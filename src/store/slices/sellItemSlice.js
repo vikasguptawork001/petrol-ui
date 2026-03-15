@@ -114,8 +114,7 @@ export const calculatePreview = createAsyncThunk(
         
         // Calculate item-wise discount (matching backend logic exactly) - amount only
         let itemDiscount = parseFloat(item.discount || 0);
-        const itemDiscountType = 'amount';
-        
+
         // Ensure discount doesn't exceed item total
         itemDiscount = Math.min(itemDiscount, itemTotal);
         

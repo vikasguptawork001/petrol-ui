@@ -49,7 +49,7 @@ const NozzleReading = () => {
   const [nozzleFilter, setNozzleFilter] = useState('');
   const [attendantFilter, setAttendantFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit] = useState(50);
   const [pagination, setPagination] = useState(null);
 
   // Pending closings (opening-only records) for "Add closing" tab
@@ -80,6 +80,7 @@ const NozzleReading = () => {
 
   useEffect(() => {
     fetchReadings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromDate, toDate, nozzleFilter, attendantFilter, page, limit]);
 
   const fetchReadings = async () => {
@@ -127,6 +128,7 @@ const NozzleReading = () => {
     if (activeTab === 'add_closing') {
       fetchPendingReadings();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, pendingFromDate, pendingToDate]);
 
   const handleSubmit = async (e) => {

@@ -22,6 +22,7 @@ const Attendants = () => {
     if (user && (user.role === 'admin' || user.role === 'super_admin')) {
       fetchAttendants();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchAttendants = async () => {

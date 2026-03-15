@@ -15,11 +15,11 @@ const Parties = () => {
   const toast = useToast();
   const { user } = useAuth();
   const [parties, setParties] = useState([]);
-  const [filter, setFilter] = useState('seller'); // petrol pump: creditors only ('seller')
+  const [, setFilter] = useState('seller'); // petrol pump: creditors only ('seller')
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [buyerParties, setBuyerParties] = useState([]);
+  const [, setBuyerParties] = useState([]);
   const [sellerParties, setSellerParties] = useState([]);
   // Removed pagination - not needed for Parties tab
   const [selectedParty, setSelectedParty] = useState(null);

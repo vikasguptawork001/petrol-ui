@@ -18,6 +18,7 @@ const CreditorDashboard = () => {
     if (user && user.role === 'super_admin') {
       fetchCreditors();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchCreditors = async () => {

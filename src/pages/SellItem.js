@@ -130,6 +130,7 @@ const SellItem = () => {
     } else if (sellerInfo && !sellerInfo.due_date) {
       setDueDateForPartial('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sellerInfo?.id, sellerInfo?.due_date]);
 
   useEffect(() => {
@@ -140,6 +141,7 @@ const SellItem = () => {
         toast.error('Failed to load seller information');
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeller, sellerInfo, dispatch, toast]);
 
   // Debounce search query - only search after 1 second of no typing
@@ -240,16 +242,6 @@ const SellItem = () => {
     }
     const qty = parseInt(quantity) || 0;
     dispatch(updateItemQuantity({ itemId, quantity: qty <= 0 ? '' : qty }));
-  };
-
-  const handleUpdateDiscount = (itemId, discountValue) => {
-    const rawValue = discountValue === '' ? null : parseFloat(discountValue);
-    const discountAmount = (rawValue === null || isNaN(rawValue)) ? 0 : Math.max(0, rawValue);
-    if (previewData) {
-      dispatch(updatePreviewItemDiscount({ itemId, discount: discountAmount, discountType: 'amount', discountPercentage: null }));
-    } else {
-      dispatch(updateItemDiscount({ itemId, discount: discountAmount, discountType: 'amount', discountPercentage: null }));
-    }
   };
 
   const updateQuantityInPreview = (itemId, quantity) => {

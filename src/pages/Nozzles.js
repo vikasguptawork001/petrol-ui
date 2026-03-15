@@ -22,6 +22,7 @@ const Nozzles = () => {
     if (user && (user.role === 'admin' || user.role === 'super_admin')) {
       fetchNozzles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchNozzles = async () => {
