@@ -1,0 +1,447 @@
+.add-item {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.add-item .card {
+  overflow: visible !important;
+}
+
+.selected-items {
+  margin-top: 30px;
+  overflow: visible !important;
+}
+
+.buyer-info {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 4px;
+  margin: 15px 0;
+}
+
+.buyer-info h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.buyer-info p {
+  margin: 5px 0;
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.suggestion-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.new-item-form {
+  margin-top: 20px;
+  background-color: #f8f9fa;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+
+/* Add New Item modal - portaled to body; fixed header, close only via X/Close button */
+.add-item-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.add-item-modal-overlay .modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.add-item-modal-overlay .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.add-item-modal-overlay .modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.add-item-modal-overlay .modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.add-item-modal-overlay .modal-close:hover {
+  color: #333;
+}
+
+.add-item-modal-overlay .modal-body {
+  overflow: auto;
+  flex: 1;
+  padding: 20px;
+}
+
+.selected-items table input {
+  border: 1px solid #ddd;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+/* Center action button in AddItem table */
+.selected-items table td:last-child {
+  text-align: center !important;
+  padding: 8px 4px !important;
+}
+
+.selected-items table td:last-child .action-menu-wrapper {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+
+/* Ensure action button is centered on all screen sizes */
+@media (max-width: 1200px) {
+  .selected-items table td:last-child {
+    text-align: center !important;
+  }
+  
+  .selected-items table td:last-child .action-menu-wrapper {
+    display: inline-block !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .selected-items table td:last-child {
+    text-align: center !important;
+    padding: 8px 2px !important;
+  }
+  
+  .selected-items table td:last-child .action-menu-wrapper {
+    display: inline-block !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .selected-items table td:last-child {
+    text-align: center !important;
+    padding: 6px 2px !important;
+  }
+  
+  .selected-items table td:last-child .action-menu-wrapper {
+    display: inline-block !important;
+    text-align: center !important;
+  }
+}
+
+/* ============================================
+   TABLE INLINE SEARCH & SUGGESTIONS
+   ============================================ */
+
+.table-search-row td {
+  background-color: #fcfcfc;
+  padding: 8px 14px !important;
+  border-bottom: 2px solid #3498db !important;
+}
+
+.table-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.table-search-input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.table-responsive-container {
+  width: 100%;
+  overflow: visible !important; /* CRITICAL: Must be visible to show dropdown */
+  position: relative;
+  min-height: 400px;
+  z-index: 100;
+}
+
+/* Force visibility on all table parts */
+.add-item table, 
+.add-item tbody, 
+.add-item tr,
+.add-item td {
+  overflow: visible !important;
+}
+
+.add-item tfoot {
+  position: relative;
+  z-index: 1; /* Lower than search row */
+}
+
+.table-search-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: visible !important;
+}
+
+.table-suggestions {
+  position: absolute;
+  top: 100%; /* Just below input */
+  left: 0;
+  width: min(650px, 95vw);
+  background: white;
+  border: 1px solid #3498db;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 999999 !important; /* Extremely high z-index */
+  max-height: 300px; /* Reduced specific height to fit better */
+  overflow-y: auto;
+  margin-top: 5px; /* Closer to input */
+  display: flex;
+  flex-direction: column;
+  animation: slideDown 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.table-suggestions-header {
+  padding: 12px 18px;
+  background: #f8faff;
+  border-bottom: 1px solid #e1e8ed;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5c7cfa;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-suggestion-item {
+  padding: 14px 18px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f3f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+  background: white;
+  min-height: 60px;
+}
+
+.table-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.table-suggestion-item:hover {
+  background-color: #f8f9fa;
+  padding-left: 22px;
+}
+
+.table-suggestion-item.active {
+  background-color: #edf2ff;
+  border-left: 5px solid #4c6ef5;
+  padding-left: 22px;
+}
+
+.table-suggestion-item.already-selected {
+  background-color: #f4fce3;
+  border-left: 5px solid #82c91e;
+}
+
+.table-suggestion-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4px;
+}
+
+.table-suggestion-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: #212529;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-suggestion-meta {
+  font-size: 13px;
+  color: #868e96;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.table-suggestion-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 100px;
+}
+
+.table-suggestion-rate {
+  font-weight: 800;
+  color: #2f9e44;
+  font-size: 18px;
+}
+
+.stock-pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stock-pill.low { background: #fff9db; color: #f08c00; }
+.stock-pill.good { background: #ebfbee; color: #40c057; }
+.stock-pill.none { background: #fff5f5; color: #fa5252; }
+
+.selected-badge {
+  background: #82c91e;
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table-suggestions-footer {
+  padding: 10px 18px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  font-size: 12px;
+  color: #adb5bd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-suggestions-body {
+  overflow-y: visible; /* Let parent handle scrolling */
+  min-height: 100px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-loader-container,
+.no-results-container {
+  padding: 30px 20px;
+  text-align: center;
+  background: white;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #495057;
+  gap: 12px;
+}
+
+.search-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #edf2ff;
+  border-top: 3px solid #4c6ef5;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.no-results-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,961 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import apiClient from '../../config/axios';
+import config from '../../config/config';
+
+// Async thunks for API calls
+export const fetchSellerParties = createAsyncThunk(
+  'sellItem/fetchSellerParties',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(config.api.sellers);
+      return response.data.parties || response.data.sellers || [];
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch seller parties');
+    }
+  }
+);
+
+export const fetchSellerInfo = createAsyncThunk(
+  'sellItem/fetchSellerInfo',
+  async (sellerId, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(`${config.api.sellers}/${sellerId}`);
+      return response.data.party || response.data.seller;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch seller info');
+    }
+  }
+);
+
+export const searchItems = createAsyncThunk(
+  'sellItem/searchItems',
+  async ({ query, includePurchaseRate = false }, { rejectWithValue }) => {
+    try {
+      const trimmedQuery = (query || '').trim();
+      const params = { q: trimmedQuery };
+      if (includePurchaseRate) {
+        params.include_purchase_rate = 'true';
+      }
+      const response = await apiClient.get(config.api.itemsSearch, { params });
+      return response.data.items || [];
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to search items');
+    }
+  }
+);
+
+export const calculatePreview = createAsyncThunk(
+  'sellItem/calculatePreview',
+  async ({ selectedItems, sellerInfo, withGst, payPreviousBalance, previousBalancePaid, paymentStatus, paidAmount }, { rejectWithValue }) => {
+    // Automatically include previous balance if seller has balance
+    const previousBalance = parseFloat(sellerInfo?.balance_amount || 0);
+    const effectivePreviousBalancePaid = previousBalance > 0 ? previousBalance : 0;
+    try {
+      // Fetch all item details in a single batch API call
+      const itemIds = selectedItems.map(item => item.item_id);
+      let itemsDetailsMap = new Map();
+      
+      try {
+        const response = await apiClient.post(config.api.itemsDetails, {
+          item_ids: itemIds,
+          include_purchase_rate: false // For selling, we don't need purchase rate
+        });
+        
+        // Create a map of item_id -> item details for quick lookup
+        if (response.data && response.data.items) {
+          response.data.items.forEach(item => {
+            itemsDetailsMap.set(item.id, item);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching batch item details:', error);
+        // Fallback: continue with existing item data if batch API fails
+      }
+
+      // Merge batch API response with selectedItems (preserving cart quantity, discount, etc.)
+      const itemsWithDetails = selectedItems.map(item => {
+        const itemDetails = itemsDetailsMap.get(item.item_id);
+        if (itemDetails) {
+          return {
+            ...item,
+            // Update with latest details from API
+            product_name: itemDetails.product_name || item.product_name,
+            product_code: itemDetails.product_code || item.product_code,
+            brand: itemDetails.brand || item.brand,
+            hsn_number: itemDetails.hsn_number || item.hsn_number || '',
+            tax_rate: itemDetails.tax_rate || item.tax_rate || 0,
+            sale_rate: (item.sale_rate !== undefined && item.sale_rate !== null && item.sale_rate !== '') ? parseFloat(item.sale_rate) : (itemDetails.sale_rate || item.sale_rate || 0),
+            purchase_rate: itemDetails.purchase_rate || item.purchase_rate || 0,
+            min_sale_rate: itemDetails.min_sale_rate != null ? itemDetails.min_sale_rate : item.min_sale_rate,
+            // Stock quantity from API (quantity field in response)
+            available_quantity: itemDetails.quantity || item.available_quantity || 0
+          };
+        }
+        // If item not found in batch response, use existing data
+        return {
+          ...item,
+          tax_rate: item.tax_rate || 0,
+          hsn_number: item.hsn_number || ''
+        };
+      });
+      
+      const itemsWithTax = itemsWithDetails;
+      
+      // Calculate amounts
+      let subtotal = 0;
+      let totalTaxableValue = 0;
+      let totalTax = 0;
+      
+      const itemsWithGstCalc = itemsWithTax.map(item => {
+        const saleRate = parseFloat(item.sale_rate) || 0;
+        const quantity = parseInt(item.quantity) || 0;
+        const taxRate = parseFloat(item.tax_rate) || 0;
+        const itemTotal = saleRate * quantity;
+        
+        // Calculate item-wise discount (matching backend logic exactly) - amount only
+        let itemDiscount = parseFloat(item.discount || 0);
+        const itemDiscountType = 'amount';
+        
+        // Ensure discount doesn't exceed item total
+        itemDiscount = Math.min(itemDiscount, itemTotal);
+        
+        const itemTotalAfterDiscount = itemTotal - itemDiscount;
+        const effectiveRate = quantity > 0 ? itemTotalAfterDiscount / quantity : saleRate;
+        
+        let taxableValue = itemTotalAfterDiscount;
+        let taxAmount = 0;
+        
+        if (withGst && taxRate > 0) {
+          taxableValue = itemTotalAfterDiscount / (1 + taxRate / 100);
+          taxAmount = itemTotalAfterDiscount - taxableValue;
+        }
+        
+        return {
+          ...item,
+          itemTotal,
+          itemDiscount,
+          itemTotalAfterDiscount,
+          effectiveRate,
+          taxableValue,
+          taxAmount,
+          tax_rate: taxRate,
+          hsn_number: item.hsn_number || ''
+        };
+      });
+      
+      if (withGst) {
+        totalTaxableValue = itemsWithGstCalc.reduce((sum, item) => sum + item.taxableValue, 0);
+        totalTax = itemsWithGstCalc.reduce((sum, item) => sum + item.taxAmount, 0);
+        subtotal = totalTaxableValue; // Subtotal is taxable value for GST
+      } else {
+        subtotal = itemsWithGstCalc.reduce((sum, item) => sum + item.itemTotalAfterDiscount, 0);
+        totalTaxableValue = subtotal;
+      }
+      
+      // Calculate final total (matching backend logic)
+      const invoiceTotal = withGst ? (subtotal + totalTax) : subtotal;
+      // Use the effective values (automatically calculated above)
+      const prevBalanceToPay = effectivePreviousBalancePaid;
+      const grandTotal = invoiceTotal + prevBalanceToPay;
+      // Round grand total to whole number (no decimals) - this is the final amount
+      const roundedGrandTotal = Math.round(grandTotal);
+      
+      return {
+        seller: sellerInfo,
+        items: itemsWithGstCalc,
+        subtotal: withGst ? totalTaxableValue : subtotal,
+        taxAmount: totalTax,
+        taxableValue: totalTaxableValue,
+        withGst,
+        total: invoiceTotal,
+        previousBalance,
+        previousBalancePaid: prevBalanceToPay,
+        grandTotal: roundedGrandTotal, // Use rounded grand total
+        paymentStatus,
+        // Round paid amount to whole number (no decimals)
+        // For partially_paid, always use 0 if not explicitly provided
+        paidAmount: paymentStatus === 'fully_paid' ? roundedGrandTotal : (paidAmount !== undefined && paidAmount !== null ? Math.round(paidAmount) : 0),
+        selectedSeller: sellerInfo?.id || ''
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to calculate preview');
+    }
+  }
+);
+
+export const submitSale = createAsyncThunk(
+  'sellItem/submitSale',
+  async ({ previewData, selectedSeller, attendantId, nozzleId, dueDate }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState().sellItem;
+      const aid = attendantId != null ? attendantId : state.selectedAttendantId;
+      const nid = nozzleId != null ? nozzleId : state.selectedNozzleId;
+      const payload = {
+        seller_party_id: previewData.selectedSeller || selectedSeller,
+        attendant_id: aid || null,
+        nozzle_id: nid || null,
+        items: previewData.items.map(item => ({
+          item_id: item.item_id,
+          quantity: parseInt(item.quantity) || 0,
+          sale_rate: parseFloat(item.sale_rate) || 0,
+          discount: parseFloat(item.itemDiscount) || 0,
+          discount_type: 'amount',
+          discount_percentage: null
+        })),
+        payment_status: previewData.paymentStatus,
+        paid_amount: Math.round(previewData.paidAmount || 0), // Ensure rounded whole number
+        with_gst: previewData.withGst || false,
+        previous_balance_paid: previewData.previousBalancePaid || 0
+      };
+      if (previewData.paymentStatus === 'partially_paid' && dueDate) {
+        payload.due_date = dueDate;
+      }
+      const response = await apiClient.post(config.api.sale, payload);
+
+      return {
+        transactionId: response.data.transaction?.id,
+        billNumber: response.data.transaction?.bill_number
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to submit sale');
+    }
+  }
+);
+
+const initialState = {
+  // Seller party state
+  sellerParties: [],
+  selectedSeller: '',
+  sellerInfo: null,
+  sellerSearchQuery: '',
+  filteredSellerParties: [],
+  showSellerSuggestions: false,
+  
+  // Item search state
+  searchQuery: '',
+  suggestedItems: [],
+  
+  // Selected items state
+  selectedItems: [],
+  itemStockInfo: {},
+  
+  // Preview state
+  previewData: null,
+  previewLoading: false,
+  // Tracks if current UI state (cart/payment/GST/previous balance, etc.)
+  // has changes that are not yet reflected in previewData
+  previewDirty: true,
+  
+  // Payment state
+  paymentStatus: 'partially_paid', // Default to partial payment
+  paidAmount: 0,
+  
+  // GST state
+  withGst: false,
+  
+  // Previous balance state
+  previousBalancePaid: 0,
+  payPreviousBalance: false,
+
+  // Attendant & nozzle (petrol pump)
+  selectedAttendantId: null,
+  selectedNozzleId: null,
+
+  // Print state
+  printDisabled: true,
+  printClicked: false,
+  
+  // Discount inputs (local UI state)
+  discountInputs: {},
+  
+  // Loading states
+  loading: {
+    sellerParties: false,
+    sellerInfo: false,
+    items: false,
+    preview: false,
+    submit: false
+  },
+  
+  // Error states
+  errors: {
+    sellerParties: null,
+    sellerInfo: null,
+    items: null,
+    preview: null,
+    submit: null
+  }
+};
+
+const sellItemSlice = createSlice({
+  name: 'sellItem',
+  initialState,
+  reducers: {
+    // Seller party actions
+    setSelectedSeller: (state, action) => {
+      const newSellerId = action.payload;
+      // Only clear sellerInfo if we're selecting a different seller
+      if (state.selectedSeller !== newSellerId) {
+        state.sellerInfo = null;
+      }
+      state.selectedSeller = newSellerId;
+      state.previewDirty = true;
+    },
+    setSellerSearchQuery: (state, action) => {
+      const newQuery = (action.payload || '').trim();
+      state.sellerSearchQuery = newQuery;
+      if (!newQuery) {
+        state.selectedSeller = '';
+        state.sellerInfo = null;
+        state.filteredSellerParties = state.sellerParties;
+        state.showSellerSuggestions = false;
+      } else {
+        // Clear selected seller if user is typing something different than the selected seller's name
+        if (state.selectedSeller && state.sellerInfo) {
+          const selectedSellerName = (state.sellerInfo.party_name || '').trim();
+          if (newQuery !== selectedSellerName && !newQuery.startsWith(selectedSellerName)) {
+            state.selectedSeller = '';
+            state.sellerInfo = null;
+          }
+        }
+        // Filter seller parties with trimmed query
+        const filtered = state.sellerParties.filter(party =>
+          (party.party_name || '').toLowerCase().includes(newQuery.toLowerCase()) ||
+          (party.mobile_number && party.mobile_number.includes(newQuery)) ||
+          (party.address && (party.address || '').toLowerCase().includes(newQuery.toLowerCase()))
+        );
+        state.filteredSellerParties = filtered;
+        state.showSellerSuggestions = filtered.length > 0;
+      }
+    },
+    setShowSellerSuggestions: (state, action) => {
+      state.showSellerSuggestions = action.payload;
+    },
+    selectSellerParty: (state, action) => {
+      const party = action.payload;
+      // Only clear sellerInfo if we're selecting a different seller
+      if (state.selectedSeller !== party.id) {
+        state.sellerInfo = null;
+      }
+      state.selectedSeller = party.id;
+      state.sellerSearchQuery = party.party_name;
+      state.showSellerSuggestions = false;
+      state.previewDirty = true;
+    },
+    
+    // Item search actions
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+    },
+    clearSuggestedItems: (state) => {
+      state.suggestedItems = [];
+    },
+    
+    // Selected items actions
+    addItemToCart: (state, action) => {
+      const item = action.payload;
+      const existingItem = state.selectedItems.find(i => i.item_id === item.id);
+      
+      if (existingItem) {
+        // If item already exists, increment quantity by 1
+        existingItem.quantity = Math.max(1, (parseInt(existingItem.quantity) || 0) + 1);
+      } else {
+        // Extract quantity/current_quantity separately to avoid using item.quantity (which is stock) as cart quantity
+        const { quantity: stockQuantity, current_quantity: currentStockQuantity } = item;
+        const availableStock = currentStockQuantity !== undefined && currentStockQuantity !== null 
+          ? parseInt(currentStockQuantity) 
+          : (stockQuantity !== undefined && stockQuantity !== null ? parseInt(stockQuantity) : 0);
+        
+        state.selectedItems.push({
+          item_id: item.id,
+          product_name: item.product_name,
+          sale_rate: parseFloat(item.sale_rate) || 0,
+          min_sale_rate: item.min_sale_rate != null ? parseFloat(item.min_sale_rate) : null,
+          tax_rate: parseFloat(item.tax_rate) || 0,
+          hsn_number: item.hsn_number || '',
+          quantity: 1, // Always start with quantity 1 for new items
+          available_quantity: availableStock, // Store stock as available_quantity
+          discount: 0,
+          discount_type: 'amount',
+          discount_percentage: null
+        });
+      }
+      state.previewDirty = true;
+    },
+    updateItemQuantity: (state, action) => {
+      const { itemId, quantity } = action.payload;
+      const item = state.selectedItems.find(i => i.item_id === itemId);
+      if (item) {
+        const oldQty = parseInt(item.quantity, 10) || 0;
+        const newQty = quantity === '' ? 0 : parseInt(quantity, 10) || 0;
+        item.quantity = quantity;
+        // Discount is per quantity: preserve per-unit when qty changes
+        if (oldQty > 0 && newQty >= 0 && item.discount != null) {
+          const perUnit = (parseFloat(item.discount) || 0) / oldQty;
+          item.discount = Math.round(perUnit * newQty * 100) / 100;
+        }
+      }
+      state.previewDirty = true;
+    },
+    updateItemSaleRate: (state, action) => {
+      const { itemId, saleRate } = action.payload;
+      const item = state.selectedItems.find(i => i.item_id === itemId);
+      if (item) {
+        const val = parseFloat(saleRate);
+        item.sale_rate = isNaN(val) || val < 0 ? (item.sale_rate ?? 0) : val;
+      }
+      state.previewDirty = true;
+    },
+    removeItem: (state, action) => {
+      state.selectedItems = state.selectedItems.filter(item => item.item_id !== action.payload);
+      state.previewDirty = true;
+    },
+    updateItemDiscount: (state, action) => {
+      const { itemId, discount, discountType, discountPercentage } = action.payload;
+      const item = state.selectedItems.find(i => i.item_id === itemId);
+      if (item) {
+        if (discountType !== undefined) item.discount_type = discountType;
+        if (discount !== undefined) item.discount = discount;
+        if (discountPercentage !== undefined) item.discount_percentage = discountPercentage;
+      }
+      state.previewDirty = true;
+    },
+    setSelectedAttendant: (state, action) => {
+      state.selectedAttendantId = action.payload;
+      state.previewDirty = true;
+    },
+    setSelectedNozzle: (state, action) => {
+      state.selectedNozzleId = action.payload;
+      state.previewDirty = true;
+    },
+    applyMinPriceDiscount: (state, action) => {
+      const itemId = action.payload;
+      const item = state.selectedItems.find(i => i.item_id === itemId);
+      if (item && item.min_sale_rate != null && item.sale_rate != null) {
+        const saleRate = parseFloat(item.sale_rate) || 0;
+        const minRate = parseFloat(item.min_sale_rate) || 0;
+        const qty = parseInt(item.quantity) || 0;
+        if (minRate < saleRate && qty > 0) {
+          const discountPerUnit = saleRate - minRate;
+          item.discount = Math.round(discountPerUnit * qty * 100) / 100;
+          item.discount_type = 'amount';
+          item.discount_percentage = null;
+        }
+      }
+      state.previewDirty = true;
+    },
+    updateDiscountInput: (state, action) => {
+      const { itemId, value } = action.payload;
+      state.discountInputs[itemId] = value;
+    },
+    
+    // Preview actions
+    clearPreview: (state) => {
+      state.previewData = null;
+      state.previewDirty = true;
+    },
+    updatePreviewItemQuantity: (state, action) => {
+      const { itemId, quantity } = action.payload;
+      if (!state.previewData) return;
+      
+      const qty = quantity === '' ? 0 : parseInt(quantity) || 0;
+      const updatedItems = state.previewData.items.map(item => {
+        if (item.item_id === itemId) {
+          const saleRate = parseFloat(item.sale_rate) || 0;
+          const taxRate = parseFloat(item.tax_rate) || 0;
+          const oldQty = parseInt(item.quantity, 10) || 0;
+          const itemTotal = saleRate * qty;
+          // Discount is per quantity: preserve per-unit when qty changes
+          let itemDiscount = 0;
+          const itemDiscountType = item.discount_type || 'amount';
+          if (itemDiscountType === 'percentage' && item.discount_percentage != null) {
+            itemDiscount = (itemTotal * item.discount_percentage) / 100;
+          } else {
+            const perUnit = oldQty > 0 ? (parseFloat(item.discount || 0) / oldQty) : 0;
+            itemDiscount = Math.round(perUnit * qty * 100) / 100;
+          }
+          itemDiscount = Math.min(itemDiscount, itemTotal);
+          
+          const itemTotalAfterDiscount = itemTotal - itemDiscount;
+          const effectiveRate = qty > 0 ? itemTotalAfterDiscount / qty : saleRate;
+          
+          let taxableValue = itemTotalAfterDiscount;
+          let taxAmount = 0;
+          
+          if (state.previewData.withGst && taxRate > 0) {
+            taxableValue = itemTotalAfterDiscount / (1 + taxRate / 100);
+            taxAmount = itemTotalAfterDiscount - taxableValue;
+          }
+          
+          return {
+            ...item,
+            quantity: quantity === '' ? '' : qty,
+            discount: itemDiscount,
+            itemTotal,
+            itemDiscount,
+            itemTotalAfterDiscount,
+            effectiveRate,
+            taxableValue,
+            taxAmount
+          };
+        }
+        return item;
+      });
+      
+      const totalTaxableValue = updatedItems.reduce((sum, item) => {
+        if (item.taxableValue !== undefined) {
+          return sum + (parseFloat(item.taxableValue) || 0);
+        }
+        return sum + (parseFloat(item.itemTotalAfterDiscount) || parseFloat(item.itemTotal) || 0);
+      }, 0);
+      const totalTax = updatedItems.reduce((sum, item) => sum + (parseFloat(item.taxAmount) || 0), 0);
+      const invoiceTotal = state.previewData.withGst ? (totalTaxableValue + totalTax) : totalTaxableValue;
+      const previousBalancePaid = state.previewData.previousBalancePaid || 0;
+      const grandTotalBeforeRounding = invoiceTotal + previousBalancePaid;
+      const roundedGrandTotal = Math.round(grandTotalBeforeRounding);
+      let updatedPaidAmount = state.previewData.paidAmount || 0;
+      if (state.paymentStatus === 'fully_paid') {
+        updatedPaidAmount = roundedGrandTotal;
+      } else if (state.paymentStatus === 'partially_paid') {
+        updatedPaidAmount = Math.min(Math.round(updatedPaidAmount), roundedGrandTotal);
+      }
+
+      state.previewData = {
+        ...state.previewData,
+        items: updatedItems,
+        subtotal: state.previewData.withGst ? totalTaxableValue : invoiceTotal,
+        taxableValue: totalTaxableValue,
+        taxAmount: totalTax,
+        total: invoiceTotal,
+        grandTotal: roundedGrandTotal,
+        paidAmount: updatedPaidAmount
+      };
+      state.selectedItems = updatedItems;
+    },
+    removePreviewItem: (state, action) => {
+      if (!state.previewData) return;
+      
+      const updatedItems = state.previewData.items.filter(item => item.item_id !== action.payload);
+      
+      // If no items left, clear preview
+      if (updatedItems.length === 0) {
+        state.previewData = null;
+        state.selectedItems = [];
+        return;
+      }
+      
+      // Calculate totals using itemTotalAfterDiscount (which already includes discounts)
+      // This matches the logic in calculatePreview
+      let totalTaxableValue = 0;
+      let totalTax = 0;
+      let subtotal = 0;
+      
+      if (state.previewData.withGst) {
+        // For GST: sum taxableValue and taxAmount separately
+        totalTaxableValue = updatedItems.reduce((sum, item) => sum + (parseFloat(item.taxableValue) || 0), 0);
+        totalTax = updatedItems.reduce((sum, item) => sum + (parseFloat(item.taxAmount) || 0), 0);
+        subtotal = totalTaxableValue;
+      } else {
+        // Without GST: use itemTotalAfterDiscount directly
+        subtotal = updatedItems.reduce((sum, item) => sum + (parseFloat(item.itemTotalAfterDiscount) || 0), 0);
+        totalTaxableValue = subtotal;
+        totalTax = 0;
+      }
+      
+      // Calculate invoice total (cart amount before previous balance)
+      const invoiceTotal = state.previewData.withGst ? (subtotal + totalTax) : subtotal;
+      
+      // Calculate grand total including previous balance
+      const previousBalancePaid = state.previewData.previousBalancePaid || 0;
+      const grandTotalBeforeRounding = invoiceTotal + previousBalancePaid;
+      const roundedGrandTotal = Math.round(grandTotalBeforeRounding);
+      
+      // Update paidAmount: if fully paid, set to grand total; if partially paid, cap at grand total
+      let updatedPaidAmount = state.previewData.paidAmount || 0;
+      if (state.paymentStatus === 'fully_paid') {
+        updatedPaidAmount = roundedGrandTotal;
+      } else if (state.paymentStatus === 'partially_paid') {
+        updatedPaidAmount = Math.min(Math.round(updatedPaidAmount), roundedGrandTotal);
+      }
+      
+      state.previewData = {
+        ...state.previewData,
+        items: updatedItems,
+        subtotal,
+        taxableValue: totalTaxableValue,
+        taxAmount: totalTax,
+        total: invoiceTotal,
+        grandTotal: roundedGrandTotal,
+        paidAmount: updatedPaidAmount
+      };
+      state.selectedItems = updatedItems;
+    },
+    updatePreviewItemSaleRate: (state, action) => {
+      const { itemId, saleRate } = action.payload;
+      if (!state.previewData) return;
+      const val = parseFloat(saleRate);
+      if (isNaN(val) || val < 0) return;
+      const updatedItems = state.previewData.items.map(item => {
+        if (item.item_id !== itemId) return item;
+        const updatedItem = { ...item, sale_rate: val };
+        const qty = parseInt(updatedItem.quantity) || 0;
+        const taxRate = parseFloat(updatedItem.tax_rate) || 0;
+        const itemTotal = val * qty;
+        const itemDiscountType = updatedItem.discount_type || 'amount';
+        let itemDiscount = 0;
+        if (itemDiscountType === 'percentage' && updatedItem.discount_percentage != null) {
+          itemDiscount = (itemTotal * updatedItem.discount_percentage) / 100;
+        } else {
+          itemDiscount = Math.min(parseFloat(updatedItem.discount || 0), itemTotal);
+        }
+        const itemTotalAfterDiscount = itemTotal - itemDiscount;
+        const effectiveRate = qty > 0 ? itemTotalAfterDiscount / qty : val;
+        let taxableValue = itemTotalAfterDiscount;
+        let taxAmount = 0;
+        if (state.previewData.withGst && taxRate > 0) {
+          taxableValue = itemTotalAfterDiscount / (1 + taxRate / 100);
+          taxAmount = itemTotalAfterDiscount - taxableValue;
+        }
+        return {
+          ...updatedItem,
+          itemTotal,
+          itemDiscount,
+          itemTotalAfterDiscount,
+          effectiveRate,
+          taxableValue,
+          taxAmount
+        };
+      });
+      const totalTaxableValue = updatedItems.reduce((s, i) => s + (parseFloat(i.taxableValue) || parseFloat(i.itemTotalAfterDiscount) || 0), 0);
+      const totalTax = updatedItems.reduce((s, i) => s + (parseFloat(i.taxAmount) || 0), 0);
+      const invoiceTotal = state.previewData.withGst ? (totalTaxableValue + totalTax) : totalTaxableValue;
+      const previousBalancePaid = state.previewData.previousBalancePaid || 0;
+      const roundedGrandTotal = Math.round(invoiceTotal + previousBalancePaid);
+      let paidAmount = state.previewData.paidAmount || 0;
+      if (state.paymentStatus === 'fully_paid') paidAmount = roundedGrandTotal;
+      else if (state.paymentStatus === 'partially_paid') paidAmount = Math.min(Math.round(paidAmount), roundedGrandTotal);
+      state.previewData = {
+        ...state.previewData,
+        items: updatedItems,
+        subtotal: state.previewData.withGst ? totalTaxableValue : invoiceTotal,
+        taxableValue: totalTaxableValue,
+        taxAmount: totalTax,
+        total: invoiceTotal,
+        grandTotal: roundedGrandTotal,
+        paidAmount
+      };
+      state.selectedItems = updatedItems;
+    },
+    updatePreviewItemDiscount: (state, action) => {
+      const { itemId, discount, discountType, discountPercentage } = action.payload;
+      if (!state.previewData) return;
+      
+      const updatedItems = state.previewData.items.map(item => {
+        if (item.item_id === itemId) {
+          const updatedItem = { ...item };
+          if (discountType !== undefined) updatedItem.discount_type = discountType;
+          if (discount !== undefined) updatedItem.discount = discount;
+          if (discountPercentage !== undefined) updatedItem.discount_percentage = discountPercentage;
+          
+          // Recalculate item amounts with new discount
+          const saleRate = parseFloat(updatedItem.sale_rate) || 0;
+          const quantity = parseInt(updatedItem.quantity) || 0;
+          const taxRate = parseFloat(updatedItem.tax_rate) || 0;
+          const itemTotal = saleRate * quantity;
+          
+          // Calculate item-wise discount (matching backend logic)
+          let itemDiscount = 0;
+          const itemDiscountType = updatedItem.discount_type || 'amount';
+          if (itemDiscountType === 'percentage' && updatedItem.discount_percentage !== null && updatedItem.discount_percentage !== undefined) {
+            itemDiscount = (itemTotal * updatedItem.discount_percentage) / 100;
+          } else {
+            itemDiscount = parseFloat(updatedItem.discount || 0);
+          }
+          
+          // Ensure discount doesn't exceed item total
+          itemDiscount = Math.min(itemDiscount, itemTotal);
+          
+          const itemTotalAfterDiscount = itemTotal - itemDiscount;
+          const effectiveRate = quantity > 0 ? itemTotalAfterDiscount / quantity : saleRate;
+          
+          let taxableValue = itemTotalAfterDiscount;
+          let taxAmount = 0;
+          
+          if (state.previewData.withGst && taxRate > 0) {
+            taxableValue = itemTotalAfterDiscount / (1 + taxRate / 100);
+            taxAmount = itemTotalAfterDiscount - taxableValue;
+          }
+          
+          return {
+            ...updatedItem,
+            itemTotal,
+            itemDiscount,
+            itemTotalAfterDiscount,
+            effectiveRate,
+            taxableValue,
+            taxAmount
+          };
+        }
+        return item;
+      });
+      
+      // Recalculate totals (match calculatePreview / updatePreviewItemQuantity)
+      const totalTaxableValue = updatedItems.reduce((sum, item) => {
+        if (item.taxableValue !== undefined) {
+          return sum + (parseFloat(item.taxableValue) || 0);
+        }
+        return sum + (parseFloat(item.itemTotalAfterDiscount) || parseFloat(item.itemTotal) || 0);
+      }, 0);
+      const totalTax = updatedItems.reduce((sum, item) => sum + (parseFloat(item.taxAmount) || 0), 0);
+      const invoiceTotal = state.previewData.withGst ? (totalTaxableValue + totalTax) : totalTaxableValue;
+      
+      const previousBalancePaid = state.previewData.previousBalancePaid || 0;
+      const grandTotalBeforeRounding = invoiceTotal + previousBalancePaid;
+      const roundedGrandTotal = Math.round(grandTotalBeforeRounding);
+      let updatedPaidAmount = state.previewData.paidAmount || 0;
+      if (state.paymentStatus === 'fully_paid') {
+        updatedPaidAmount = roundedGrandTotal;
+      } else if (state.paymentStatus === 'partially_paid') {
+        updatedPaidAmount = Math.min(Math.round(updatedPaidAmount), roundedGrandTotal);
+      }
+      
+      state.previewData = {
+        ...state.previewData,
+        items: updatedItems,
+        subtotal: state.previewData.withGst ? totalTaxableValue : invoiceTotal,
+        taxAmount: totalTax,
+        taxableValue: totalTaxableValue,
+        total: invoiceTotal,
+        grandTotal: roundedGrandTotal,
+        paidAmount: updatedPaidAmount
+      };
+      state.selectedItems = updatedItems;
+    },
+    updatePreviewPaymentInfo: (state, action) => {
+      if (!state.previewData) return;
+      const { paymentStatus, paidAmount, previousBalancePaid } = action.payload;
+      
+      state.previewData = {
+        ...state.previewData,
+        paymentStatus: paymentStatus !== undefined ? paymentStatus : state.previewData.paymentStatus,
+        paidAmount: paidAmount !== undefined ? paidAmount : state.previewData.paidAmount,
+        previousBalancePaid: previousBalancePaid !== undefined ? previousBalancePaid : state.previewData.previousBalancePaid
+      };
+      
+      // Update local state if provided
+      if (paidAmount !== undefined) {
+        state.paidAmount = paidAmount;
+      }
+      if (previousBalancePaid !== undefined) {
+        state.previousBalancePaid = previousBalancePaid;
+      }
+    },
+    
+    // Payment actions
+    setPaymentStatus: (state, action) => {
+      state.paymentStatus = action.payload;
+      // Don't update paidAmount here - let calculatePreview handle it based on grandTotal
+      // This ensures previous balance is included in the calculation
+      state.previewDirty = true;
+    },
+    setPaidAmount: (state, action) => {
+      state.paidAmount = action.payload;
+      state.previewDirty = true;
+    },
+    
+    // GST actions
+    setWithGst: (state, action) => {
+      state.withGst = action.payload;
+      state.previewDirty = true;
+    },
+    
+    // Previous balance actions
+    setPreviousBalancePaid: (state, action) => {
+      state.previousBalancePaid = action.payload;
+      state.previewDirty = true;
+    },
+    setPayPreviousBalance: (state, action) => {
+      state.payPreviousBalance = action.payload;
+      // When unchecking, reset the amount
+      // When checking, don't auto-set - let the UI component handle it based on previewData
+      // This prevents conflicts when user is manually entering the amount
+      if (!action.payload) {
+        state.previousBalancePaid = 0;
+      }
+      state.previewDirty = true;
+    },
+    
+    // Print actions
+    setPrintDisabled: (state, action) => {
+      state.printDisabled = action.payload;
+    },
+    setPrintClicked: (state, action) => {
+      state.printClicked = action.payload;
+    },
+    
+    // Reset actions
+    resetSellItem: (state) => {
+      return { ...initialState, sellerParties: state.sellerParties };
+    },
+    resetAfterSale: (state) => {
+      state.selectedItems = [];
+      state.selectedSeller = '';
+      state.sellerInfo = null;
+      state.selectedAttendantId = null;
+      state.selectedNozzleId = null;
+      state.previewData = null;
+      state.paymentStatus = 'partially_paid'; // Default to partial payment
+      state.paidAmount = 0;
+      state.previousBalancePaid = 0;
+      state.payPreviousBalance = false;
+      state.printDisabled = true;
+      state.printClicked = false;
+      state.discountInputs = {};
+      state.previewDirty = true;
+    }
+  },
+  extraReducers: (builder) => {
+    // Fetch seller parties
+    builder
+      .addCase(fetchSellerParties.pending, (state) => {
+        state.loading.sellerParties = true;
+        state.errors.sellerParties = null;
+      })
+      .addCase(fetchSellerParties.fulfilled, (state, action) => {
+        state.loading.sellerParties = false;
+        state.sellerParties = action.payload;
+        state.filteredSellerParties = action.payload;
+      })
+      .addCase(fetchSellerParties.rejected, (state, action) => {
+        state.loading.sellerParties = false;
+        state.errors.sellerParties = action.payload;
+      });
+    
+    // Fetch seller info
+    builder
+      .addCase(fetchSellerInfo.pending, (state) => {
+        state.loading.sellerInfo = true;
+        state.errors.sellerInfo = null;
+      })
+      .addCase(fetchSellerInfo.fulfilled, (state, action) => {
+        state.loading.sellerInfo = false;
+        state.sellerInfo = action.payload;
+      })
+      .addCase(fetchSellerInfo.rejected, (state, action) => {
+        state.loading.sellerInfo = false;
+        state.errors.sellerInfo = action.payload;
+      });
+    
+    // Search items
+    builder
+      .addCase(searchItems.pending, (state) => {
+        state.loading.items = true;
+        state.errors.items = null;
+      })
+      .addCase(searchItems.fulfilled, (state, action) => {
+        state.loading.items = false;
+        state.suggestedItems = action.payload;
+      })
+      .addCase(searchItems.rejected, (state, action) => {
+        state.loading.items = false;
+        state.errors.items = action.payload;
+      });
+    
+    // Calculate preview
+    builder
+      .addCase(calculatePreview.pending, (state) => {
+        state.previewLoading = true;
+        state.errors.preview = null;
+      })
+      .addCase(calculatePreview.fulfilled, (state, action) => {
+        state.previewLoading = false;
+        state.previewData = action.payload;
+        state.selectedItems = action.payload.items;
+        state.previewDirty = false;
+        state.previewDirty = false;
+        // Update payment status and paid amount based on preview data
+        state.paymentStatus = action.payload.paymentStatus || state.paymentStatus;
+        // For partially_paid, preserve the current paidAmount from state if user is typing
+        // Only update if paymentStatus is fully_paid (which should set it to grandTotal)
+        // or if the payload explicitly has a different value for partially_paid
+        if (action.payload.paymentStatus === 'fully_paid') {
+          // For fully_paid, always set to grandTotal
+          state.paidAmount = action.payload.paidAmount || 0;
+        } else if (action.payload.paymentStatus === 'partially_paid') {
+          // For partially_paid, only update if the payload has a valid paidAmount
+          // This allows user input to persist while typing
+          if (action.payload.paidAmount !== undefined && action.payload.paidAmount !== null) {
+            state.paidAmount = action.payload.paidAmount;
+          }
+          // Otherwise, keep the current state.paidAmount (user's input)
+        } else {
+          // Fallback: update if provided
+          if (action.payload.paidAmount !== undefined) {
+            state.paidAmount = action.payload.paidAmount;
+          }
+        }
+      })
+      .addCase(calculatePreview.rejected, (state, action) => {
+        state.previewLoading = false;
+        state.errors.preview = action.payload;
+      });
+    
+    // Submit sale
+    builder
+      .addCase(submitSale.pending, (state) => {
+        state.loading.submit = true;
+        state.errors.submit = null;
+      })
+      .addCase(submitSale.fulfilled, (state, action) => {
+        state.loading.submit = false;
+        if (action.payload.transactionId) {
+          state.previewData = {
+            ...state.previewData,
+            transactionId: action.payload.transactionId,
+            billNumber: action.payload.billNumber
+          };
+          state.printDisabled = false;
+        }
+      })
+      .addCase(submitSale.rejected, (state, action) => {
+        state.loading.submit = false;
+        state.errors.submit = action.payload;
+      });
+  }
+});
+
+export const {
+  setSelectedSeller,
+  setSellerSearchQuery,
+  setShowSellerSuggestions,
+  selectSellerParty,
+  setSearchQuery,
+  clearSuggestedItems,
+  addItemToCart,
+  updateItemQuantity,
+  updateItemSaleRate,
+  removeItem,
+  updateItemDiscount,
+  updateDiscountInput,
+  clearPreview,
+  updatePreviewItemQuantity,
+  removePreviewItem,
+  updatePreviewItemSaleRate,
+  updatePreviewItemDiscount,
+  updatePreviewPaymentInfo,
+  setPaymentStatus,
+  setPaidAmount,
+  setWithGst,
+  setPreviousBalancePaid,
+  setPayPreviousBalance,
+  setPrintDisabled,
+  setPrintClicked,
+  setSelectedAttendant,
+  setSelectedNozzle,
+  applyMinPriceDiscount,
+  resetSellItem,
+  resetAfterSale
+} = sellItemSlice.actions;
+
+export default sellItemSlice.reducer;
+
