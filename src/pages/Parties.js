@@ -10,6 +10,7 @@ import TransactionLoader from '../components/TransactionLoader';
 import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import './Party.css';
+import '../styles/petrolpump-theme.css';
 
 const Parties = () => {
   const toast = useToast();
@@ -501,8 +502,14 @@ const Parties = () => {
     <Layout>
       <TransactionLoader isLoading={loading || processingPayment} type={processingPayment ? "payment" : "transaction"} message={loading ? 'Loading parties...' : ''} />
       <div className="parties-page">
-        <div className="parties-header">
-          <h2>Parties</h2>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>👥</span>
+              <h2>Creditors / Parties</h2>
+            </div>
+            <p>Manage pump creditors. All payments and balance history for debtors/creditors.</p>
+          </div>
           <div className="header-actions">
             <button
               onClick={() => {
@@ -518,7 +525,7 @@ const Parties = () => {
               {loading ? 'Refreshing...' : '🔄 Refresh'}
             </button>
             {user?.role !== 'sales' && (
-            <Link to="/add-seller-party" className="btn btn-success">
+            <Link to="/add-seller-party" className="btn btn-success" style={{ fontWeight: '600' }}>
               + Add Creditor
             </Link>
             )}

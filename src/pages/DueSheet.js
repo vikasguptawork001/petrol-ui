@@ -10,6 +10,7 @@ import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import { getLocalDateString } from '../utils/dateUtils';
 import './DueSheet.css';
+import '../styles/petrolpump-theme.css';
 
 const DueSheet = () => {
   const { user } = useAuth();
@@ -176,12 +177,14 @@ const DueSheet = () => {
   return (
     <Layout>
       <div className="ds-page">
-        <header className="ds-page-header">
-          <h1 className="ds-page-title">Due Sheet</h1>
-          <p className="ds-page-subtitle">
-            Creditors with outstanding balance. Filter by due date or search by name, mobile, address or vehicle.
-          </p>
-        </header>
+        <div className="pp-page-header">
+          <div className="pp-header-content">
+            <h1 className="pp-page-title">Due Sheet</h1>
+            <p className="pp-page-subtitle">
+              Creditors with outstanding balance. Filter by due date or search by name, mobile, address or vehicle.
+            </p>
+          </div>
+        </div>
 
         <div className="ds-card">
           <h2 className="ds-card-title">Filters</h2>

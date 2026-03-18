@@ -2208,7 +2208,13 @@ const SellItem = () => {
       <div className="sell-item">
         <div className="sell-item-wrapper">
           <div className="sell-item-main">
-            <h2>Create New Sale</h2>
+            <div className="pp-page-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px' }}>⛽</span>
+                <h2>Create New Sale</h2>
+              </div>
+              <p>Process a new customer transaction and generate fuel bills</p>
+            </div>
 
             {/* Sticky Header Section - Professional Design */}
             <div className="card sticky-search-section">

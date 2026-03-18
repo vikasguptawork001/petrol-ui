@@ -4,9 +4,10 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 import './PetrolPump.css';
+import '../styles/petrolpump-theme.css';
 
 const Attendants = () => {
   const { user } = useAuth();
@@ -130,7 +131,7 @@ const Attendants = () => {
     <Layout>
       <div className="pp-page">
         <div className="pp-page-header">
-          <div>
+          <div className="pp-header-content">
             <h1 className="pp-page-title">Attendants</h1>
             <p className="pp-page-subtitle">Manage staff. Attendance ID and mobile (10 digits) are optional. Nozzle is chosen per reading. Delete hides from list (archived internally).</p>
           </div>
@@ -144,10 +145,7 @@ const Attendants = () => {
         <div className="pp-card">
           <h2 className="pp-card-title">Attendant list</h2>
           {loading ? (
-            <div className="pp-loading">
-              <PetrolNozzleLoader size="small" />
-              <span>Loading…</span>
-            </div>
+            <TransactionLoader type="petrol" message="Loading attendants..." />
           ) : attendants.length === 0 ? (
             <div className="pp-empty">No attendants yet. Add one. Nozzle is chosen per reading in Daily Nozzle Reading.</div>
           ) : (

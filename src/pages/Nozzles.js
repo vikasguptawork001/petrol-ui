@@ -4,9 +4,10 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 import './PetrolPump.css';
+import '../styles/petrolpump-theme.css';
 
 const Nozzles = () => {
   const { user } = useAuth();
@@ -109,7 +110,7 @@ const Nozzles = () => {
     <Layout>
       <div className="pp-page">
         <div className="pp-page-header">
-          <div>
+          <div className="pp-header-content">
             <h1 className="pp-page-title">Nozzles</h1>
             <p className="pp-page-subtitle">Manage pump nozzles. Delete hides a nozzle from the list (archived internally).</p>
           </div>
@@ -123,10 +124,7 @@ const Nozzles = () => {
         <div className="pp-card">
           <h2 className="pp-card-title">Nozzle list</h2>
           {loading ? (
-            <div className="pp-loading">
-              <PetrolNozzleLoader size="small" />
-              <span>Loading…</span>
-            </div>
+            <TransactionLoader type="petrol" message="Loading nozzles..." />
           ) : nozzles.length === 0 ? (
             <div className="pp-empty">No nozzles yet. Add one to get started.</div>
           ) : (

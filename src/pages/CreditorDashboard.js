@@ -5,6 +5,7 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 
 const CreditorDashboard = () => {
@@ -64,6 +65,7 @@ const CreditorDashboard = () => {
 
   return (
     <Layout>
+      <TransactionLoader isLoading={loading} message="Loading creditor list..." />
       <div className="party-form">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
           <h2 style={{ margin: 0 }}>Creditor Dashboard</h2>
@@ -94,8 +96,8 @@ const CreditorDashboard = () => {
               style={{ maxWidth: '320px', padding: '8px 12px' }}
             />
           </div>
-          {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
+          {filtered.length === 0 && !loading ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>No creditors found</div>
           ) : (
             <div className="table-container">
               <table className="table">

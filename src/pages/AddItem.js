@@ -441,12 +441,13 @@ const AddItem = () => {
     <Layout>
       <TransactionLoader isLoading={isAddingNewItem} type="purchase" />
       <div className="add-item">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0 }}>Add Item to Inventory</h2>
-            <p style={{ color: '#666', marginTop: '8px', marginBottom: 0 }}>
-              Create new items or search and add existing items to your list.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>📦</span>
+              <h2>Add Item to Inventory</h2>
+            </div>
+            <p>Create new stock entries or manage existing dispenser items</p>
           </div>
           <button
             type="button"

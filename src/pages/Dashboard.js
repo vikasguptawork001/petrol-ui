@@ -669,7 +669,7 @@ const Dashboard = () => {
   return (
     <Layout>
       {showDueAlertModal && (
-        <div className="modal-overlay due-alert-overlay" onClick={(e) => e.target === e.currentTarget && setShowDueAlertModal(false)}>
+        <div className="modal-overlay due-alert-overlay">
           <div className="due-alert-modal" onClick={(e) => e.stopPropagation()}>
             <div className="due-alert-modal-header">
               <div className="due-alert-modal-title-wrap">
@@ -702,18 +702,18 @@ const Dashboard = () => {
               <table className="due-alert-table">
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th style={{ textAlign: 'center' }}>#</th>
                     <th>Creditor</th>
                     <th>Mobile</th>
                     <th>Due Date</th>
                     <th className="due-alert-th-amount">Outstanding</th>
-                    <th>Actions</th>
+                    <th style={{ textAlign: 'center' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dueAlertParties.map((p, idx) => (
                     <tr key={p.id}>
-                      <td>{idx + 1}</td>
+                      <td style={{ textAlign: 'center' }}>{idx + 1}</td>
                       <td><strong>{p.party_name}</strong></td>
                       <td>{p.mobile_number || '—'}</td>
                       <td>
@@ -751,12 +751,13 @@ const Dashboard = () => {
                         )}
                       </td>
                       <td className="due-alert-amount-cell">₹ {formatCurrency(p.balance_amount)}</td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         {dueDateEditingId === p.id ? null : (
                           <button
                             type="button"
                             className="btn btn-sm btn-outline-secondary due-alert-change-date"
                             onClick={() => startEditDueDate(p)}
+                            style={{ margin: '0 auto' }}
                           >
                             Change date
                           </button>
@@ -789,17 +790,33 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      <TransactionLoader isLoading={updating || deleting || quickSaleLoading || paginationLoading} type="transaction" message={updating ? 'Updating item...' : deleting ? 'Deleting item...' : quickSaleLoading ? 'Processing quick sale...' : paginationLoading ? 'Loading items...' : ''} />
+      <TransactionLoader 
+        isLoading={loading || updating || deleting || quickSaleLoading || paginationLoading} 
+        type="transaction" 
+        message={
+          loading ? 'Loading stock inventory...' :
+          updating ? 'Updating item...' : 
+          deleting ? 'Deleting item...' : 
+          quickSaleLoading ? 'Processing quick sale...' : 
+          paginationLoading ? 'Loading items...' : 
+          ''
+        } 
+      />
       <div className="dashboard">
         <div className="dashboard-wrapper">
           {/* Left: Title + table (scrolls) */}
           <div className="dashboard-main">
-            <h2 className="dashboard-title">Stock Dashboard</h2>
+            <div className="pp-page-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px' }}>📊</span>
+                <h2 className="dashboard-title">Stock Dashboard</h2>
+              </div>
+              <p>Monitor your petrol pump inventory, stock levels, and dispenser rates</p>
+            </div>
             <div className="dashboard-scrollable-content">
-          {loading ? (
-            <div className="loading">
-              {config.app.theme === 'petrol_pump' && <PetrolNozzleLoader size="small" />}
-              <span>Loading…</span>
+          {(items.length === 0 && !loading) ? (
+            <div className="empty-state" style={{ textAlign: 'center', padding: '40px' }}>
+              <span style={{ color: '#94a3b8' }}>No items found in your inventory</span>
             </div>
           ) : (
             <>

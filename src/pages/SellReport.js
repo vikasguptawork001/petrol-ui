@@ -11,6 +11,8 @@ import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import './Report.css';
+import '../styles/petrolpump-theme.css';
+import '../styles/petrolpump-theme.css';
 
 const SellReport = () => {
   const { user } = useAuth();
@@ -210,19 +212,24 @@ const SellReport = () => {
     <Layout>
       <TransactionLoader isLoading={loading || loadingBillDetails} type="transaction" message={loading ? 'Loading sales report...' : loadingBillDetails ? 'Loading bill details...' : ''} />
       <div className="report">
-        <div className="report-header">
-          <h2>Sell Report</h2>
-          <button 
-            onClick={exportToExcel} 
-            className="btn btn-success"
-            disabled={exporting || transactions.length === 0}
-            style={{
-              opacity: (exporting || transactions.length === 0) ? 0.6 : 1,
-              cursor: (exporting || transactions.length === 0) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {exporting ? 'Exporting...' : 'Export to Excel'}
-          </button>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>📊</span>
+              <h2>Sell Report</h2>
+            </div>
+            <p>View and export detailed sale transactions. Filter by date, GST, party or dispenser.</p>
+          </div>
+          <div className="header-actions">
+            <button 
+              onClick={exportToExcel} 
+              className="btn btn-success"
+              disabled={exporting || transactions.length === 0}
+              style={{ padding: '10px 20px', fontWeight: '600' }}
+            >
+              {exporting ? 'Exporting...' : '📁 Export to Excel'}
+            </button>
+          </div>
         </div>
 
         <div className="card">

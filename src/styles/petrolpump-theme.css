@@ -474,3 +474,94 @@ body {
   color: var(--pp-navy);
   margin-bottom: 14px;
 }
+
+/* ─── Standard Branded Page Header ─── */
+.pp-page-header {
+  background: #0d1828; /* Solid navy to block background scene */
+  padding: 24px 30px;
+  border-radius: 12px;
+  border-left: 6px solid #f59a30; /* Branded orange accent */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pp-page-header h2 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+  border-bottom: none !important;
+}
+
+.pp-page-header p {
+  margin: 0 !important;
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+/* ─── GLOBAL DARK BACKGROUND TEXT VISIBILITY FIXES ─── */
+
+/* 1. Ensure any loose text directly on the layout body is light */
+.sell-item,
+.sell-item-main,
+.add-item-container,
+.add-item,
+.return-item {
+  color: #e2e8f0;
+}
+
+/* 2. Page titles sitting on the dark scene (fallback for non-PP components) */
+.page-title {
+  color: #f8fafc !important;
+  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 4. Fix specific loose text elements (pagination controls outside cards) */
+.pagination-controls,
+.pagination-controls span,
+.pagination-controls select {
+  color: #e2e8f0 !important;
+}
+.pagination-controls select {
+  background-color: var(--pp-navy) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 5. ReturnItem empty state and loose elements */
+.return-item p, .return-item span, .return-item small {
+  color: inherit;
+}
+
+/* 6. Ensure opaque cards and specific surfaces still retain readable dark text */
+.card,
+.dashboard-right-panel,
+.table-container,
+.modal-content,
+.search-container {
+  color: #1e293b !important;
+}
+
+/* Ensure text inside cards forces dark color no matter what */
+.card h2, .card h3, .card p, .card span, .card small, .card label, .card div,
+.dashboard-right-panel h2, .dashboard-right-panel h3, .dashboard-right-panel p,
+.dashboard-right-panel .right-panel-label,
+.dashboard-right-panel .advanced-search-title,
+.modal-body p, .modal-body label, .modal-body div, .modal-header h3,
+.table-responsive-container p, .table-responsive-container span {
+  color: inherit; 
+}
+
+/* Override #666 or #333 inline styles tightly inside cards */
+.card *[style*="color: #666"], 
+.dashboard-right-panel *[style*="color: #666"],
+.modal-body *[style*="color: #666"],
+.modal-body *[style*="color: #333"],
+.card *[style*="color: '#666'"] {
+  color: #475569 !important;
+}
+

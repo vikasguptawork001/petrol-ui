@@ -677,7 +677,13 @@ const ReturnItem = () => {
     <Layout>
       <TransactionLoader isLoading={isProcessing} type="return" />
       <div className="return-item">
-        <h2>Return Items</h2>
+        <div className="pp-page-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '24px' }}>🔄</span>
+            <h2>Return Items</h2>
+          </div>
+          <p>Process product returns from customers or back to suppliers</p>
+        </div>
         <div className="card">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
