@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
+import '../styles/petrolpump-theme.css';
 
 const CreditorDashboard = () => {
   const { user } = useAuth();
@@ -67,9 +68,19 @@ const CreditorDashboard = () => {
     <Layout>
       <TransactionLoader isLoading={loading} message="Loading creditor list..." />
       <div className="party-form">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0 }}>Creditor Dashboard</h2>
-          <Link to="/due-sheet" className="btn btn-primary">View Due Sheet</Link>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>💳</span>
+              <h2 style={{ color: '#fff', margin: 0 }}>Creditor Dashboard</h2>
+            </div>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Overview of all sellers and creditors with outstanding balances.</p>
+          </div>
+          <div className="header-actions">
+            <Link to="/due-sheet" className="btn btn-pp-outline" style={{ textDecoration: 'none', marginRight: '10px' }}>
+              View Due Sheet
+            </Link>
+          </div>
         </div>
 
         <div className="card" style={{ marginBottom: '20px' }}>

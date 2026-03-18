@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import './Report.css';
+import '../styles/petrolpump-theme.css';
 
 const ItemWiseSellReport = () => {
   const [fromDate, setFromDate] = useState(new Date());
@@ -224,19 +225,24 @@ const ItemWiseSellReport = () => {
     <Layout>
       <TransactionLoader isLoading={loading} type="transaction" message="Loading item-wise sales report..." />
       <div className="report">
-        <div className="report-header">
-          <h2>Item-wise Sell Report</h2>
-          <button 
-            onClick={exportToExcel} 
-            className="btn btn-success"
-            disabled={rows.length === 0 || loading}
-            style={{
-              opacity: (rows.length === 0 || loading) ? 0.6 : 1,
-              cursor: (rows.length === 0 || loading) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Export to Excel
-          </button>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>📦</span>
+              <h2 style={{ color: '#fff', margin: 0 }}>Item-wise Sell Report</h2>
+            </div>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Direct item sales summary. Track profit and quantity sold per product.</p>
+          </div>
+          <div className="header-actions">
+            <button 
+              onClick={exportToExcel} 
+              className="btn btn-pp-primary"
+              disabled={rows.length === 0 || loading}
+              style={{ padding: '10px 20px', fontWeight: '600' }}
+            >
+              📁 Export to Excel
+            </button>
+          </div>
         </div>
 
         <div className="card">

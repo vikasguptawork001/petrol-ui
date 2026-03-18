@@ -177,12 +177,13 @@ const DueSheet = () => {
   return (
     <Layout>
       <div className="ds-page">
-        <div className="pp-page-header">
-          <div className="pp-header-content">
-            <h1 className="pp-page-title">Due Sheet</h1>
-            <p className="pp-page-subtitle">
-              Creditors with outstanding balance. Filter by due date or search by name, mobile, address or vehicle.
-            </p>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>📋</span>
+              <h2 style={{ color: '#fff', margin: 0 }}>Due Sheet</h2>
+            </div>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Outstanding balances and credit recovery. Track overdue payments globally.</p>
           </div>
         </div>
 

@@ -506,9 +506,9 @@ const Parties = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '24px' }}>👥</span>
-              <h2>Creditors / Parties</h2>
+              <h2 style={{ color: '#fff', margin: 0 }}>Creditors / Parties</h2>
             </div>
-            <p>Manage pump creditors. All payments and balance history for debtors/creditors.</p>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Manage pump creditors. All payments and balance history for debtors/creditors.</p>
           </div>
           <div className="header-actions">
             <button

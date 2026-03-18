@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import './OrderSheet.css';
+import '../styles/petrolpump-theme.css';
 
 const OrderSheet = () => {
   const [orders, setOrders] = useState([]);
@@ -134,19 +135,24 @@ const OrderSheet = () => {
     <Layout>
       <TransactionLoader isLoading={loading} type="transaction" message="Loading order sheet..." />
       <div className="order-sheet">
-        <div className="order-header">
-          <h2>Order Sheet</h2>
-          <button 
-            onClick={exportToExcel} 
-            className="btn btn-success"
-            disabled={exporting || orders.length === 0 || loading}
-            style={{
-              opacity: (exporting || orders.length === 0 || loading) ? 0.6 : 1,
-              cursor: (exporting || orders.length === 0 || loading) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {exporting ? 'Exporting...' : 'Export to Excel'}
-          </button>
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>📝</span>
+              <h2 style={{ color: '#fff', margin: 0 }}>Order Sheet</h2>
+            </div>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Automatic procurement list. Items requiring restock based on alert quantity.</p>
+          </div>
+          <div className="header-actions">
+            <button 
+              onClick={exportToExcel} 
+              className="btn btn-pp-primary"
+              disabled={exporting || orders.length === 0 || loading}
+              style={{ padding: '10px 20px', fontWeight: '600' }}
+            >
+              📁 Export to Excel
+            </button>
+          </div>
         </div>
 
         <div className="card info-card">

@@ -9,7 +9,6 @@ import { useToast } from '../context/ToastContext';
 import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
-import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
 import * as XLSX from 'xlsx';
 import { getLocalDateString } from '../utils/dateUtils';
 import './Dashboard.css';

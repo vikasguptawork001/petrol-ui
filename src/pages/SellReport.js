@@ -12,7 +12,6 @@ import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import './Report.css';
 import '../styles/petrolpump-theme.css';
-import '../styles/petrolpump-theme.css';
 
 const SellReport = () => {
   const { user } = useAuth();
@@ -216,18 +215,18 @@ const SellReport = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '24px' }}>📊</span>
-              <h2>Sell Report</h2>
+              <h2 style={{ color: '#fff', margin: 0 }}>Sell Report</h2>
             </div>
-            <p>View and export detailed sale transactions. Filter by date, GST, party or dispenser.</p>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>View and export detailed sale transactions. Filter by date, GST, party or dispenser.</p>
           </div>
           <div className="header-actions">
             <button 
               onClick={exportToExcel} 
-              className="btn btn-success"
+              className="btn btn-pp-primary"
               disabled={exporting || transactions.length === 0}
               style={{ padding: '10px 20px', fontWeight: '600' }}
             >
-              {exporting ? 'Exporting...' : '📁 Export to Excel'}
+              📁 Export to Excel
             </button>
           </div>
         </div>

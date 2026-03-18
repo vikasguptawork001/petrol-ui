@@ -8,6 +8,7 @@ import ActionMenu from '../components/ActionMenu';
 import { useToast } from '../context/ToastContext';
 import { numberToWords } from '../utils/numberToWords';
 import './SellItemV2.css';
+import '../styles/petrolpump-theme.css';
 
 function formatMoney(n) {
   const num = Number(n || 0);
@@ -456,19 +457,22 @@ const SellItemV2 = () => {
     <Layout>
       <TransactionLoader isLoading={loading.submit || loading.pdf} type="sell" />
       <div className="sell2">
-        <div className="sell2-header">
+        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 className="sell2-title">Sell Item 2.0</h2>
-            <p className="sell2-subtitle">Fast selling flow + clean bill preview + PDF based on the updated tax invoice template.</p>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>🛒</span>
+              <h2 style={{ color: '#fff', margin: 0 }}>Sell Item 2.0</h2>
+            </div>
+            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Fast selling flow + clean bill preview + PDF based on the updated tax invoice template.</p>
           </div>
           <div className="sell2-actions">
-            <button className="sell2-btn" onClick={resetForm} type="button">
+            <button className="btn btn-pp-outline" onClick={resetForm} type="button" style={{ marginRight: '8px' }}>
               Reset
             </button>
-            <button className="sell2-btn primary" onClick={submitSale} disabled={!canSubmit || loading.submit} type="button">
+            <button className="btn btn-pp-primary" onClick={submitSale} disabled={!canSubmit || loading.submit} type="button" style={{ marginRight: '8px' }}>
               {loading.submit ? 'Saving…' : 'Save Sale'}
             </button>
-            <button className="sell2-btn" onClick={downloadPdf} disabled={!lastTransactionId || loading.pdf} type="button">
+            <button className="btn btn-pp-outline" onClick={downloadPdf} disabled={!lastTransactionId || loading.pdf} type="button">
               {loading.pdf ? 'Downloading…' : 'Download PDF'}
             </button>
           </div>
