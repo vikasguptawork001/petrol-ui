@@ -1,0 +1,131 @@
+/* Petrol Nozzle Loader – nozzle adding fuel to tank */
+
+.petrol-nozzle-loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.petrol-nozzle-loader__svg {
+  display: block;
+}
+
+/* Sizes */
+.petrol-nozzle-loader--large .petrol-nozzle-loader__svg {
+  width: 120px;
+  height: 100px;
+}
+
+.petrol-nozzle-loader--small .petrol-nozzle-loader__svg {
+  width: 72px;
+  height: 60px;
+}
+
+/* Tank */
+.petrol-nozzle-loader__tank {
+  fill: #e2e8f0;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+.petrol-nozzle-loader__tank-fill {
+  fill: #3b82f6;
+  opacity: 0.9;
+  transform-origin: 42px 82px;
+  animation: pp-tank-fill 1.8s ease-in-out infinite;
+}
+
+.petrol-nozzle-loader__tank-highlight {
+  fill: rgba(255, 255, 255, 0.35);
+}
+
+/* Fuel level rising in tank (scale from bottom) */
+@keyframes pp-tank-fill {
+  0%, 100% {
+    transform: scaleY(0.45);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Hose */
+.petrol-nozzle-loader__hose {
+  fill: #64748b;
+  stroke: #475569;
+  stroke-width: 1;
+}
+
+/* Nozzle gun */
+.petrol-nozzle-loader__gun {
+  fill: #1e293b;
+  stroke: #334155;
+  stroke-width: 1;
+}
+
+.petrol-nozzle-loader__gun-tip {
+  fill: #0f172a;
+}
+
+/* Stream lines – dashed motion */
+.petrol-nozzle-loader__stream {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 4 8;
+  opacity: 0.9;
+  animation: pp-stream-dash 0.6s linear infinite;
+}
+
+.petrol-nozzle-loader__stream--2 {
+  animation-delay: 0.2s;
+}
+
+.petrol-nozzle-loader__stream--3 {
+  animation-delay: 0.4s;
+}
+
+@keyframes pp-stream-dash {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* Drops falling into tank */
+.petrol-nozzle-loader__drop {
+  fill: #2563eb;
+  opacity: 0.95;
+  animation: pp-drop-fall 1s ease-in infinite;
+}
+
+.petrol-nozzle-loader__drop--1 {
+  animation-delay: 0s;
+}
+
+.petrol-nozzle-loader__drop--2 {
+  animation-delay: 0.25s;
+}
+
+.petrol-nozzle-loader__drop--3 {
+  animation-delay: 0.5s;
+}
+
+@keyframes pp-drop-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}

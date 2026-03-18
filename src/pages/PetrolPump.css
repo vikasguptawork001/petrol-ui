@@ -264,6 +264,15 @@
 .pp-loading {
   color: #3b82f6;
   font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pp-loading span {
+  display: block;
 }
 
 /* Modal overlay for petrol pump modals */

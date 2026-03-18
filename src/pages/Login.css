@@ -1,56 +1,201 @@
+/* ─── Login Page ─── */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 100vw;
+  font-family: var(--pp-font-body, 'Inter', sans-serif);
+  position: relative;
+  overflow: hidden;
+
+  /* Same flat illustrated nighttime scene as global background */
+  background-color: #0c1829;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 680'%3E%3Crect width='1200' height='680' fill='%230c1829'/%3E%3Ccircle cx='60' cy='45' r='1.5' fill='%23fff' opacity='0.7'/%3E%3Ccircle cx='180' cy='30' r='1' fill='%23fff' opacity='0.6'/%3E%3Ccircle cx='310' cy='55' r='1.8' fill='%23fff' opacity='0.8'/%3E%3Ccircle cx='420' cy='22' r='1.2' fill='%23fff' opacity='0.5'/%3E%3Ccircle cx='540' cy='70' r='1' fill='%23fff' opacity='0.65'/%3E%3Ccircle cx='680' cy='18' r='1.5' fill='%23fff' opacity='0.75'/%3E%3Ccircle cx='770' cy='50' r='1.3' fill='%23fff' opacity='0.6'/%3E%3Ccircle cx='880' cy='35' r='1' fill='%23fff' opacity='0.8'/%3E%3Ccircle cx='960' cy='62' r='1.6' fill='%23fff' opacity='0.55'/%3E%3Ccircle cx='1080' cy='28' r='1.2' fill='%23fff' opacity='0.7'/%3E%3Ccircle cx='1150' cy='55' r='1' fill='%23fff' opacity='0.6'/%3E%3Ccircle cx='130' cy='90' r='1' fill='%23fff' opacity='0.4'/%3E%3Ccircle cx='450' cy='100' r='1.2' fill='%23fff' opacity='0.35'/%3E%3Ccircle cx='720' cy='85' r='1' fill='%23fff' opacity='0.45'/%3E%3Ccircle cx='1020' cy='95' r='1.3' fill='%23fff' opacity='0.4'/%3E%3Crect x='0' y='420' width='1200' height='260' fill='%231e1005'/%3E%3Crect x='0' y='418' width='1200' height='6' fill='%23291608' opacity='0.9'/%3E%3Crect x='60' y='148' width='620' height='22' rx='4' fill='%23f59a30'/%3E%3Crect x='100' y='148' width='18' height='280' rx='4' fill='%230d1828'/%3E%3Crect x='640' y='148' width='18' height='280' rx='4' fill='%230d1828'/%3E%3Cellipse cx='360' cy='175' rx='300' ry='18' fill='%23f59a30' opacity='0.08'/%3E%3Crect x='60' y='210' width='130' height='46' rx='6' fill='%23e85c2c'/%3E%3Ctext x='125' y='239' fill='%23ffffff' font-size='14' font-family='Inter,Arial,sans-serif' font-weight='700' text-anchor='middle' letter-spacing='1'%3EPETROPRO%3C/text%3E%3Crect x='185' y='250' width='100' height='175' rx='10' fill='%23152338'/%3E%3Crect x='195' y='264' width='80' height='40' rx='5' fill='%230a111e'/%3E%3Crect x='198' y='267' width='74' height='34' rx='3' fill='%23071016'/%3E%3Ctext x='235' y='289' fill='%2300d8f0' font-size='14' font-family='monospace' font-weight='700' text-anchor='middle'%3E95.40%3C/text%3E%3Crect x='200' y='312' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='200' y='331' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='197' y='355' width='34' height='24' rx='4' fill='%23e8593c'/%3E%3Crect x='237' y='355' width='34' height='24' rx='4' fill='%2326c97a'/%3E%3Crect x='185' y='408' width='100' height='17' rx='4' fill='%23f59a30' opacity='0.85'/%3E%3Crect x='280' y='370' width='16' height='10' rx='3' fill='%23f59a30'/%3E%3Cpath d='M296 375 Q340 375 340 330 Q340 290 310 275' stroke='%23f59a30' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='400' y='250' width='100' height='175' rx='10' fill='%23152338'/%3E%3Crect x='410' y='264' width='80' height='40' rx='5' fill='%230a111e'/%3E%3Crect x='413' y='267' width='74' height='34' rx='3' fill='%23071016'/%3E%3Ctext x='450' y='289' fill='%2300d8f0' font-size='14' font-family='monospace' font-weight='700' text-anchor='middle'%3E88.20%3C/text%3E%3Crect x='415' y='312' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='415' y='331' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='412' y='355' width='34' height='24' rx='4' fill='%23e8593c'/%3E%3Crect x='452' y='355' width='34' height='24' rx='4' fill='%2326c97a'/%3E%3Crect x='400' y='408' width='100' height='17' rx='4' fill='%23f59a30' opacity='0.85'/%3E%3Crect x='395' y='370' width='10' height='10' rx='2' fill='%23f59a30'/%3E%3Cpath d='M395 375 Q360 375 358 410 Q356 440 400 440' stroke='%23f59a30' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='240' cy='430' rx='60' ry='8' fill='%230a0d13' opacity='0.5'/%3E%3Cellipse cx='450' cy='430' rx='60' ry='8' fill='%230a0d13' opacity='0.5'/%3E%3Crect x='568' y='350' width='22' height='55' rx='6' fill='%23213859'/%3E%3Ccircle cx='579' cy='340' r='13' fill='%23c8956a'/%3E%3Cline x1='590' y1='370' x2='620' y2='385' stroke='%23213859' stroke-width='8' stroke-linecap='round'/%3E%3Crect x='618' y='380' width='20' height='10' rx='3' fill='%23f59a30'/%3E%3Crect x='570' y='402' width='10' height='28' rx='4' fill='%230d1828'/%3E%3Crect x='585' y='402' width='10' height='28' rx='4' fill='%230d1828'/%3E%3Cellipse cx='810' cy='428' rx='130' ry='10' fill='%230a0d13' opacity='0.6'/%3E%3Crect x='680' y='360' width='260' height='65' rx='14' fill='%231e3252'/%3E%3Crect x='720' y='310' width='170' height='55' rx='12' fill='%23213859'/%3E%3Crect x='735' y='318' width='70' height='40' rx='6' fill='%2300d8f0' opacity='0.22'/%3E%3Crect x='820' y='318' width='55' height='40' rx='6' fill='%2300d8f0' opacity='0.18'/%3E%3Ccircle cx='730' cy='428' r='32' fill='%230a0d13'/%3E%3Ccircle cx='730' cy='428' r='20' fill='%23162032'/%3E%3Ccircle cx='730' cy='428' r='8' fill='%23f59a30' opacity='0.5'/%3E%3Ccircle cx='900' cy='428' r='32' fill='%230a0d13'/%3E%3Ccircle cx='900' cy='428' r='20' fill='%23162032'/%3E%3Ccircle cx='900' cy='428' r='8' fill='%23f59a30' opacity='0.5'/%3E%3Crect x='683' y='385' width='12' height='18' rx='3' fill='%23f59a30' opacity='0.7'/%3E%3Cpath d='M638 385 Q662 385 680 393' stroke='%23f59a30' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='940' cy='378' rx='10' ry='7' fill='%23f59a30' opacity='0.6'/%3E%3Cellipse cx='940' cy='400' rx='10' ry='7' fill='%23f59a30' opacity='0.35'/%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
 }
 
+/* ─── Login card — dark navy glass matching pump body ─── */
 .login-box {
-  background: white;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 0;
+  border-radius: 18px;
+  border: 2px solid rgba(245, 154, 48, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(245,154,48,0.1),
+    0 24px 60px rgba(0,0,0,0.55);
+  overflow: hidden;
+  animation: loginCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Dark navy header bar — like a pump LCD bezel */
+.login-box::before {
+  content: '⛽  PetrolPro';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 18px;
+  background: #0d1828;
+  color: #f59a30;
+  font-family: var(--pp-font-body, 'Inter', sans-serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid #f59a30;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Adjust h2 since the ::before acts as header */
 .login-box h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
+  display: none;
 }
 
-.error-message {
-  color: #dc3545;
-  margin-bottom: 15px;
-  padding: 10px;
-  background-color: #f8d7da;
-  border-radius: 4px;
-  font-size: 14px;
+.brand-tagline {
+  display: none;
 }
 
-.login-box button {
+/* Form area padding */
+.login-box form {
+  padding: 28px 32px 32px;
+}
+
+@keyframes loginCardIn {
+  from { transform: translateY(24px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ─── Form fields ─── */
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 7px;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.form-group input {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: #f8f9fb;
+  border: 1px solid #ddd8d0;
+  color: #0d1828;
+  font-size: 0.95rem;
+  font-family: var(--pp-font-body, 'Inter', sans-serif);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
-.login-box button:disabled {
+.form-group input:focus {
+  outline: none;
+  border-color: #f59a30;
+  box-shadow: 0 0 0 3px rgba(245, 154, 48, 0.18);
+  background: #fff;
+}
+
+.form-group input::placeholder {
+  color: #b0a89a;
+}
+
+/* ─── Error message — LCD flash style ─── */
+.error-message {
+  color: #e8593c;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  background: rgba(232, 89, 60, 0.08);
+  border: 1px solid rgba(232, 89, 60, 0.25);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Sign in button (orange pump button) ─── */
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #f59a30;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(245, 154, 48, 0.45);
+  letter-spacing: 0.03em;
+  font-family: var(--pp-font-body, 'Inter', sans-serif);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #d97f10;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(245, 154, 48, 0.5);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
+/* ─── Fuel gauge progress while authenticating ─── */
+.login-gauge-wrap {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
 
+.login-gauge-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: #7a8699;
+  letter-spacing: 0.08em;
+}
 
+/* ─── Loader / splash screen ─── */
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #0c1829;
+  gap: 16px;
+}
 
+.loader-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #00d8f0;
+  letter-spacing: 0.08em;
+  animation: pulseText 1.5s infinite ease-in-out;
+}
 
-
-
-
-
-
-
-
-
-
+@keyframes pulseText {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}

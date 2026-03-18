@@ -4,6 +4,7 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
 import './Party.css';
 import './PetrolPump.css';
 
@@ -143,7 +144,10 @@ const Attendants = () => {
         <div className="pp-card">
           <h2 className="pp-card-title">Attendant list</h2>
           {loading ? (
-            <div className="pp-loading">Loading…</div>
+            <div className="pp-loading">
+              <PetrolNozzleLoader size="small" />
+              <span>Loading…</span>
+            </div>
           ) : attendants.length === 0 ? (
             <div className="pp-empty">No attendants yet. Add one. Nozzle is chosen per reading in Daily Nozzle Reading.</div>
           ) : (

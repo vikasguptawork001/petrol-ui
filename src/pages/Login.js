@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
 import './Login.css';
 
 const Login = () => {
@@ -22,10 +23,8 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     const result = await login(user_id, password);
     setLoading(false);
-
     if (result.success) {
       navigate('/dashboard');
     } else {
@@ -33,12 +32,18 @@ const Login = () => {
     }
   };
 
-  // Show loading while checking authentication
+  // Show branded loading screen while checking auth
   if (authLoading) {
     return (
-      <div className="login-container">
-        <div className="login-box">
-          <div>Loading...</div>
+      <div className="loader-container">
+        <PetrolNozzleLoader size="large" />
+        <div className="loader-text" style={{ marginTop: '8px' }}>loading system...</div>
+        <div className="fuel-gauge" style={{ width: '200px' }}>
+          <span className="fuel-gauge-e">E</span>
+          <div className="fuel-gauge-track">
+            <div className="fuel-gauge-fill" style={{ width: '75%', animationDelay: '0s' }} />
+          </div>
+          <span className="fuel-gauge-f">F</span>
         </div>
       </div>
     );
@@ -47,32 +52,60 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h2>Steepray Info Solutions</h2>
+        {/* Dispenser icon + company name */}
+        <h2>⛽ Petrol Pump System</h2>
+        <p className="brand-tagline">Steepray Info Solutions</p>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>User ID</label>
+            <label htmlFor="login-userid">User ID</label>
             <input
+              id="login-userid"
               type="text"
               value={user_id}
               onChange={(e) => setUser_id(e.target.value)}
               required
-              placeholder="Enter User ID"
+              placeholder="Enter user ID"
+              autoComplete="username"
             />
           </div>
+
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="login-password">Password</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Enter Password"
+              placeholder="Enter password"
+              autoComplete="current-password"
             />
           </div>
-          {error && <div className="error-message">{error}</div>}
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+
+          {error && (
+            <div className="error-message" role="alert">
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Authenticating...' : 'Sign in'}
           </button>
+
+          {/* Fuel gauge sweeps E→F while authenticating */}
+          {loading && (
+            <div className="login-gauge-wrap">
+              <div className="fuel-gauge" style={{ width: '100%' }}>
+                <span className="fuel-gauge-e">E</span>
+                <div className="fuel-gauge-track">
+                  <div className="fuel-gauge-fill" style={{ width: '60%' }} />
+                </div>
+                <span className="fuel-gauge-f">F</span>
+              </div>
+              <span className="login-gauge-label">authenticating...</span>
+            </div>
+          )}
         </form>
       </div>
     </div>
@@ -80,5 +113,3 @@ const Login = () => {
 };
 
 export default Login;
-
-

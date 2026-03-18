@@ -6,7 +6,7 @@ const config = {
   // API Base URL
   // In development: uses localhost
   // In production: set via REACT_APP_API_URL environment variable
-  apiBaseUrl: (process.env.REACT_APP_API_URL || "https://petrol-server.onrender.com"),
+  apiBaseUrl: (process.env.REACT_APP_API_URL || 'http://localhost:5000'),
   
   // API Endpoints
   api: {
@@ -66,7 +66,9 @@ const config = {
   app: {
     name: 'Steepray Info Solutions',
     version: '1.0.0',
-    defaultPageSize: 200
+    defaultPageSize: 200,
+    /** 'petrol_pump' = use nozzle-to-tank loader for all loading/processing states */
+    theme: 'petrol_pump'
   },
   
   // Feature Flags

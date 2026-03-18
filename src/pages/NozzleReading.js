@@ -9,6 +9,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getLocalDateString, getLocalISOString } from '../utils/dateUtils';
 import Pagination from '../components/Pagination';
+import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
 import './Report.css';
 import './PetrolPump.css';
 
@@ -363,7 +364,10 @@ const NozzleReading = () => {
               <button type="button" className="btn btn-secondary" onClick={fetchPendingReadings}>Refresh</button>
             </div>
             {loadingPending ? (
-              <div className="pp-loading">Loading…</div>
+              <div className="pp-loading">
+                <PetrolNozzleLoader size="small" />
+                <span>Loading…</span>
+              </div>
             ) : pendingReadings.length === 0 ? (
               <div className="pp-empty">No opening-only records in this date range. Add opening from the Opening only tab first.</div>
             ) : (
@@ -448,7 +452,10 @@ const NozzleReading = () => {
             </div>
           </div>
           {loadingReport ? (
-            <div className="pp-loading">Loading…</div>
+            <div className="pp-loading">
+              <PetrolNozzleLoader size="small" />
+              <span>Loading…</span>
+            </div>
           ) : (
             <>
               <div className="pp-table-wrap">

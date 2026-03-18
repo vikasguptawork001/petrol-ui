@@ -9,6 +9,7 @@ import { useToast } from '../context/ToastContext';
 import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
+import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
 import * as XLSX from 'xlsx';
 import { getLocalDateString } from '../utils/dateUtils';
 import './Dashboard.css';
@@ -796,7 +797,10 @@ const Dashboard = () => {
             <h2 className="dashboard-title">Stock Dashboard</h2>
             <div className="dashboard-scrollable-content">
           {loading ? (
-            <div className="loading">Loading...</div>
+            <div className="loading">
+              {config.app.theme === 'petrol_pump' && <PetrolNozzleLoader size="small" />}
+              <span>Loading…</span>
+            </div>
           ) : (
             <>
               <div className="table-container">

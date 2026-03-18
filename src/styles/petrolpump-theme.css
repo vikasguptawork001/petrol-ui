@@ -1,0 +1,476 @@
+/* ============================================================
+   PETROL PUMP INVENTORY SYSTEM — GLOBAL DESIGN SYSTEM
+   Theme tokens, branded components & utility classes
+   ============================================================ */
+
+/* ─── Google Fonts ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* ─── CSS Variables / Design Tokens ─── */
+:root {
+  /* Brand colors */
+  --pp-bg:           #faf8f4;          /* warm off-white page background */
+  --pp-orange:       #f59a30;          /* halogen pump light — primary accent */
+  --pp-orange-dark:  #d97f10;          /* hover / press state */
+  --pp-orange-light: #fff5e8;          /* tinted backgrounds, active nav rows */
+  --pp-navy:         #0d1828;          /* pump body color — secondary accent */
+  --pp-navy-mid:     #1e2f46;          /* slightly lighter navy */
+  --pp-navy-light:   #e8ecf1;          /* subtle navy-tinted dividers */
+
+  /* Semantic */
+  --pp-success:      #1d9e75;
+  --pp-danger:       #e8593c;
+  --pp-info:         #185fa5;
+  --pp-warning:      #f59f00;
+
+  /* Cards & surfaces */
+  --pp-card-bg:      #ffffff;
+  --pp-card-border:  1px solid #ede8e0;
+  --pp-card-radius:  12px;
+  --pp-card-shadow:  0 2px 8px rgba(13,24,40,0.06);
+
+  /* LCD display */
+  --pp-lcd-bg:       #0d1828;
+  --pp-lcd-text:     #00e5ff;          /* cyan monospace value */
+  --pp-lcd-radius:   8px;
+
+  /* Typography */
+  --pp-font-body:    'Inter', 'Segoe UI', system-ui, sans-serif;
+  --pp-font-mono:    'JetBrains Mono', 'Courier New', monospace;
+
+  /* Header is 52px (existing), footer 50px */
+  --header-height:   52px;
+  --footer-height:   50px;
+}
+
+/* ─── Base body — Flat illustrated nighttime petrol pump scene ─── */
+body {
+  font-family: var(--pp-font-body);
+  color: var(--pp-navy);
+  min-height: 100vh;
+
+  background-color: #0c1829;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 680'%3E%3C!-- Night sky --%3E%3Crect width='1200' height='680' fill='%230c1829'/%3E%3C!-- Stars --%3E%3Ccircle cx='60' cy='45' r='1.5' fill='%23fff' opacity='0.7'/%3E%3Ccircle cx='180' cy='30' r='1' fill='%23fff' opacity='0.6'/%3E%3Ccircle cx='310' cy='55' r='1.8' fill='%23fff' opacity='0.8'/%3E%3Ccircle cx='420' cy='22' r='1.2' fill='%23fff' opacity='0.5'/%3E%3Ccircle cx='540' cy='70' r='1' fill='%23fff' opacity='0.65'/%3E%3Ccircle cx='680' cy='18' r='1.5' fill='%23fff' opacity='0.75'/%3E%3Ccircle cx='770' cy='50' r='1.3' fill='%23fff' opacity='0.6'/%3E%3Ccircle cx='880' cy='35' r='1' fill='%23fff' opacity='0.8'/%3E%3Ccircle cx='960' cy='62' r='1.6' fill='%23fff' opacity='0.55'/%3E%3Ccircle cx='1080' cy='28' r='1.2' fill='%23fff' opacity='0.7'/%3E%3Ccircle cx='1150' cy='55' r='1' fill='%23fff' opacity='0.6'/%3E%3Ccircle cx='130' cy='90' r='1' fill='%23fff' opacity='0.4'/%3E%3Ccircle cx='450' cy='100' r='1.2' fill='%23fff' opacity='0.35'/%3E%3Ccircle cx='720' cy='85' r='1' fill='%23fff' opacity='0.45'/%3E%3Ccircle cx='1020' cy='95' r='1.3' fill='%23fff' opacity='0.4'/%3E%3C!-- Ground strip --%3E%3Crect x='0' y='420' width='1200' height='260' fill='%231e1005'/%3E%3Crect x='0' y='418' width='1200' height='6' fill='%23291608' opacity='0.9'/%3E%3C!-- Canopy horizontal bar --%3E%3Crect x='60' y='148' width='620' height='22' rx='4' fill='%23f59a30'/%3E%3C!-- Canopy support poles --%3E%3Crect x='100' y='148' width='18' height='280' rx='4' fill='%230d1828'/%3E%3Crect x='640' y='148' width='18' height='280' rx='4' fill='%230d1828'/%3E%3C!-- Subtle canopy underside glow --%3E%3Cellipse cx='360' cy='175' rx='300' ry='18' fill='%23f59a30' opacity='0.08'/%3E%3C!-- PETROPRO sign --%3E%3Crect x='60' y='210' width='130' height='46' rx='6' fill='%23e85c2c'/%3E%3Ctext x='125' y='239' fill='%23ffffff' font-size='14' font-family='Inter,Arial,sans-serif' font-weight='700' text-anchor='middle' letter-spacing='1'%3EPETROPRO%3C/text%3E%3C!-- ==== LEFT DISPENSER ==== --%3E%3C!-- Body --%3E%3Crect x='185' y='250' width='100' height='175' rx='10' fill='%23152338'/%3E%3C!-- LCD screen --%3E%3Crect x='195' y='264' width='80' height='40' rx='5' fill='%230a111e'/%3E%3Crect x='198' y='267' width='74' height='34' rx='3' fill='%23071016'/%3E%3Ctext x='235' y='289' fill='%2300d8f0' font-size='14' font-family='monospace' font-weight='700' text-anchor='middle'%3E95.40%3C/text%3E%3C!-- Small slot/label --%3E%3Crect x='200' y='312' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='200' y='331' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3C!-- Buttons row --%3E%3Crect x='197' y='355' width='34' height='24' rx='4' fill='%23e8593c'/%3E%3Crect x='237' y='355' width='34' height='24' rx='4' fill='%2326c97a'/%3E%3C!-- Bottom accent --%3E%3Crect x='185' y='408' width='100' height='17' rx='4' fill='%23f59a30' opacity='0.85'/%3E%3C!-- Hose connector nub --%3E%3Crect x='280' y='370' width='16' height='10' rx='3' fill='%23f59a30'/%3E%3C!-- Orange curved hose --%3E%3Cpath d='M296 375 Q340 375 340 330 Q340 290 310 275' stroke='%23f59a30' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C!-- ==== RIGHT DISPENSER ==== --%3E%3Crect x='400' y='250' width='100' height='175' rx='10' fill='%23152338'/%3E%3Crect x='410' y='264' width='80' height='40' rx='5' fill='%230a111e'/%3E%3Crect x='413' y='267' width='74' height='34' rx='3' fill='%23071016'/%3E%3Ctext x='450' y='289' fill='%2300d8f0' font-size='14' font-family='monospace' font-weight='700' text-anchor='middle'%3E88.20%3C/text%3E%3Crect x='415' y='312' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='415' y='331' width='70' height='14' rx='3' fill='%230d1a2e'/%3E%3Crect x='412' y='355' width='34' height='24' rx='4' fill='%23e8593c'/%3E%3Crect x='452' y='355' width='34' height='24' rx='4' fill='%2326c97a'/%3E%3Crect x='400' y='408' width='100' height='17' rx='4' fill='%23f59a30' opacity='0.85'/%3E%3C!-- Hose from right pump --%3E%3Crect x='395' y='370' width='10' height='10' rx='2' fill='%23f59a30'/%3E%3Cpath d='M395 375 Q360 375 358 410 Q356 440 400 440' stroke='%23f59a30' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3C!-- Small ground shadow under dispensers --%3E%3Cellipse cx='240' cy='430' rx='60' ry='8' fill='%230a0d13' opacity='0.5'/%3E%3Cellipse cx='450' cy='430' rx='60' ry='8' fill='%230a0d13' opacity='0.5'/%3E%3C!-- ==== ATTENDANT FIGURE ==== --%3E%3C!-- Body --%3E%3Crect x='568' y='350' width='22' height='55' rx='6' fill='%23213859'/%3E%3C!-- Head --%3E%3Ccircle cx='579' cy='340' r='13' fill='%23c8956a'/%3E%3C!-- Arm holding nozzle --%3E%3Cline x1='590' y1='370' x2='620' y2='385' stroke='%23213859' stroke-width='8' stroke-linecap='round'/%3E%3C!-- Nozzle --%3E%3Crect x='618' y='380' width='20' height='10' rx='3' fill='%23f59a30'/%3E%3C!-- Legs --%3E%3Crect x='570' y='402' width='10' height='28' rx='4' fill='%230d1828'/%3E%3Crect x='585' y='402' width='10' height='28' rx='4' fill='%230d1828'/%3E%3C!-- ==== CAR ==== --%3E%3C!-- Car shadow --%3E%3Cellipse cx='810' cy='428' rx='130' ry='10' fill='%230a0d13' opacity='0.6'/%3E%3C!-- Car body --%3E%3Crect x='680' y='360' width='260' height='65' rx='14' fill='%231e3252'/%3E%3C!-- Cabin roof --%3E%3Crect x='720' y='310' width='170' height='55' rx='12' fill='%23213859'/%3E%3C!-- Windscreen --%3E%3Crect x='735' y='318' width='70' height='40' rx='6' fill='%2300d8f0' opacity='0.22'/%3E%3C!-- Rear window --%3E%3Crect x='820' y='318' width='55' height='40' rx='6' fill='%2300d8f0' opacity='0.18'/%3E%3C!-- Wheels --%3E%3Ccircle cx='730' cy='428' r='32' fill='%230a0d13'/%3E%3Ccircle cx='730' cy='428' r='20' fill='%23162032'/%3E%3Ccircle cx='730' cy='428' r='8' fill='%23f59a30' opacity='0.5'/%3E%3Ccircle cx='900' cy='428' r='32' fill='%230a0d13'/%3E%3Ccircle cx='900' cy='428' r='20' fill='%23162032'/%3E%3Ccircle cx='900' cy='428' r='8' fill='%23f59a30' opacity='0.5'/%3E%3C!-- Fuel cap area --%3E%3Crect x='683' y='385' width='12' height='18' rx='3' fill='%23f59a30' opacity='0.7'/%3E%3C!-- Fuel hose to car --%3E%3Cpath d='M638 385 Q662 385 680 393' stroke='%23f59a30' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C!-- Headlights --%3E%3Cellipse cx='940' cy='378' rx='10' ry='7' fill='%23f59a30' opacity='0.6'/%3E%3Cellipse cx='940' cy='400' rx='10' ry='7' fill='%23f59a30' opacity='0.35'/%3E%3C!-- Warm ground light pool under car --%3E%3Cellipse cx='810' cy='440' rx='100' ry='12' fill='%23f59a30' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Ensure all real content sits above the background */
+.layout,
+.login-container {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ============================================================
+   BRANDED COMPONENT CLASSES
+   ============================================================ */
+
+/* ─── LCD Panel ─── */
+/* Usage: <span class="lcd-panel">1,240 L</span> */
+.lcd-panel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pp-lcd-bg);
+  color: var(--pp-lcd-text);
+  font-family: var(--pp-font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: var(--pp-lcd-radius);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.08) inset;
+  white-space: nowrap;
+}
+
+.lcd-panel.lcd-lg {
+  font-size: 1.4rem;
+  padding: 8px 20px;
+  border-radius: 10px;
+}
+
+.lcd-panel.lcd-sm {
+  font-size: 0.78rem;
+  padding: 2px 8px;
+}
+
+/* Flashing danger state */
+.lcd-panel.lcd-danger {
+  color: var(--pp-danger);
+  border-color: rgba(232, 89, 60, 0.3);
+  animation: lcdFlash 0.8s ease-in-out infinite;
+}
+
+@keyframes lcdFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ─── Fuel Gauge Bar ─── */
+/* Usage:
+   <div class="fuel-gauge">
+     <span class="fuel-gauge-e">E</span>
+     <div class="fuel-gauge-track">
+       <div class="fuel-gauge-fill" style="width:65%"></div>
+     </div>
+     <span class="fuel-gauge-f">F</span>
+   </div>
+*/
+.fuel-gauge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fuel-gauge-e,
+.fuel-gauge-f {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--pp-font-mono);
+  width: 14px;
+  text-align: center;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.fuel-gauge-track {
+  flex: 1;
+  height: 8px;
+  background: #e8e3db;
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+
+.fuel-gauge-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--pp-success);
+  transition: width 0.6s ease, background-color 0.4s ease;
+}
+
+/* Dynamic fill colors driven by data-level attribute or inline style from JS */
+.fuel-gauge-fill[data-level="low"] {
+  background: var(--pp-danger);
+}
+.fuel-gauge-fill[data-level="medium"] {
+  background: var(--pp-warning);
+}
+.fuel-gauge-fill[data-level="high"] {
+  background: var(--pp-success);
+}
+
+/* ─── Nozzle Status Pill ─── */
+/* Usage: <span class="nozzle-pill nozzle-active">Active</span> */
+.nozzle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  letter-spacing: 0.02em;
+}
+
+.nozzle-pill::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nozzle-active {
+  background: rgba(29, 158, 117, 0.12);
+  color: #16855f;
+}
+.nozzle-active::before { background: var(--pp-success); }
+
+.nozzle-idle {
+  background: rgba(100, 116, 139, 0.12);
+  color: #64748b;
+}
+.nozzle-idle::before { background: #94a3b8; }
+
+.nozzle-offline {
+  background: rgba(232, 89, 60, 0.1);
+  color: var(--pp-danger);
+}
+.nozzle-offline::before { background: var(--pp-danger); }
+
+/* ─── Warning LED dot ─── */
+/* Usage: <span class="warning-led led-red"></span> */
+.warning-led {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.8);
+}
+
+.led-green  { background: var(--pp-success); box-shadow: 0 0 5px var(--pp-success); }
+.led-amber  { background: var(--pp-warning); box-shadow: 0 0 5px var(--pp-warning); }
+.led-red    { background: var(--pp-danger);  box-shadow: 0 0 5px var(--pp-danger);  }
+
+/* ─── Petrol Pump Card ─── */
+.pp-card {
+  background: var(--pp-card-bg);
+  border: var(--pp-card-border);
+  border-radius: var(--pp-card-radius);
+  box-shadow: var(--pp-card-shadow);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pp-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+/* ─── Orange Primary Button ─── */
+.btn-pp-primary {
+  background: var(--pp-orange);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: var(--pp-font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(245, 154, 48, 0.35);
+}
+
+.btn-pp-primary:hover:not(:disabled) {
+  background: var(--pp-orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 154, 48, 0.4);
+}
+
+.btn-pp-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-pp-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Navy Outline Button ─── */
+.btn-pp-outline {
+  background: transparent;
+  color: var(--pp-navy);
+  border: 1.5px solid var(--pp-navy-light);
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-family: var(--pp-font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pp-outline:hover:not(:disabled) {
+  border-color: var(--pp-navy);
+  background: rgba(13,24,40,0.04);
+}
+
+/* ─── Stat card (dashboard top row) ─── */
+.pp-stat-card {
+  background: var(--pp-card-bg);
+  border: var(--pp-card-border);
+  border-radius: var(--pp-card-radius);
+  box-shadow: var(--pp-card-shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 160px;
+}
+
+.pp-stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #7a7265;
+  letter-spacing: 0.02em;
+}
+
+.pp-stat-value {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Global table refinement ─── */
+.pp-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--pp-card-bg);
+  border-radius: var(--pp-card-radius);
+  overflow: hidden;
+  box-shadow: var(--pp-card-shadow);
+  border: var(--pp-card-border);
+}
+
+.pp-table thead th {
+  background: var(--pp-navy);
+  color: #cbd5e1;
+  font-family: var(--pp-font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: none;
+}
+
+.pp-table tbody tr {
+  border-bottom: 1px solid #f0ede8;
+  transition: background 0.15s;
+}
+
+.pp-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.pp-table tbody tr:hover {
+  background: #fdf6ec;
+}
+
+.pp-table tbody td {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: var(--pp-navy);
+}
+
+/* Totals / summary row */
+.pp-table tfoot tr {
+  background: var(--pp-lcd-bg);
+}
+
+.pp-table tfoot td {
+  color: var(--pp-lcd-text);
+  font-family: var(--pp-font-mono);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 11px 14px;
+}
+
+/* ─── Loading overlay (global) ─── */
+.pp-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(250, 248, 244, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  gap: 20px;
+}
+
+.pp-loading-label {
+  font-family: var(--pp-font-mono);
+  font-size: 0.95rem;
+  color: var(--pp-navy-mid);
+  letter-spacing: 0.05em;
+}
+
+/* Fuel hose progress bar */
+.pp-fuel-progress {
+  width: 240px;
+  height: 10px;
+  background: #e8e3db;
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pp-fuel-progress-fill {
+  height: 100%;
+  background: var(--pp-orange);
+  border-radius: 99px;
+  animation: fuelFill 1.8s ease-in-out infinite;
+}
+
+@keyframes fuelFill {
+  0%   { width: 5%; }
+  70%  { width: 90%; }
+  100% { width: 90%; }
+}
+
+/* ─── Active filter accent ─── */
+.filter-active {
+  border-color: var(--pp-orange) !important;
+  box-shadow: 0 0 0 3px rgba(245,154,48,0.18) !important;
+}
+
+/* ─── Form inputs refinement ─── */
+.pp-input {
+  width: 100%;
+  padding: 9px 13px;
+  border: 1px solid #ddd8d0;
+  border-radius: 8px;
+  font-family: var(--pp-font-body);
+  font-size: 0.92rem;
+  color: var(--pp-navy);
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.pp-input:focus {
+  outline: none;
+  border-color: var(--pp-orange);
+  box-shadow: 0 0 0 3px rgba(245, 154, 48, 0.18);
+}
+
+/* ─── LCD input field (for meter readings) ─── */
+.lcd-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--pp-navy);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: var(--pp-lcd-radius);
+  font-family: var(--pp-font-mono);
+  font-size: 1.1rem;
+  color: var(--pp-lcd-text);
+  letter-spacing: 0.08em;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lcd-input:focus {
+  outline: none;
+  border-color: var(--pp-lcd-text);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+}
+
+.lcd-input::placeholder {
+  color: rgba(0, 229, 255, 0.3);
+}
+
+/* ─── Section heading with dispenser icon ─── */
+.pp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pp-navy);
+  margin-bottom: 14px;
+}

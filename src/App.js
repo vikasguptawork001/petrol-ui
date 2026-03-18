@@ -22,17 +22,26 @@ import NozzleReading from './pages/NozzleReading';
 import CreditorDashboard from './pages/CreditorDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import PetrolNozzleLoader from './components/PetrolNozzleLoader';
+import config from './config/config';
 import './App.css';
+
+const usePetrolLoader = config.app.theme === 'petrol_pump';
 
 const Router = typeof window !== 'undefined' && window.electronAPI?.isElectron ? HashRouter : BrowserRouter;
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '16px', background: '#f8fafc' }}>
+        {usePetrolLoader && <PetrolNozzleLoader size="large" />}
+        <span style={{ color: usePetrolLoader ? '#64748b' : '#1e293b', fontWeight: 500 }}>Loading…</span>
+      </div>
+    );
   }
-  
+
   return user ? children : <Navigate to="/login" />;
 };
 
