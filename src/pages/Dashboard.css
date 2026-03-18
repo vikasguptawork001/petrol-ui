@@ -7,17 +7,37 @@
   max-width: 100%;
   margin: 0 auto;
   width: 100%;
+  height: calc(100vh - 100px); /* Leave exactly enough room for layout header/footer */
+  overflow: hidden;
+}
+
+/* Compact header override for Dashboard specifically - narrows the Stock Dashboard title area */
+.dashboard .pp-page-header {
+  padding: 10px 20px !important;
+  margin-bottom: 12px !important;
+  border-left-width: 4px !important;
+}
+
+.dashboard .pp-page-header h2 {
+  font-size: 1.25rem !important; /* Slightly smaller for more height */
+}
+
+.dashboard .pp-page-header p {
+  font-size: 0.8rem !important;
+  margin: 0 !important;
 }
 
 /* Two-column layout: main (table) left, fixed panel right */
 .dashboard-wrapper {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: stretch;
   width: 100%;
-  padding-right: 324px;
+  height: 100%;
+  padding-right: 320px;
   box-sizing: border-box;
   gap: 0;
+  transition: all 0.3s ease;
 }
 
 .dashboard-main {
@@ -29,32 +49,32 @@
 }
 
 .dashboard-title {
-  margin: 0 0 16px 0;
-  color: #f1f5f9;
-  font-size: 1.3rem;
+  margin: 0;
+  color: #fff !important;
+  font-size: 1.5rem;
   font-weight: 700;
-  flex-shrink: 0;
   text-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
-/* Right panel - fixed, always visible, stops above footer */
+/* Right panel - Glassmorphic fixed panel */
 .dashboard-right-panel {
   position: fixed;
   top: var(--header-height, 52px);
-  right: 20px;
-  bottom: var(--footer-height, 50px);
-  width: 300px;
-  min-width: 300px;
-  background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: var(--pp-card-radius, 12px);
-  padding: 20px;
-  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.45);
-  height: auto;
-  overflow-y: auto;
+  right: 16px;
+  bottom: calc(var(--footer-height, 50px) + 16px);
+  width: 290px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
   z-index: 500;
-  display: block;
-  visibility: visible;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .right-panel-section {
@@ -194,20 +214,25 @@
 .search-container {
   display: flex;
   gap: 10px;
-  margin-bottom: 0;
+  margin-bottom: 8px; /* Reduced margin */
   flex-wrap: wrap;
   flex-shrink: 0;
-  background: #ffffff;
+  background: #1a2d46;
   border-radius: 10px;
-  padding: 14px 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.9);
+  padding: 10px 16px; /* Compact search */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .search-container input,
 .search-container select {
   flex: 1;
   min-width: 160px;
+  background: #0d1828;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
 }
 
 .dashboard-scrollable-content {
@@ -218,10 +243,11 @@
 }
 
 .pagination-controls {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  font-size: 0.85rem;
 }
 
 .pagination-controls select {
@@ -232,23 +258,37 @@
   font-size: 14px;
 }
 
-/* Right panel responsive: on smaller screens, stack below main content */
+@media (max-width: 1440px) {
+  .dashboard-wrapper {
+    padding-right: 290px;
+  }
+}
+
 @media (max-width: 1200px) {
   .dashboard-wrapper {
     padding-right: 0;
     flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .dashboard {
+    height: auto;
+    overflow-y: auto;
   }
 
   .dashboard-right-panel {
-    position: relative;
-    top: auto;
-    right: auto;
-    bottom: auto;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    max-height: none;
-    margin-top: 20px;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    margin-top: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+  }
+
+  .table-container {
+    max-height: 500px !important;
   }
 }
 
@@ -338,32 +378,96 @@
 }
 
 .table-container {
-  overflow-x: auto;
+  overflow: auto;
   background: #ffffff;
-  border-radius: var(--pp-card-radius, 12px);
-  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
   flex: 1;
-  min-height: 0;
   width: 100%;
+  height: calc(100vh - 180px); /* Maximized vertical space for data columns */
   position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: #f59a30 #f1f5f9;
+}
+
+/* ─── Modern Branded Slider ─── */
+.table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Subtle default */
+  border-radius: 4px;
+  border: 2px solid #f8fafc;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #f59a30; /* Branded orange on hover */
 }
 
 .table-container table {
   width: 100%;
-  min-width: 1200px;
-  border-collapse: collapse;
+  min-width: 1400px;
+  border-collapse: collapse; 
   position: relative;
+  background: #fff;
 }
 
+.table-container table thead {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #f8fafc !important; 
+}
+
+.table-container table thead th {
+  background: #f8fafc !important; 
+  color: #475569 !important;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 16px;
+  border-bottom: 2px solid #f59a30 !important;
+}
+
+.table-container table tbody tr {
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.table-container table tbody tr:hover {
+  background: #fff8f1; /* Very subtle orange tint on hover */
+}
+
+.table-container table td {
+  padding: 12px 16px;
+  color: #1e293b !important;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Sticky Actions Column - Light Theme */
 .table-container table th:last-child,
 .table-container table td:last-child {
   position: sticky;
   right: 0;
-  background-color: white;
+  background-color: #fff;
   z-index: 10;
-  box-shadow: -2px 0 4px rgba(0,0,0,0.1);
-  padding: 8px 4px !important;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.05);
+  border-left: 1px solid #f1f5f9;
+}
+
+.table-container table tr:hover td:last-child {
+  background-color: #fff8f1 !important;
 }
 
 .table-container table td:last-child {
