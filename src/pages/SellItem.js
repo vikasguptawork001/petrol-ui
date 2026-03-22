@@ -94,6 +94,10 @@ const SellItem = () => {
   } = useSelector((state) => state.sellItem);
 
   useEffect(() => {
+    dispatch(setWithGst(false));
+  }, [dispatch]);
+
+  useEffect(() => {
     dispatch(fetchSellerParties()).catch((error) => {
       console.error('Error fetching seller parties:', error);
       toast.error('Failed to load seller parties');
@@ -1139,7 +1143,7 @@ const SellItem = () => {
                   <th style={{ padding: '8px', textAlign: 'center', fontWeight: '600', border: '1px solid #2c3e50', backgroundColor: '#34495e', color: '#ffffff' }}>S.N.</th>
                   <th style={{ padding: '8px', textAlign: 'left', fontWeight: '600', border: '1px solid #2c3e50', backgroundColor: '#34495e', color: '#ffffff' }}>Description of Goods</th>
                   {previewData.withGst && (
-                    <th style={{ padding: '8px', textAlign: 'center', fontWeight: '600', border: '1px solid #2c3e50', backgroundColor: '#34495e', color: '#ffffff' }}>HSN/Code</th>
+                    <th style={{ padding: '8px', textAlign: 'center', fontWeight: '600', border: '1px solid #2c3e50', backgroundColor: '#34495e', color: '#ffffff' }}>Code</th>
                   )}
                   <th style={{ padding: '8px', textAlign: 'center', fontWeight: '600', border: '1px solid #2c3e50', backgroundColor: '#34495e', color: '#ffffff' }}>Qty.</th>
                   <th style={{ padding: '8px', textAlign: 'center', fontWeight: '600', border: '1px solid #2c3e50', backgroundColor: '#34495e', color: '#ffffff' }}>Unit</th>
@@ -1165,7 +1169,7 @@ const SellItem = () => {
                       <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{index + 1}</td>
                       <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.product_name}</td>
                       {previewData.withGst && (
-                        <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{item.hsn_number || '-'}</td>
+                        <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{item.product_code || '-'}</td>
                       )}
                       <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>
                         {previewData.transactionId ? (
@@ -1216,7 +1220,7 @@ const SellItem = () => {
                           </>
                         )}
                       </td>
-                      <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>PCS</td>
+                      <td style={{ textAlign: 'center', padding: '8px', border: '1px solid #ddd' }}>{item.unit || 'PCS'}</td>
                       <td style={{ textAlign: 'right', padding: '8px', border: '1px solid #ddd' }}>
                         {!previewData.transactionId ? (
                           <input
@@ -1478,7 +1482,7 @@ const SellItem = () => {
                 {/* Professional Payment Controls Row */}
                 <div className="payment-controls-grid" style={{
                   display: 'grid',
-                  gridTemplateColumns: 'auto auto 1fr auto',
+                  gridTemplateColumns: 'auto 1fr auto',
                   gap: '15px',
                   alignItems: 'center',
                   padding: '15px',
@@ -1488,57 +1492,6 @@ const SellItem = () => {
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                   width: '100%'
                 }}>
-                  {/* GST Selection */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '10px 15px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    border: '1px solid #e9ecef',
-                    minWidth: '160px',
-                    height: '42px'
-                  }}>
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      margin: 0,
-                      width: '100%',
-                      color: '#495057'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={withGst}
-                        onChange={async (e) => {
-                          if (actionInProgress || previewLoading) return;
-                          setActionInProgress(true);
-                          try {
-                            const newWithGst = e.target.checked;
-                            dispatch(setWithGst(newWithGst));
-                            await handlePreview(newWithGst);
-                          } finally {
-                            setActionInProgress(false);
-                          }
-                        }}
-                        disabled={previewLoading || actionInProgress}
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          cursor: (previewLoading || actionInProgress) ? 'not-allowed' : 'pointer',
-                          accentColor: '#28a745'
-                        }}
-                      />
-                      <span>
-                        Include GST
-                        {withGst && <span style={{ color: '#28a745', marginLeft: '8px', fontWeight: '600' }}>✓</span>}
-                      </span>
-                    </label>
-                  </div>
-
                   {/* Previous Balance Payment */}
                   {previewData.seller && previewData.seller.balance_amount > 0 && (
                     <div style={{
@@ -2106,10 +2059,6 @@ const SellItem = () => {
               {!previewData.transactionId && (
                 <div className="right-panel-section">
                   <div className="right-panel-label">Payment</div>
-                  <label className="right-panel-checkbox">
-                    <input type="checkbox" checked={withGst} onChange={async (e) => { if (actionInProgress || previewLoading) return; setActionInProgress(true); try { await handlePreview(e.target.checked); } finally { setActionInProgress(false); } }} disabled={previewLoading || actionInProgress} />
-                    Include GST
-                  </label>
                   <div className="right-panel-radio-group">
                     <label className={`right-panel-radio-option ${paymentStatus === 'fully_paid' ? 'selected' : ''}`}>
                       <input type="radio" name="payStatus" checked={paymentStatus === 'fully_paid'} onChange={async () => { if (actionInProgress) return; setActionInProgress(true); try { dispatch(setPaymentStatus('fully_paid')); await handlePreview(null, { paymentStatus: 'fully_paid' }); } finally { setActionInProgress(false); } }} disabled={actionInProgress} />
@@ -2621,7 +2570,7 @@ const SellItem = () => {
                                               <span className={`stock-pill ${stockClass}`}>
                                                 {stockIcon} {stockLevel} Stock
                                               </span>
-                                              {item.hsn_number && <span>HSN: {item.hsn_number}</span>}
+                                              {item.unit && <span>Unit: {item.unit}</span>}
                                             </div>
                                           </div>
                                           <div className="table-suggestion-right">
@@ -2679,35 +2628,6 @@ const SellItem = () => {
                   border: '1px solid #e1e8ed',
                   flexWrap: 'wrap'
                 }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '10px',
-                    padding: '8px 16px',
-                    backgroundColor: 'white',
-                    borderRadius: '8px',
-                    border: '1px solid #e1e8ed'
-                  }}>
-                    <input
-                      type="checkbox"
-                      id="include-gst-bottom"
-                      checked={withGst}
-                      onChange={async (e) => {
-                        if (previewLoading || actionInProgress) return;
-                        const newWithGst = e.target.checked;
-                        dispatch(setWithGst(newWithGst));
-                        if (selectedItems.length > 0) {
-                          setActionInProgress(true);
-                          try { await handlePreview(newWithGst); } 
-                          finally { setActionInProgress(false); }
-                        }
-                      }}
-                      style={{ cursor: 'pointer', width: '18px', height: '18px' }}
-                    />
-                    <label htmlFor="include-gst-bottom" style={{ cursor: 'pointer', fontWeight: '500', fontSize: '14px', color: '#333' }}>
-                      Include GST
-                    </label>
-                  </div>
                   <button 
                     onClick={async () => {
                       if (previewLoading || actionInProgress) return;
@@ -2771,29 +2691,6 @@ const SellItem = () => {
             </div>
             {selectedItems.length > 0 && (
               <>
-                <div className="right-panel-section">
-                  <label className="right-panel-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={withGst}
-                      onChange={async (e) => {
-                        if (previewLoading || actionInProgress) return;
-                        const newWithGst = e.target.checked;
-                        dispatch(setWithGst(newWithGst));
-                        if (previewData && selectedItems.length > 0) {
-                          setActionInProgress(true);
-                          try {
-                            await handlePreview(newWithGst);
-                          } finally {
-                            setActionInProgress(false);
-                          }
-                        }
-                      }}
-                      disabled={previewLoading || actionInProgress}
-                    />
-                    Include GST
-                  </label>
-                </div>
                 <div className="right-panel-section">
                   <button
                     onClick={async () => {

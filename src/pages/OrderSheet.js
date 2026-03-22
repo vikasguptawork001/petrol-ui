@@ -162,7 +162,7 @@ const OrderSheet = () => {
           </p>
         </div>
 
-        <div className="card" style={{ marginBottom: '20px' }}>
+        <div className="card order-sheet-toolbar" style={{ marginBottom: '20px', borderRadius: '12px' }}>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Records per page</label>

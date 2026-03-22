@@ -539,7 +539,7 @@ const ReturnReport = () => {
                                 <tr key={item.item_id}>
                                   <td>{index + 1}</td>
                                   <td>{item.product_name}</td>
-                                  <td>{item.product_code || '-'}</td>
+                                  <td>{item.product_name}</td>
                                   <td>{item.brand || '-'}</td>
                                   <td>{item.hsn_number || '-'}</td>
                                   <td>{item.tax_rate}%</td>

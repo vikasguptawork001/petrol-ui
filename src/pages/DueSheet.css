@@ -3,9 +3,27 @@
 .ds-page {
   min-height: 100%;
   background: linear-gradient(160deg, #f0f4f8 0%, #e8eef4 50%, #f5f7fa 100%);
-  padding: 24px;
-  max-width: 1400px;
+  padding: clamp(16px, 2.2vw, 28px);
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Embedded on home dashboard — avoid double chrome */
+.ds-page.ds-page--embedded {
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.ds-embedded-hint {
+  margin: 0 0 14px 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.45;
 }
 
 .ds-page-header {

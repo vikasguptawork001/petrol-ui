@@ -591,7 +591,7 @@ const Parties = () => {
                       <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Mobile</th>
                       <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Email</th>
                       <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Address</th>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>GST Number</th>
+                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>GST (optional)</th>
                       {user?.role === 'super_admin' && (
                         <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Balance Amount</th>
                       )}
@@ -657,12 +657,13 @@ const Parties = () => {
                   {user?.role === 'super_admin' && (
                   <tfoot>
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'right', fontWeight: 'bold', padding: '12px' }}>
+                      <td colSpan={6} style={{ textAlign: 'right', fontWeight: 'bold', padding: '12px' }}>
                         Total Balance:
                       </td>
-                      <td style={{ fontWeight: 'bold', padding: '12px' }}>
+                      <td style={{ fontWeight: 'bold', padding: '12px', textAlign: 'center' }}>
                         ₹{filteredParties.reduce((sum, p) => sum + parseFloat(p.balance_amount || 0), 0).toFixed(2)}
                       </td>
+                      <td />
                     </tr>
                   </tfoot>
                   )}
@@ -687,46 +688,57 @@ const Parties = () => {
               }}>×</button>
             </div>
             <div className="modal-body">
-              {/* Party Metadata */}
-              <div style={{ marginBottom: '30px' }}>
-                <h4 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
-                  Party Information
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ margin: '0 0 14px 0', color: '#1e293b', fontSize: '15px', fontWeight: 700, letterSpacing: '0.02em' }}>
+                  Creditor overview
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <strong>Party Name:</strong> {partyDetails.party_name}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                  gap: '12px'
+                }}>
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Name</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{partyDetails.party_name}</div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <strong>Type:</strong> Creditor
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Mobile</div>
+                    <div style={{ fontSize: '15px', color: '#334155' }}>{partyDetails.mobile_number || '—'}</div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <strong>Mobile:</strong> {partyDetails.mobile_number || 'N/A'}
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Email</div>
+                    <div style={{ fontSize: '14px', color: '#334155', wordBreak: 'break-word' }}>{partyDetails.email || '—'}</div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <strong>Email:</strong> {partyDetails.email || 'N/A'}
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Payment due date</div>
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
+                      {partyDetails.due_date
+                        ? new Date(partyDetails.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>Updated when a partial sale sets a new due date</div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <strong>GST Number:</strong> {partyDetails.gst_number || 'N/A'}
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0', gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Address</div>
+                    <div style={{ fontSize: '14px', color: '#334155', lineHeight: 1.5 }}>{partyDetails.address || '—'}</div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <strong>Address:</strong> {partyDetails.address || 'N/A'}
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>GST</div>
+                    <div style={{ fontSize: '14px', color: '#334155' }}>{partyDetails.gst_number || '—'}</div>
                   </div>
                   {user?.role === 'super_admin' && (
-                    <>
-                      <div style={{ textAlign: 'center' }}>
-                        <strong>Opening Balance:</strong> ₹{parseFloat(partyDetails.opening_balance || 0).toFixed(2)}
+                    <div style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)', borderRadius: '10px', padding: '14px 16px', border: '1px solid #fdba74' }}>
+                      <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#9a3412', fontWeight: 600, marginBottom: '6px' }}>Outstanding balance</div>
+                      <div style={{
+                        fontSize: '22px',
+                        fontWeight: 800,
+                        color: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#c2410c' : '#15803d',
+                        fontVariantNumeric: 'tabular-nums'
+                      }}>
+                        ₹{parseFloat(partyDetails.balance_amount || 0).toFixed(2)}
                       </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <strong>Current Balance:</strong>
-                        <span style={{
-                          color: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#d32f2f' : '#388e3c',
-                          fontWeight: '600',
-                          marginLeft: '8px'
-                        }}>
-                          ₹{parseFloat(partyDetails.balance_amount || 0).toFixed(2)}
-                        </span>
-                      </div>
-                    </>
+                      <div style={{ fontSize: '12px', color: '#9a3412', marginTop: '6px' }}>Opening: ₹{parseFloat(partyDetails.opening_balance || 0).toFixed(2)}</div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -770,6 +782,8 @@ const Parties = () => {
                             <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Previous Amount</th>
                             <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Current Transaction</th>
                             <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Paid Amount</th>
+                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }} title="From partial-payment sales">Prev due</th>
+                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }} title="New due date set on this sale">New due</th>
                             {user?.role === 'super_admin' && (
                               <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Balance Amount</th>
                             )}
@@ -789,6 +803,11 @@ const Parties = () => {
                             const prevBalance = safeNum(txn.previous_balance);
                             const paidAmt = safeNum(txn.paid_amount);
                             const balanceAfter = safeNum(txn.balance_after ?? txn.balance_amount);
+                            const fmtDue = (d) => {
+                              if (d == null || d === '') return '—';
+                              const t = new Date(d);
+                              return Number.isNaN(t.getTime()) ? String(d).slice(0, 10) : t.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                            };
                             return (
                             <tr key={idx}>
                              <td style={{ textAlign: 'center' }}>{new Date(txn.transaction_timestamp || txn.created_at).toLocaleString()}</td>
@@ -823,6 +842,8 @@ const Parties = () => {
                                   ₹{paidAmt.toFixed(2)}
                                 </div>
                               </td>
+                              <td style={{ textAlign: 'center', fontSize: '13px', color: '#475569' }}>{fmtDue(txn.previous_due_date)}</td>
+                              <td style={{ textAlign: 'center', fontSize: '13px', color: '#0f172a', fontWeight: txn.new_due_date ? 600 : 400 }}>{fmtDue(txn.new_due_date)}</td>
                               {user?.role === 'super_admin' && (
                                 <td style={{ textAlign: 'center' }}>
                                   <div>₹{balanceAfter.toFixed(2)}</div>
@@ -1489,7 +1510,7 @@ const Parties = () => {
                 </div>
               </div>
               <div className="form-group">
-                <label>GST Number</label>
+                <label>GST number (optional)</label>
                 <input
                   type="text"
                   value={editFormData.gst_number}

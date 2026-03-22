@@ -4,11 +4,11 @@
    ============================================ */
 
 .sell-item {
-  max-width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
   margin: 0 auto;
-  padding: 0 20px 40px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-
+  padding: 0 clamp(12px, 2.2vw, 28px) clamp(28px, 4vw, 48px);
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
+  box-sizing: border-box;
 }
 
 /* Two-column layout: main left, fixed right panel */
@@ -17,7 +17,7 @@
   flex-direction: row;
   align-items: flex-start;
   width: 100%;
-  padding-right: 324px;
+  padding-right: clamp(280px, 27vw, 360px);
   box-sizing: border-box;
 }
 
@@ -32,10 +32,10 @@
 .sell-item-right-panel {
   position: fixed;
   top: var(--header-height, 52px);
-  right: 20px;
-  bottom: calc(var(--footer-height, 50px) + 10px); /* Extra 10px margin from footer */
-  width: 300px;
-  min-width: 300px;
+  right: clamp(12px, 1.2vw, 22px);
+  bottom: calc(var(--footer-height, 50px) + clamp(10px, 1vw, 16px));
+  width: clamp(268px, 24vw, 320px);
+  min-width: 0;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -233,7 +233,7 @@
   vertical-align: middle;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1320px) {
   .sell-item-wrapper {
     padding-right: 0;
     flex-direction: column;
@@ -245,7 +245,9 @@
     right: auto;
     bottom: auto;
     width: 100%;
-    max-width: 100%;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
     height: auto;
     max-height: none;
     margin-top: 20px;

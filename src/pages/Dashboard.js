@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { DueSheetPanel } from './DueSheet';
+import { NozzleReadingPanel } from './NozzleReading';
 import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
@@ -26,9 +28,12 @@ const Dashboard = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchField, setSearchField] = useState('product_name');
+  const [sortBy, setSortBy] = useState('product_name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [advancedSearch, setAdvancedSearch] = useState({
     product_name: '',
+    unit: '',
     brand: '',
     remarks: ''
   });
@@ -48,8 +53,6 @@ const Dashboard = () => {
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [editItemImage, setEditItemImage] = useState(null);
-  const [editItemImagePreview, setEditItemImagePreview] = useState(null);
   const [originalItemData, setOriginalItemData] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [paginationLoading, setPaginationLoading] = useState(false);
@@ -58,6 +61,7 @@ const Dashboard = () => {
   const [dueDateEditingId, setDueDateEditingId] = useState(null);
   const [dueDateEditingValue, setDueDateEditingValue] = useState('');
   const [dueDateSaving, setDueDateSaving] = useState(false);
+  const [homeTab, setHomeTab] = useState('items');
 
   // Fetch items only on mount (not when page/limit changes - those are handled client-side)
   useEffect(() => {
@@ -231,6 +235,36 @@ const Dashboard = () => {
     });
   };
 
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const aValue = a[sortBy] || '';
+      const bValue = b[sortBy] || '';
+      
+      let comparison = 0;
+      if (aValue < bValue) {
+        comparison = -1;
+      } else if (aValue > bValue) {
+        comparison = 1;
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  }, [items, sortBy, sortOrder]);
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortBy !== field) return '';
+    return sortOrder === 'asc' ? '↑' : '↓';
+  };
+
   const handleAdvancedSearch = async () => {
     if (searching) return;
     
@@ -275,17 +309,27 @@ const Dashboard = () => {
     setExporting(true);
     try {
       // Export only the data currently showing on screen (visible/filtered data)
-      const data = items.map(item => ({
+      const data = sortedItems.map((item, index) => {
+      const itemData = {
+        'S.No': index + 1,
         'Product Name': item.product_name,
-        'Brand': item.brand,
-        'HSN Number': item.hsn_number,
-        'Tax Rate': item.tax_rate,
-        'Sale Rate': item.sale_rate,
-        'Purchase Rate': user?.role === 'super_admin' ? item.purchase_rate : 'N/A',
-        'Quantity': item.quantity,
-        'Rack Number': item.rack_number,
-        'Remarks': item.remarks || ''
-      }));
+        'Unit': item.unit || '-',
+        'Brand': item.brand || '-',
+        'Tax Rate (%)': item.tax_rate || 0,
+        'Sale Rate': parseFloat(item.sale_rate || 0).toFixed(2),
+        'Quantity': item.quantity || 0,
+        'Stock Value': (parseFloat(item.purchase_rate || 0) * (item.quantity || 0)).toFixed(2),
+        'Alert Quantity': item.alert_quantity || 0,
+        'Rack No': item.rack_number || '-',
+        'Remarks': item.remarks || '-'
+      };
+
+      if (user?.role === 'super_admin') {
+        itemData['Purchase Rate'] = parseFloat(item.purchase_rate || 0).toFixed(2);
+      }
+      
+      return itemData;
+    });
 
       const ws = XLSX.utils.json_to_sheet(data);
       
@@ -335,8 +379,8 @@ const Dashboard = () => {
     }
   };
 
-  const canEdit = user?.role === 'admin' || user?.role === 'super_admin';
-  const canDelete = user?.role === 'super_admin';
+  // const canEdit = user?.role === 'admin' || user?.role === 'super_admin';
+  // const canDelete = user?.role === 'super_admin';
 
   const handleView = async (item) => {
     if (updating || deleting || quickSaleLoading || modalLoading) return;
@@ -351,8 +395,6 @@ const Dashboard = () => {
     setShowStockAmountModal(false);
     setEditingItem(null);
     setOriginalItemData(null);
-    setEditItemImage(null);
-    setEditItemImagePreview(null);
     setQuickSaleItem(null);
     try {
       const response = await apiClient.get(`${config.api.items}/${item.id}`);
@@ -378,8 +420,6 @@ const Dashboard = () => {
     setShowStockAmountModal(false);
     setEditingItem(null);
     setOriginalItemData(null);
-    setEditItemImage(null);
-    setEditItemImagePreview(null);
     setViewItem(null);
     setQuickSaleItem(item);
     setQuickSaleQuantity(1);
@@ -455,42 +495,42 @@ const Dashboard = () => {
     
     // Store original values for comparison
     // Handle both purchase_rate and purchase_price field names from API
-    const purchaseRate = item.purchase_rate !== undefined && item.purchase_rate !== null
-      ? item.purchase_rate
-      : (item.purchase_price !== undefined && item.purchase_price !== null
-        ? item.purchase_price
-        : 0);
+    // const purchaseRate = item.purchase_rate !== undefined && item.purchase_rate !== null
+    //   ? item.purchase_rate
+    //   : (item.purchase_price !== undefined && item.purchase_price !== null
+    //     ? item.purchase_price
+    //     : 0);
     
-    const originalData = {
-      product_name: item.product_name || '',
-      product_code: item.product_code || '',
+    setOriginalItemData({
+      product_name: item.product_name,
+      unit: item.unit || '',
       brand: item.brand || '',
-      hsn_number: item.hsn_number || '',
-      tax_rate: item.tax_rate && [5, 18, 28].includes(parseFloat(item.tax_rate)) ? parseFloat(item.tax_rate) : 18,
-      sale_rate: parseFloat(item.sale_rate) || 0,
-      purchase_rate: parseFloat(purchaseRate) || 0,
-      min_sale_rate: item.min_sale_rate != null && item.min_sale_rate !== '' ? parseFloat(item.min_sale_rate) : null,
-      quantity: parseInt(item.quantity) || 0,
-      alert_quantity: parseInt(item.alert_quantity) || 0,
+      tax_rate: item.tax_rate || 18,
+      sale_rate: item.sale_rate || 0,
+      min_sale_rate: item.min_sale_rate || 0,
+      purchase_rate: item.purchase_rate || 0,
+      quantity: item.quantity || 0,
+      alert_quantity: item.alert_quantity || 0,
       rack_number: item.rack_number || '',
       remarks: item.remarks || ''
-    };
-    setOriginalItemData(originalData);
-    
-    setEditFormData(originalData);
+    });
+    setEditFormData({
+      product_name: item.product_name,
+      unit: item.unit || '',
+      brand: item.brand || '',
+      tax_rate: item.tax_rate || 18,
+      sale_rate: item.sale_rate || 0,
+      min_sale_rate: item.min_sale_rate || 0,
+      purchase_rate: item.purchase_rate || 0,
+      quantity: item.quantity || 0,
+      alert_quantity: item.alert_quantity || 0,
+      rack_number: item.rack_number || '',
+      remarks: item.remarks || ''
+    });
     // Fetch full item details to get image and purchase_rate
     try {
       const response = await apiClient.get(`${config.api.items}/${item.id}`);
       const fullItem = response.data.item;
-      
-      // Update image preview
-      if (fullItem.image_url) {
-        setEditItemImagePreview(fullItem.image_url);
-      } else if (fullItem.image_base64) {
-        setEditItemImagePreview(`data:image/jpeg;base64,${fullItem.image_base64}`);
-      } else {
-        setEditItemImagePreview(null);
-      }
       
       // Update purchase_rate and min_sale_rate from API response if available
       const purchaseRate = fullItem.purchase_rate !== undefined && fullItem.purchase_rate !== null 
@@ -500,21 +540,21 @@ const Dashboard = () => {
           : null);
       const minSaleRate = fullItem.min_sale_rate != null && fullItem.min_sale_rate !== '' ? parseFloat(fullItem.min_sale_rate) : null;
       const updatedFormData = {
-        ...originalData,
+        ...originalItemData,
+        unit: fullItem.unit || '',
         ...(user?.role === 'super_admin' && purchaseRate !== null ? { purchase_rate: parseFloat(purchaseRate) || 0 } : {}),
         ...(minSaleRate !== undefined ? { min_sale_rate: minSaleRate } : {})
       };
-      if (updatedFormData.purchase_rate !== originalData.purchase_rate || updatedFormData.min_sale_rate !== originalData.min_sale_rate) {
+      if (updatedFormData.purchase_rate !== originalItemData.purchase_rate || updatedFormData.min_sale_rate !== originalItemData.min_sale_rate || updatedFormData.unit !== originalItemData.unit) {
         setEditFormData(updatedFormData);
         setOriginalItemData(updatedFormData);
       }
     } catch (error) {
-      console.error('Error fetching item image:', error);
-      setEditItemImagePreview(null);
+      console.error('Error fetching item details:', error);
     } finally {
       setModalLoading(false);
     }
-    setEditItemImage(null);
+    setEditFormData(originalItemData);
     setShowEditModal(true);
   };
 
@@ -589,11 +629,7 @@ const Dashboard = () => {
           }
         }
       });
-      
-      // Add image if a new one was selected
-      if (editItemImage) {
-        changedFields.image = editItemImage;
-      }
+
 
       // If no fields changed, show message and return
       if (Object.keys(changedFields).length === 0) {
@@ -602,36 +638,11 @@ const Dashboard = () => {
         return;
       }
 
-      // Create FormData for multipart/form-data (required for image upload)
-      const formData = new FormData();
-      Object.keys(changedFields).forEach(key => {
-        if (key === 'image') {
-          formData.append('image', changedFields[key]);
-        } else if (key === 'min_sale_rate') {
-          const val = changedFields[key];
-          formData.append(key, val === null || val === undefined || val === '' || isNaN(parseFloat(val)) ? '' : parseFloat(val).toString());
-        } else if (changedFields[key] !== null && changedFields[key] !== undefined) {
-          // Ensure numeric fields are sent as numbers (FormData will convert to string, but backend expects numeric strings)
-          if (['sale_rate', 'purchase_rate', 'quantity', 'alert_quantity', 'tax_rate'].includes(key)) {
-            const numValue = parseFloat(changedFields[key]);
-            formData.append(key, isNaN(numValue) ? '0' : numValue.toString());
-          } else {
-            formData.append(key, changedFields[key]);
-          }
-        }
-      });
-      
-      await apiClient.patch(`${config.api.items}/${editingItem.id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      await apiClient.patch(`${config.api.items}/${editingItem.id}`, changedFields);
       toast.success('Item updated successfully!');
       setShowEditModal(false);
       setEditingItem(null);
       setOriginalItemData(null);
-      setEditItemImage(null);
-      setEditItemImagePreview(null);
       fetchItems(); // Refresh the list
       if (user?.role === 'super_admin') {
         fetchTotalStockAmount();
@@ -790,7 +801,7 @@ const Dashboard = () => {
         </div>
       )}
       <TransactionLoader 
-        isLoading={loading || updating || deleting || quickSaleLoading || paginationLoading} 
+        isLoading={homeTab === 'items' && (loading || updating || deleting || quickSaleLoading || paginationLoading)} 
         type="transaction" 
         message={
           loading ? 'Loading stock inventory...' :
@@ -801,7 +812,33 @@ const Dashboard = () => {
           ''
         } 
       />
-      <div className="dashboard">
+      <div className={`dashboard ${homeTab === 'items' ? 'dashboard--items' : 'dashboard--hub'}`}>
+        {/* <header className={`pp-home-hero ${homeTab === 'items' ? 'pp-home-hero--compact' : ''}`}>
+          <div className="pp-home-hero__text">
+            <p className="pp-home-hero__eyebrow">Operations hub</p>
+            <h1 className="pp-home-hero__title">Dashboard</h1>
+          </div>
+          <nav className="pp-seg" aria-label="Dashboard section">
+            {[
+              { id: 'items', label: 'Stock & items' },
+              { id: 'nozzles', label: 'Nozzle readings' },
+              { id: 'creditors', label: 'Due sheet' }
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`pp-seg__btn ${homeTab === t.id ? 'pp-seg__btn--active' : ''}`}
+                onClick={() => setHomeTab(t.id)}
+                aria-current={homeTab === t.id ? 'page' : undefined}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+        </header> */}
+
+        {homeTab === 'items' && (
+        <>
         <div className="dashboard-wrapper">
           {/* Left: Title + table (scrolls) */}
           <div className="dashboard-main">
@@ -810,7 +847,6 @@ const Dashboard = () => {
                 <span style={{ fontSize: '24px' }}>📊</span>
                 <h2 className="dashboard-title">Stock Dashboard</h2>
               </div>
-              <p>Monitor your petrol pump inventory, stock levels, and dispenser rates</p>
             </div>
             <div className="dashboard-scrollable-content">
           {(items.length === 0 && !loading) ? (
@@ -818,94 +854,91 @@ const Dashboard = () => {
               <span style={{ color: '#94a3b8' }}>No items found in your inventory</span>
             </div>
           ) : (
-            <>
-              <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left' }}>S.No</th>
-                    <th style={{ textAlign: 'left' }}>Product Name</th>
-                    <th style={{ textAlign: 'left' }}>Brand</th>
-                    <th style={{ textAlign: 'left' }}>HSN</th>
-                    <th style={{ textAlign: 'right' }}>Tax Rate</th>
-                    <th style={{ textAlign: 'right' }}>Sale Rate</th>
-                    <th style={{ textAlign: 'left' }}>Remarks</th>
-                    <th style={{ textAlign: 'center' }}>Quantity</th>
-                    <th style={{ textAlign: 'center' }}>Rack No</th>
-                    <th style={{ textAlign: 'center' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.length === 0 ? (
+               <div className="table-scroll dashboard-items-table-scroll" aria-label="Stock table">
+               <div className="table-container">
+                <table className="table">
+                  <thead>
                     <tr>
-                      <td colSpan="10" style={{ textAlign: 'center' }}>
-                        No items found
-                      </td>
+                      <th style={{ textAlign: 'left' }}>S.No</th>
+                      <th onClick={() => handleSort('product_name')} style={{ cursor: 'pointer' }}>Product Name {getSortIcon('product_name')}</th>
+                      <th onClick={() => handleSort('unit')} style={{ cursor: 'pointer' }}>Unit {getSortIcon('unit')}</th>
+                      <th onClick={() => handleSort('brand')} style={{ cursor: 'pointer' }}>Brand {getSortIcon('brand')}</th>
+                      <th style={{ textAlign: 'right' }}>Tax (%)</th>
+                      <th style={{ textAlign: 'right' }}>Sale Rate</th>
+                      <th style={{ textAlign: 'left' }}>Remarks</th>
+                      <th style={{ textAlign: 'center' }}>Stock</th>
+                      <th style={{ textAlign: 'center' }}>Rack</th>
+                      <th style={{ textAlign: 'center' }}>Actions</th>
                     </tr>
-                  ) : (
-                    items.map((item, index) => (
-                      <tr key={item.id}>
-                        <td style={{ textAlign: 'left' }}>{(page - 1) * limit + index + 1}</td>
-                        <td style={{ textAlign: 'left' }}>{item.product_name}</td>
-                        <td style={{ textAlign: 'left' }}>{item.brand}</td>
-                        <td style={{ textAlign: 'left' }}>{item.hsn_number}</td>
-                        <td style={{ textAlign: 'right' }}>{item.tax_rate}%</td>
-                        <td style={{ textAlign: 'right' }}>₹{item.sale_rate}</td>
-                        <td 
-                          style={{ 
-                            textAlign: 'left',
-                            maxWidth: '200px', 
-                            overflow: 'hidden', 
-                            textOverflow: 'ellipsis', 
-                            whiteSpace: 'nowrap',
-                            cursor: item.remarks ? 'pointer' : 'default'
-                          }}
-                          title={item.remarks ? String(item.remarks).trim() : undefined}
-                        >
-                          {item.remarks || '-'}
-                        </td>
-                        <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                        <td style={{ textAlign: 'center' }}>{item.rack_number}</td>
-                        <td style={{ textAlign: 'center', padding: '8px 4px', display: 'table-cell', verticalAlign: 'middle' }}>
-                          <ActionMenu
-                            itemId={item.id}
-                            itemName={item.product_name}
-                            disabled={modalLoading || updating || deleting || quickSaleLoading}
-                            actions={[
-                              {
-                                label: 'View',
-                                icon: '👁️',
-                                onClick: (id) => handleView(item)
-                              },
-                              ...(canEdit ? [{
-                                label: 'Edit',
-                                icon: '✏️',
-                                onClick: (id) => handleEdit(item)
-                              }] : []),
-                              {
-                                label: 'Quick Sale',
-                                icon: '⚡',
-                                onClick: (id) => handleQuickSale(item)
-                              },
-                              ...(canDelete ? [{
-                                label: 'Delete',
-                                icon: '🗑️',
-                                danger: true,
-                                onClick: (id, name) => handleDelete(id, name)
-                              }] : [])
-                            ]}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            </>
+                  </thead>
+                  <tbody>
+                    {sortedItems.map((item, index) => {
+                      const canEdit = user && (user.role === 'admin' || user.role === 'super_admin');
+                      const canDelete = user && user.role === 'super_admin';
+                      return (
+                        <tr key={item.id} className={item.quantity <= (item.alert_quantity || 0) ? 'stock-alert-row' : ''}>
+                          <td style={{ textAlign: 'left' }}>{(page - 1) * limit + index + 1}</td>
+                          <td style={{ textAlign: 'left' }}>{item.product_name}</td>
+                          <td style={{ textAlign: 'left' }}>{item.unit || <span style={{color: '#999'}}>N/A</span>}</td>
+                          <td style={{ textAlign: 'left' }}>{item.brand || <span style={{color: '#999'}}>N/A</span>}</td>
+                          <td style={{ textAlign: 'right' }}>{item.tax_rate}%</td>
+                          <td style={{ textAlign: 'right' }}>₹{item.sale_rate}</td>
+                          <td 
+                            style={{ 
+                              textAlign: 'left',
+                              maxWidth: '200px', 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap',
+                              cursor: item.remarks ? 'pointer' : 'default'
+                            }}
+                            title={item.remarks ? String(item.remarks).trim() : undefined}
+                          >
+                            {item.remarks || '-'}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                          <td style={{ textAlign: 'center' }}>{item.rack_number || '-'}</td>
+                          <td style={{ textAlign: 'center', padding: '8px 4px', display: 'table-cell', verticalAlign: 'middle' }}>
+                            <ActionMenu
+                              itemId={item.id}
+                              itemName={item.product_name}
+                              disabled={modalLoading || updating || deleting || quickSaleLoading}
+                              actions={[
+                                {
+                                  label: 'View',
+                                  icon: '👁️',
+                                  onClick: () => handleView(item)
+                                },
+                                ...(canEdit ? [{
+                                  label: 'Edit',
+                                  icon: '✏️',
+                                  onClick: () => handleEdit(item)
+                                }] : []),
+                                {
+                                  label: 'Quick Sale',
+                                  icon: '⚡',
+                                  onClick: () => handleQuickSale(item)
+                                },
+                                ...(canDelete ? [{
+                                  label: 'Delete',
+                                  icon: '🗑️',
+                                  danger: true,
+                                  onClick: (id, name) => handleDelete(id, name)
+                                }] : [])
+                              ]}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              </div>
           )}
             </div>
           </div>
+        </div>
 
           {/* Right panel - rendered in body so always visible (not clipped by main-content overflow) */}
           {createPortal(
@@ -1000,11 +1033,20 @@ const Dashboard = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Brand"
-                  value={advancedSearch.brand}
-                  onChange={(e) => setAdvancedSearch({ ...advancedSearch, brand: e.target.value })}
+                  placeholder="Unit"
+                  value={advancedSearch.unit}
+                  onChange={(e) => setAdvancedSearch({ ...advancedSearch, unit: e.target.value })}
                   className="right-panel-input"
                 />
+                <div className="form-group">
+                    <label>Brand</label>
+                    <input
+                      type="text"
+                      value={advancedSearch.brand}
+                      onChange={(e) => setAdvancedSearch({...advancedSearch, brand: e.target.value})}
+                      placeholder="Brand Name"
+                    />
+                  </div>
                 <input
                   type="text"
                   placeholder="Remarks"
@@ -1022,7 +1064,7 @@ const Dashboard = () => {
                   </button>
                   <button
                     onClick={() => {
-                      setAdvancedSearch({ product_name: '', brand: '', remarks: '' });
+                      setAdvancedSearch({ product_name: '', unit: '', brand: '', remarks: '' });
                       setSearch('');
                       fetchItems();
                     }}
@@ -1035,7 +1077,7 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setAdvancedSearch({ product_name: '', brand: '', remarks: '' });
+                    setAdvancedSearch({ product_name: '', unit: '', brand: '', remarks: '' });
                     setPage(1);
                     if (allItems.length > 0) {
                       setItems(allItems.slice(0, limit));
@@ -1091,8 +1133,21 @@ const Dashboard = () => {
           </aside>,
           document.body
           )}
-        </div>
+        </>
+        )}
 
+        {homeTab === 'nozzles' && (
+          <div className="dashboard-embedded-wrap">
+            <NozzleReadingPanel embedded />
+          </div>
+        )}
+
+        {homeTab === 'creditors' && (
+          <div className="dashboard-embedded-wrap">
+            <DueSheetPanel embedded />
+          </div>
+        )}
+        
         {/* Edit Item Modal */}
         {showEditModal && editingItem && (
           <div className="modal-overlay" onClick={(e) => {
@@ -1108,8 +1163,6 @@ const Dashboard = () => {
                   setShowEditModal(false);
                   setEditingItem(null);
                   setOriginalItemData(null);
-                  setEditItemImage(null);
-                  setEditItemImagePreview(null);
                 }}>×</button>
               </div>
               <div className="modal-body">
@@ -1123,14 +1176,6 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Product Code</label>
-                  <input
-                    type="text"
-                    value={editFormData.product_code}
-                    onChange={(e) => setEditFormData({ ...editFormData, product_code: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
                   <label>Brand</label>
                   <input
                     type="text"
@@ -1139,12 +1184,27 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>HSN Number</label>
-                  <input
-                    type="text"
-                    value={editFormData.hsn_number}
-                    onChange={(e) => setEditFormData({ ...editFormData, hsn_number: e.target.value })}
-                  />
+                  <label>Unit (liter / packet / kg) *</label>
+                  <select
+                    value={editFormData.unit}
+                    onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <option value="">Select Unit</option>
+                    <option value="liter">Liter</option>
+                    <option value="packet">Packet</option>
+                    <option value="kg">KG</option>
+                    <option value="pcs">Pcs</option>
+                    <option value="box">Box</option>
+                    <option value="mtr">Meter</option>
+                  </select>
                 </div>
                 <div className="form-row">
                   {user?.role === 'super_admin' && (
@@ -1412,61 +1472,13 @@ const Dashboard = () => {
                     {editFormData.remarks?.length || 0}/200 characters
                   </small>
                 </div>
-                <div className="form-group">
-                  <label>Product Image (Max 3MB)</label>
-                  <input
-                    id="edit-image-input"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        if (file.size > 3 * 1024 * 1024) {
-                          toast.error('Image size must be less than 3MB');
-                          e.target.value = '';
-                          return;
-                        }
-                        setEditItemImage(file);
-                        setEditItemImagePreview(URL.createObjectURL(file));
-                      }
-                    }}
-                  />
-                  {(editItemImagePreview || editItemImage) && (
-                    <div style={{ marginTop: '10px' }}>
-                      <img 
-                        src={editItemImagePreview} 
-                        alt="Preview" 
-                        style={{ maxWidth: '200px', maxHeight: '200px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditItemImage(null);
-                          setEditItemImagePreview(null);
-                          // Reset file input
-                          const fileInput = document.querySelector('#edit-image-input');
-                          if (fileInput) fileInput.value = '';
-                        }}
-                        style={{ marginLeft: '10px', padding: '5px 10px' }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                  {!editItemImagePreview && !editItemImage && (
-                    <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '5px' }}>
-                      Leave empty to keep current image, or select a new image to replace it
-                    </small>
-                  )}
-                </div>
+
               </div>
               <div className="modal-footer">
                 <button onClick={() => {
                   setShowEditModal(false);
                   setEditingItem(null);
                   setOriginalItemData(null);
-                  setEditItemImage(null);
-                  setEditItemImagePreview(null);
                 }} className="btn btn-secondary">
                   Cancel
                 </button>
@@ -1510,7 +1522,7 @@ const Dashboard = () => {
                   <label>Sale Rate: ₹{quickSaleItem.sale_rate}</label>
                 </div>
                 <div className="form-group">
-                  <label>Available Quantity: {quickSaleItem.quantity}</label>
+                  <label>Available Quantity: {quickSaleItem.quantity} {quickSaleItem.unit || ''}</label>
                 </div>
                 <div className="form-group">
                   <label>Quantity to Sell *</label>
@@ -1614,14 +1626,6 @@ const Dashboard = () => {
                         </div>
                         <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>{viewItem.product_name}</h3>
                       </div>
-                      <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '5px' }}>
-                          Product Code
-                        </div>
-                        <p style={{ margin: 0, fontSize: '18px', fontWeight: '500', opacity: 0.9 }}>
-                          {viewItem.product_code || 'No Product Code'}
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1689,8 +1693,8 @@ const Dashboard = () => {
                       <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>{viewItem.brand || 'N/A'}</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ fontSize: '12px', color: '#666', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>HSN Number</div>
-                      <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>{viewItem.hsn_number || 'N/A'}</div>
+                      <div style={{ fontSize: '12px', color: '#666', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Unit</div>
+                      <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>{viewItem.unit || 'N/A'}</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ fontSize: '12px', color: '#666', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rack Number</div>
@@ -1835,40 +1839,6 @@ const Dashboard = () => {
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* Image Section - At Bottom */}
-                {(viewItem.image_url || viewItem.image_base64) && (
-                  <div style={{
-                    marginTop: '30px',
-                    textAlign: 'center',
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                  }}>
-                    <h4 style={{ 
-                      margin: '0 0 20px 0', 
-                      fontSize: '18px', 
-                      fontWeight: '600', 
-                      color: '#333',
-                      paddingBottom: '15px',
-                      borderBottom: '2px solid #f0f0f0',
-                      textAlign: 'left'
-                    }}>
-                      Product Image
-                    </h4>
-                    <img 
-                      src={viewItem.image_url || `data:image/jpeg;base64,${viewItem.image_base64}`} 
-                      alt={viewItem.product_name}
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '400px', 
-                        borderRadius: '8px',
-                        objectFit: 'contain'
-                      }}
-                    />
                   </div>
                 )}
               </div>

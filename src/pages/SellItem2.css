@@ -1,25 +1,32 @@
 /* SellItem2 - Modern Professional Styling */
 
 .sell-item2-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 20px;
+  min-height: 100%;
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
+  margin: 0 auto;
+  padding: clamp(14px, 2.2vw, 28px);
+  box-sizing: border-box;
+  background: linear-gradient(160deg, #f0f4f8 0%, #e8eef4 50%, #f5f7fa 100%);
 }
 
 .sell-item2-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: clamp(16px, 2vw, 24px);
   background: white;
-  padding: 20px 30px;
+  padding: clamp(16px, 2vw, 24px) clamp(18px, 2.5vw, 30px);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 .sell-item2-header h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: clamp(1.25rem, 1.5vw + 0.85rem, 1.75rem);
   color: #2c3e50;
   font-weight: 600;
 }
@@ -64,8 +71,8 @@
 /* Main Layout */
 .sell-item2-main {
   display: grid;
-  grid-template-columns: 1fr 500px;
-  gap: 20px;
+  grid-template-columns: 1fr minmax(280px, min(500px, 100%));
+  gap: clamp(14px, 2vw, 22px);
   align-items: start;
 }
 
@@ -662,8 +669,8 @@ button {
   font-size: 16px;
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
+/* Responsive: stack on typical 13–14 inch laptop widths */
+@media (max-width: 1320px) {
   .sell-item2-main {
     grid-template-columns: 1fr;
   }

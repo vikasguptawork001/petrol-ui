@@ -8,6 +8,16 @@ import TransactionLoader from '../components/TransactionLoader';
 import ActionMenu from '../components/ActionMenu';
 import './ReturnItem.css';
 
+/**
+ * ReturnItem Component
+ * 
+ * Provides an interface for processing item returns from both Sellers and Buyers.
+ * Features:
+ * - Search and select parties (Seller/Buyer)
+ * - Multi-item return processing with inline search and suggestions
+ * - Real-time calculation of return amounts, taxes, and totals
+ * - Preview and receipt generation
+ */
 const ReturnItem = () => {
   const toast = useToast();
   const itemSearchInputRef = useRef(null);
@@ -229,7 +239,7 @@ const ReturnItem = () => {
           updatedItems.push({
             item_id: item.id,
             product_name: item.product_name,
-            product_code: item.product_code || '',
+            unit: item.unit || '',
             brand: item.brand || '',
             sale_rate: parseFloat(item.sale_rate || 0),
             purchase_rate: parseFloat(item.purchase_rate || 0), // Already included in search for buyer returns
@@ -280,7 +290,6 @@ const ReturnItem = () => {
       setSelectedItems(prev => [...prev, {
         item_id: item.id,
         product_name: item.product_name,
-        product_code: item.product_code || '',
         brand: item.brand || '',
         sale_rate: parseFloat(item.sale_rate || 0),
         purchase_rate: parseFloat(item.purchase_rate || 0), // Already included in search for buyer returns
@@ -424,7 +433,6 @@ const ReturnItem = () => {
         item_id: item.item_id,
         product_name: item.product_name,
         brand: item.brand,
-        product_code: item.product_code,
         sale_rate: parseFloat(item.sale_rate) || 0,
         purchase_rate: parseFloat(item.purchase_rate) || 0,
         quantity: parseInt(item.quantity) || 0,
@@ -1082,11 +1090,10 @@ const ReturnItem = () => {
                                           <div className="table-suggestion-info">
                                             <div className="table-suggestion-name">
                                               {item.product_name}
-                                              {item.product_code && <span style={{fontSize: '12px', color: '#868e96', fontWeight: 400}}>#{item.product_code}</span>}
                                             </div>
                                             <div className="table-suggestion-meta">
                                               {item.brand && <span>{item.brand}</span>}
-                                              {item.hsn_number && <span>HSN: {item.hsn_number}</span>}
+                                              {item.unit && <span>Unit: {item.unit}</span>}
                                               {isOutOfStock && partyType === 'buyer' && (
                                                 <span style={{color: '#dc3545', fontWeight: 700}}>OUT OF STOCK</span>
                                               )}
@@ -1099,9 +1106,9 @@ const ReturnItem = () => {
                                             <div className="table-suggestion-rate">
                                               ₹{parseFloat(item.sale_rate || item.purchase_rate || 0).toFixed(2)}
                                             </div>
-                                            <span className={`stock-pill ${stockClass}`}>
-                                              {stockLevel} Units
-                                            </span>
+                                             <span className={`stock-pill ${stockClass}`}>
+                                               {stockLevel} {item.unit || 'Units'}
+                                             </span>
                                           </div>
                                         </div>
                                       );

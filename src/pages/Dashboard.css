@@ -7,24 +7,64 @@
   max-width: 100%;
   margin: 0 auto;
   width: 100%;
-  height: calc(100vh - 100px); /* Leave exactly enough room for layout header/footer */
+}
+
+/* Stock view: fill viewport minus chrome; hub tabs: flow naturally */
+.dashboard--items {
+  height: calc(100vh - var(--app-chrome, 132px));
   overflow: hidden;
 }
 
-/* Compact header override for Dashboard specifically - narrows the Stock Dashboard title area */
-.dashboard .pp-page-header {
-  padding: 10px 20px !important;
-  margin-bottom: 12px !important;
-  border-left-width: 4px !important;
+.dashboard--hub {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
-.dashboard .pp-page-header h2 {
-  font-size: 1.25rem !important; /* Slightly smaller for more height */
+/* Full Due Sheet / Daily Nozzle modules embedded on dashboard hub tabs */
+.dashboard-embedded-wrap {
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
-.dashboard .pp-page-header p {
-  font-size: 0.8rem !important;
-  margin: 0 !important;
+/* Keep dashboard header/tabs clear of the fixed right panel */
+.dashboard--items .pp-home-hero {
+  margin-right: clamp(270px, 24vw, 340px);
+}
+
+/* Compact dashboard header on stock tab (no wasted vertical space) */
+.pp-home-hero.pp-home-hero--compact {
+  padding: clamp(12px, 1.6vw, 16px) clamp(14px, 2vw, 18px);
+  margin-bottom: 12px;
+}
+
+.pp-home-hero.pp-home-hero--compact .pp-home-hero__eyebrow {
+  margin-bottom: 4px;
+}
+
+.pp-home-hero.pp-home-hero--compact .pp-home-hero__title {
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+}
+
+.pp-home-hero.pp-home-hero--compact .pp-home-hero__text {
+  min-width: 220px;
+}
+
+/* Stock tab: slightly denser header to save vertical space */
+.dashboard--items .dashboard-main .pp-page-header {
+  padding: clamp(12px, 1.6vw, 18px) clamp(14px, 2vw, 22px);
+  margin-bottom: 12px;
+}
+
+.dashboard--items .dashboard-main .pp-page-header h2.dashboard-title {
+  font-size: clamp(1.05rem, 1.35vw, 1.35rem);
+}
+
+.dashboard--items .dashboard-main .pp-page-header p {
+  font-size: clamp(0.75rem, 0.95vw, 0.875rem);
+  margin: 4px 0 0 0;
 }
 
 /* Two-column layout: main (table) left, fixed panel right */
@@ -34,10 +74,10 @@
   align-items: stretch;
   width: 100%;
   height: 100%;
-  padding-right: 320px;
+  padding-right: clamp(270px, 24vw, 340px);
   box-sizing: border-box;
   gap: 0;
-  transition: all 0.3s ease;
+  transition: padding 0.25s ease;
 }
 
 .dashboard-main {
@@ -46,6 +86,18 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Make stock table horizontally scrollable (mouse-friendly) */
+.dashboard--items .dashboard-items-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable both-edges;
+}
+
+.dashboard--items .dashboard-items-table-scroll .table {
+  min-width: 1100px;
 }
 
 .dashboard-title {
@@ -60,9 +112,9 @@
 .dashboard-right-panel {
   position: fixed;
   top: var(--header-height, 52px);
-  right: 16px;
-  bottom: calc(var(--footer-height, 50px) + 16px);
-  width: 290px;
+  right: clamp(10px, 1.2vw, 20px);
+  bottom: calc(var(--footer-height, 50px) + clamp(10px, 1.2vw, 18px));
+  width: clamp(260px, 22vw, 320px);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -260,21 +312,23 @@
 
 @media (max-width: 1440px) {
   .dashboard-wrapper {
-    padding-right: 290px;
+    padding-right: clamp(260px, 28vw, 310px);
   }
 }
 
-@media (max-width: 1200px) {
+/* 13–14″ laptops: stack filters panel under table */
+@media (max-width: 1320px) {
   .dashboard-wrapper {
     padding-right: 0;
     flex-direction: column;
     height: auto;
-    overflow-y: auto;
+    overflow-y: visible;
   }
 
-  .dashboard {
+  .dashboard--items {
     height: auto;
-    overflow-y: auto;
+    min-height: calc(100vh - var(--app-chrome, 132px));
+    overflow: visible;
   }
 
   .dashboard-right-panel {
@@ -283,12 +337,14 @@
     right: auto !important;
     bottom: auto !important;
     width: 100% !important;
-    margin-top: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    max-width: 720px;
+    margin: 20px auto 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
   }
 
   .table-container {
-    max-height: 500px !important;
+    height: min(62vh, 560px) !important;
+    max-height: none !important;
   }
 }
 
@@ -389,6 +445,40 @@
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: #f59a30 #f1f5f9;
+}
+
+/* Hub tab panels: compact scroll region, not full viewport */
+.card.dashboard-hub-panel {
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 14px;
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-hub-panel .dashboard-hub-table {
+  height: auto;
+  max-height: min(68vh, 720px);
+  flex: none;
+}
+
+.dashboard-hub-panel .dashboard-hub-table table {
+  min-width: 0;
+}
+
+.dashboard-hub-muted {
+  color: #64748b;
+  font-size: 0.9375rem;
+  margin: 0;
+  padding: 8px 0 16px;
+}
+
+.dashboard-hub-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 /* ─── Modern Branded Slider ─── */
@@ -715,6 +805,20 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+.form-group select:focus {
+  border-color: #4CAF50;
 }
 
 .form-group input:focus {

@@ -26,9 +26,8 @@ const AddItem = () => {
   const [isAddingNewItem, setIsAddingNewItem] = useState(false);
   const [newItem, setNewItem] = useState({
     product_name: '',
-    product_code: '',
+    unit: '',
     brand: '',
-    hsn_number: '',
     tax_rate: 18,
     sale_rate: 0,
     min_sale_rate: 0,
@@ -38,13 +37,13 @@ const AddItem = () => {
     rack_number: '',
     remarks: ''
   });
-  const [itemImage, setItemImage] = useState(null);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
 
   // Inline edit: which cell is being edited { rowIndex, field: 'purchase_rate' | 'sale_rate' }
   const [editingCell, setEditingCell] = useState(null);
   const rowInputRefs = useRef({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubmittingPurchase, setIsSubmittingPurchase] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== 'admin' && user.role !== 'super_admin') {
@@ -165,11 +164,11 @@ const AddItem = () => {
             updatedItems.push({
               item_id: itemDetails.id,
               product_name: itemDetails.product_name,
-              product_code: itemDetails.product_code || '',
+              unit: itemDetails.unit || '',
               brand: itemDetails.brand || '',
-              hsn_number: itemDetails.hsn_number || '',
               tax_rate: finalTaxRate,
               sale_rate: parseFloat(itemDetails.sale_rate) || 0,
+              min_sale_rate: itemDetails.min_sale_rate != null && itemDetails.min_sale_rate !== '' ? parseFloat(itemDetails.min_sale_rate) : null,
               purchase_rate: parseFloat(itemDetails.purchase_rate) || 0,
               quantity: 1, // Purchase quantity (how many we're buying) - starts at 1
               alert_quantity: 0, // Will be set when submitting
@@ -228,11 +227,11 @@ const AddItem = () => {
         setSelectedItems(prev => [...prev, {
           item_id: item.id,
           product_name: item.product_name,
-          product_code: item.product_code || '',
+          unit: item.unit || '',
           brand: item.brand || '',
-          hsn_number: item.hsn_number || '',
           tax_rate: finalTaxRate, // Use the parsed and validated tax rate
           sale_rate: parseFloat(item.sale_rate) || 0,
+          min_sale_rate: item.min_sale_rate != null && item.min_sale_rate !== '' ? parseFloat(item.min_sale_rate) : null,
           purchase_rate: parseFloat(item.purchase_rate) || 0,
           quantity: 1, // Purchase quantity (how many we're buying) - starts at 1
           alert_quantity: 0, // Will be set when submitting
@@ -289,7 +288,7 @@ const AddItem = () => {
   };
 
   const focusCell = (rowIndex, field) => {
-    if (field === 'purchase_rate' || field === 'sale_rate') {
+    if (field === 'purchase_rate' || field === 'sale_rate' || field === 'min_sale_rate') {
       setEditingCell({ rowIndex, field });
       setTimeout(() => {
         const el = rowInputRefs.current[`${rowIndex}-${field}`];
@@ -303,7 +302,8 @@ const AddItem = () => {
 
   const focusNext = (rowIndex, currentField) => {
     const next = currentField === 'purchase_rate' ? { rowIndex, field: 'sale_rate' }
-      : currentField === 'sale_rate' ? { rowIndex, field: 'quantity' }
+      : currentField === 'sale_rate' ? { rowIndex, field: 'min_sale_rate' }
+      : currentField === 'min_sale_rate' ? { rowIndex, field: 'quantity' }
       : rowIndex + 1 < selectedItems.length ? { rowIndex: rowIndex + 1, field: 'purchase_rate' }
       : { rowIndex: 0, field: 'purchase_rate' };
     focusCell(next.rowIndex, next.field);
@@ -322,7 +322,8 @@ const AddItem = () => {
         try {
           const payload = {
             sale_rate: parseFloat(item.sale_rate) || 0,
-            purchase_rate: parseFloat(item.purchase_rate) || 0
+            purchase_rate: parseFloat(item.purchase_rate) || 0,
+            min_sale_rate: item.min_sale_rate != null && item.min_sale_rate !== '' && !isNaN(parseFloat(item.min_sale_rate)) && parseFloat(item.min_sale_rate) >= 0 ? parseFloat(item.min_sale_rate) : null
           };
           await apiClient.patch(`${config.api.items}/${item.item_id}`, payload);
           success++;
@@ -339,13 +340,75 @@ const AddItem = () => {
     }
   };
 
+  const handleSubmitPurchase = async () => {
+    if (selectedItems.length === 0) {
+      toast.warning('No items to purchase');
+      return;
+    }
+
+    // Validate that all items have required fields
+    for (const item of selectedItems) {
+      if (!item.purchase_rate || item.purchase_rate <= 0) {
+        toast.error(`Purchase rate is required for ${item.product_name}`);
+        return;
+      }
+      if (!item.quantity || item.quantity <= 0) {
+        toast.error(`Quantity must be greater than 0 for ${item.product_name}`);
+        return;
+      }
+    }
+
+    setIsSubmittingPurchase(true);
+    try {
+      // Prepare items for purchase API
+      const purchaseItems = selectedItems.map(item => ({
+        item_id: item.item_id,
+        product_name: item.product_name,
+        product_code: item.product_code || '',
+        brand: item.brand || '',
+        hsn_number: item.hsn_number || '',
+        tax_rate: item.tax_rate || 18,
+        sale_rate: parseFloat(item.sale_rate) || 0,
+        purchase_rate: parseFloat(item.purchase_rate) || 0,
+        quantity: parseInt(item.quantity) || 0,
+        alert_quantity: parseInt(item.alert_quantity) || 0,
+        rack_number: item.rack_number || '',
+        remarks: item.remarks || ''
+      }));
+
+      // For inventory addition, we don't need a buyer party, so we'll use a dummy or null value
+      // The backend should handle inventory-only purchases
+      const payload = {
+        buyer_party_id: null, // No buyer for inventory addition
+        items: purchaseItems,
+        payment_status: 'fully_paid', // No payment needed for inventory addition
+        paid_amount: 0
+      };
+
+      await apiClient.post(config.api.itemsPurchase, payload);
+
+      toast.success(`Successfully added ${selectedItems.length} item(s) to inventory!`);
+      
+      // Clear the list after successful submission
+      setSelectedItems([]);
+      setEditingCell(null);
+      
+    } catch (error) {
+      console.error('Purchase submission error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to add items to inventory';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmittingPurchase(false);
+    }
+  };
+
   const closeAddItemModal = () => {
     setShowAddItemForm(false);
     setNewItem({
       product_name: '',
+      unit: '',
       product_code: '',
       brand: '',
-      hsn_number: '',
       tax_rate: 18,
       sale_rate: 0,
       purchase_rate: 0,
@@ -354,13 +417,15 @@ const AddItem = () => {
       rack_number: '',
       remarks: ''
     });
-    setItemImage(null);
   };
-
   const handleAddNewItem = async () => {
     // Validate required fields
     if (!newItem.product_name) {
       toast.warning('Product name is required');
+      return;
+    }
+    if (!newItem.unit) {
+      toast.warning('Unit is required');
       return;
     }
     const qty = Number(newItem.quantity);
@@ -380,31 +445,21 @@ const AddItem = () => {
 
     setIsAddingNewItem(true);
     try {
-      const formData = new FormData();
-      formData.append('product_name', newItem.product_name);
-      if (newItem.product_code) formData.append('product_code', newItem.product_code);
-      if (newItem.brand) formData.append('brand', newItem.brand);
-      if (newItem.hsn_number) formData.append('hsn_number', newItem.hsn_number);
-      formData.append('tax_rate', newItem.tax_rate);
-      formData.append('purchase_rate', newItem.purchase_rate);
-      formData.append('sale_rate', newItem.sale_rate);
-      if (newItem.min_sale_rate !== undefined && newItem.min_sale_rate !== '' && !isNaN(parseFloat(newItem.min_sale_rate)) && parseFloat(newItem.min_sale_rate) >= 0) {
-        formData.append('min_sale_rate', parseFloat(newItem.min_sale_rate));
-      } else {
-        formData.append('min_sale_rate', '');
-      }
-      formData.append('quantity', newItem.quantity);
-      if (newItem.alert_quantity) formData.append('alert_quantity', newItem.alert_quantity);
-      if (newItem.rack_number) formData.append('rack_number', newItem.rack_number);
-      if (newItem.remarks) formData.append('remarks', newItem.remarks);
+      const payload = {
+        product_name: newItem.product_name,
+        unit: newItem.unit,
+        brand: newItem.brand || '',
+        tax_rate: newItem.tax_rate,
+        purchase_rate: newItem.purchase_rate,
+        sale_rate: newItem.sale_rate,
+        min_sale_rate: (newItem.min_sale_rate !== undefined && newItem.min_sale_rate !== '' && !isNaN(parseFloat(newItem.min_sale_rate)) && parseFloat(newItem.min_sale_rate) >= 0) ? parseFloat(newItem.min_sale_rate) : null,
+        quantity: newItem.quantity,
+        alert_quantity: newItem.alert_quantity || 0,
+        rack_number: newItem.rack_number || '',
+        remarks: newItem.remarks || ''
+      };
       
-      if (itemImage) {
-        formData.append('image', itemImage);
-      }
-
-      await apiClient.post(config.api.items, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await apiClient.post(config.api.items, payload);
 
       toast.success(`Product "${newItem.product_name}" created. Add it to your list by searching below.`);
       closeAddItemModal();
@@ -504,6 +559,7 @@ const AddItem = () => {
                       <th style={{ textAlign: 'left', padding: '14px 18px' }}>Brand</th>
                       <th style={{ textAlign: 'right', padding: '14px 18px' }}>Purchase Rate</th>
                       <th style={{ textAlign: 'right', padding: '14px 18px' }}>Sale Rate</th>
+                      <th style={{ textAlign: 'right', padding: '14px 18px' }}>Min Sale Rate</th>
                       <th style={{ textAlign: 'right', padding: '14px 18px' }}>Tax Rate</th>
                       <th style={{ textAlign: 'right', padding: '14px 18px', width: '90px' }}>Current Qty</th>
                       <th style={{ textAlign: 'right', padding: '14px 18px', width: '100px' }}>Quantity</th>
@@ -517,7 +573,7 @@ const AddItem = () => {
                         <td style={{ textAlign: 'left' }}>
                           <div style={{ fontWeight: '700', fontSize: '15px' }}>{item.product_name}</div>
                           <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                            {item.product_code || 'No Code'} • {item.hsn_number ? `HSN: ${item.hsn_number}` : 'No HSN'}
+                            {item.product_name} {item.unit ? `• Unit: ${item.unit}` : ''}
                           </div>
                         </td>
                         <td style={{ textAlign: 'left' }}>{item.brand || '-'}</td>
@@ -579,6 +635,35 @@ const AddItem = () => {
                             </span>
                           )}
                         </td>
+                        <td style={{ textAlign: 'right', fontWeight: '600', padding: '6px' }}>
+                          {editingCell?.rowIndex === index && editingCell?.field === 'min_sale_rate' ? (
+                            <input
+                              ref={(el) => { rowInputRefs.current[`${index}-min_sale_rate`] = el; }}
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.min_sale_rate === null || item.min_sale_rate === undefined || item.min_sale_rate === '' ? '' : item.min_sale_rate}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateItem(item.item_id, 'min_sale_rate', val === '' ? null : parseFloat(val) || null);
+                              }}
+                              onBlur={() => setEditingCell(null)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') { e.preventDefault(); setEditingCell(null); focusNext(index, 'min_sale_rate'); }
+                              }}
+                              className="table-search-input"
+                              style={{ width: '90px', textAlign: 'right', padding: '4px 6px' }}
+                            />
+                          ) : (
+                            <span
+                              onClick={() => focusCell(index, 'min_sale_rate')}
+                              style={{ cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                              title="Click to edit"
+                            >
+                              {item.min_sale_rate != null && item.min_sale_rate !== '' ? `₹${parseFloat(item.min_sale_rate).toFixed(2)}` : '–'}
+                            </span>
+                          )}
+                        </td>
                         <td style={{ textAlign: 'right' }}>{item.tax_rate || 0}%</td>
                         <td style={{ textAlign: 'right', fontWeight: '500', color: '#555' }} title="Stock in inventory">
                           {item.current_quantity != null && item.current_quantity !== '' ? Number(item.current_quantity) : '–'}
@@ -629,12 +714,12 @@ const AddItem = () => {
                     {/* Search row - next to last item, like Return page */}
                     <tr className="table-search-row">
                       <td style={{ verticalAlign: 'middle' }}></td>
-                      <td colSpan="3" style={{ position: 'relative', overflow: 'visible', zIndex: 10005 }}>
+                      <td colSpan="4" style={{ position: 'relative', overflow: 'visible', zIndex: 10005 }}>
                         <div className="table-search-wrapper">
                           <input
                             type="text"
                             className="table-search-input"
-                            placeholder="🔍 Type product name, brand, or HSN to search and add items..."
+                            placeholder="🔍 Type product name or brand to search and add items..."
                             value={searchQuery}
                             ref={itemSearchInputRef}
                             onChange={(e) => {
@@ -707,7 +792,7 @@ const AddItem = () => {
                                           <span className={`stock-pill ${stockClass}`}>
                                             {stockIcon} {stockLevel} Stock
                                           </span>
-                                          {item.hsn_number && <span>HSN: {item.hsn_number}</span>}
+                                          {item.unit && <span>Unit: {item.unit}</span>}
                                         </div>
                                       </div>
                                       <div className="table-suggestion-right">
@@ -745,10 +830,18 @@ const AddItem = () => {
                 <button
                   onClick={handleSaveRates}
                   disabled={isSaving}
-                  className="btn btn-primary"
+                  className="btn btn-secondary"
                   style={{ padding: '12px 24px', opacity: isSaving ? 0.6 : 1 }}
                 >
                   {isSaving ? 'Saving...' : 'Save rates'}
+                </button>
+                <button
+                  onClick={handleSubmitPurchase}
+                  disabled={isSubmittingPurchase}
+                  className="btn btn-success"
+                  style={{ padding: '12px 24px', opacity: isSubmittingPurchase ? 0.6 : 1 }}
+                >
+                  {isSubmittingPurchase ? 'Adding...' : 'Add to Inventory'}
                 </button>
                 <button
                   onClick={() => {
@@ -758,7 +851,7 @@ const AddItem = () => {
                       toast.info('List cleared');
                     }
                   }}
-                  className="btn btn-secondary"
+                  className="btn btn-danger"
                   style={{ padding: '12px 24px' }}
                 >
                   Clear list
@@ -784,22 +877,42 @@ const AddItem = () => {
               </p>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Brand *</label>
+                  <label>Product Name *</label>
                   <input
                     type="text"
                     value={newItem.product_name}
                     onChange={(e) => setNewItem({ ...newItem, product_name: e.target.value })}
-                    placeholder="Enter brand name"
+                    placeholder="Enter product name"
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>HSN Number</label>
+                  <label>Brand</label>
                   <input
                     type="text"
-                    value={newItem.hsn_number}
-                    onChange={(e) => setNewItem({ ...newItem, hsn_number: e.target.value })}
+                    value={newItem.brand}
+                    onChange={(e) => setNewItem({ ...newItem, brand: e.target.value })}
+                    placeholder="Enter brand name"
                   />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Unit (liter / packet / kg) *</label>
+                  <select
+                    value={newItem.unit}
+                    onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+                    required
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">Select Unit</option>
+                    <option value="liter">Liter</option>
+                    <option value="packet">Packet</option>
+                    <option value="kg">KG</option>
+                    <option value="pcs">Pcs</option>
+                    <option value="box">Box</option>
+                    <option value="mtr">Meter</option>
+                  </select>
                 </div>
               </div>
               <div className="form-row">
@@ -938,43 +1051,7 @@ const AddItem = () => {
                   {newItem.remarks?.length || 0}/200 characters
                 </small>
               </div>
-              <div className="form-group">
-                <label>Product Image (Max 3MB)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      if (file.size > 3 * 1024 * 1024) {
-                        alert('Image size must be less than 3MB');
-                        e.target.value = '';
-                        return;
-                      }
-                      setItemImage(file);
-                    }
-                  }}
-                />
-                {itemImage && (
-                  <div style={{ marginTop: '10px' }}>
-                    <img 
-                      src={URL.createObjectURL(itemImage)} 
-                      alt="Preview" 
-                      style={{ maxWidth: '200px', maxHeight: '200px' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setItemImage(null);
-                        document.querySelector('input[type="file"]').value = '';
-                      }}
-                      style={{ marginLeft: '10px', padding: '5px 10px' }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
+
 
               <div className="form-actions">
                 <button 

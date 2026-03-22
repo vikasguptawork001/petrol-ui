@@ -3,9 +3,11 @@
 }
 
 .container {
-  max-width: 1400px;
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
   margin: 0 auto;
-  padding: 20px;
+  padding: clamp(14px, 2vw, 22px);
+  box-sizing: border-box;
 }
 
 /* Click feedback: visible effect when pressing buttons and clickable elements */
@@ -230,11 +232,16 @@ input[type="number"] {
 .card {
   background: #ffffff;
   border-radius: var(--pp-card-radius, 12px);
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: clamp(16px, 2vw, 24px);
+  margin-bottom: clamp(16px, 2vw, 22px);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.9);
   color: #1e293b;
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .card-header {

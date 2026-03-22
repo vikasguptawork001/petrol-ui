@@ -567,7 +567,6 @@ const SellReport = () => {
                               <tr style={{ background: '#f8f9fa' }}>
                                 <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>S.No</th>
                                 <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Product Name</th>
-                                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Product Code</th>
                                 <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Brand</th>
                                 <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>HSN</th>
                                 <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Tax Rate</th>
@@ -585,7 +584,6 @@ const SellReport = () => {
                                 <tr key={item.item_id} style={{ borderBottom: '1px solid #e9ecef' }}>
                                   <td style={{ padding: '12px', textAlign: 'left', verticalAlign: 'middle' }}>{index + 1}</td>
                                   <td style={{ padding: '12px', textAlign: 'left', verticalAlign: 'middle' }}>{item.product_name}</td>
-                                  <td style={{ padding: '12px', textAlign: 'left', verticalAlign: 'middle' }}>{item.product_code || '-'}</td>
                                   <td style={{ padding: '12px', textAlign: 'left', verticalAlign: 'middle' }}>{item.brand || '-'}</td>
                                   <td style={{ padding: '12px', textAlign: 'left', verticalAlign: 'middle' }}>{item.hsn_number || '-'}</td>
                                   <td style={{ padding: '12px', textAlign: 'right', verticalAlign: 'middle' }}>{item.tax_rate !== null && item.tax_rate !== undefined ? `${item.tax_rate}%` : '0%'}</td>

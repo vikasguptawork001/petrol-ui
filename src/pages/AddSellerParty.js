@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
@@ -6,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import './Party.css';
 
 const AddSellerParty = () => {
+  const navigate = useNavigate();
   const toast = useToast();
   const [formData, setFormData] = useState({
     party_name: '',
@@ -200,7 +202,18 @@ const AddSellerParty = () => {
   return (
     <Layout>
       <div className="party-form">
-        <h2>Add Creditor</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '8px' }}>
+          <h2 style={{ margin: 0 }}>Add Creditor</h2>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={() => navigate('/parties')}
+            aria-label="Close and return to creditors"
+            style={{ position: 'relative', top: 0, right: 0, fontSize: '28px', lineHeight: 1, padding: '4px 12px' }}
+          >
+            ×
+          </button>
+        </div>
         <div className="card">
           <form onSubmit={handleSubmit}>
             <div className="form-row">
@@ -421,7 +434,7 @@ const AddSellerParty = () => {
                 />
               </div>
               <div className="form-group">
-                <label>GST Number (Alphanumeric, Max 20)</label>
+                <label>GST number (optional, max 20 alphanumeric)</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"

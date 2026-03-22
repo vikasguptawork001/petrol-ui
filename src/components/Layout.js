@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Layout.css';
+
+const DASHBOARD_TABS = [
+  { id: 'items', label: 'Stock & items' },
+  { id: 'nozzles', label: 'Nozzle readings' },
+  { id: 'creditors', label: 'Due sheet' }
+];
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const isDashboard = location.pathname === '/dashboard';
+  const activeDashTab = searchParams.get('tab') || 'items';
 
   const handleLogout = () => {
     logout();
@@ -18,13 +28,15 @@ const Layout = ({ children }) => {
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/add-item', label: 'Add Item', roles: ['admin', 'super_admin'] },
     { path: '/sell-item', label: 'Sell Item' },
-    { path: '/return-item', label: 'Return Item' },
+    // { path: '/return-item', label: 'Return Item' },
     { path: '/parties', label: 'Creditors' },
     // { path: '/add-seller-party', label: 'Add Creditor', roles: ['admin', 'super_admin'] },
     { path: '/nozzle-reading', label: 'Daily Nozzle Reading' },
+    { path: '/nozzles', label: 'Manage Nozzles', roles: ['admin', 'super_admin'] },
+    { path: '/attendants', label: 'Manage Attendants', roles: ['admin', 'super_admin'] },
     { path: '/sell-report', label: 'Sell Report' },
     { path: '/sell-report-items', label: 'Item-wise Sell Report', roles: ['admin', 'super_admin'] },
-    { path: '/return-report', label: 'Return Report' },
+    // { path: '/return-report', label: 'Return Report' },
     { path: '/order-sheet', label: 'Order Sheet' },
     // { path: '/creditor-dashboard', label: 'Creditor Dashboard', roles: ['super_admin'] },
     { path: '/due-sheet', label: 'Due Sheet', roles: ['super_admin'] }
@@ -47,8 +59,8 @@ const Layout = ({ children }) => {
 
   return (
     <div className="layout">
-      <header className="header">
-        <div className="header-content">
+      <header className={`header${isDashboard ? ' header--dashboard-tabs' : ''}`}>
+        <div className={`header-content${isDashboard ? ' header-content--dashboard-tabs' : ''}`}>
           <button
             className="menu-toggle"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -59,6 +71,21 @@ const Layout = ({ children }) => {
             <span className="hamburger-line" />
           </button>
           <h1>Steepray Information Services Private Limited</h1>
+          {isDashboard && (
+            <nav className="header-dashboard-tabs pp-seg" aria-label="Dashboard section">
+              {DASHBOARD_TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`pp-seg__btn${activeDashTab === t.id ? ' pp-seg__btn--active' : ''}`}
+                  onClick={() => setSearchParams({ tab: t.id }, { replace: true })}
+                  aria-current={activeDashTab === t.id ? 'page' : undefined}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+          )}
           <div className="header-right">
             <span className="user-info">
               {user?.user_id} ({getRoleLabel(user?.role)})

@@ -203,7 +203,7 @@ export const submitSale = createAsyncThunk(
         })),
         payment_status: previewData.paymentStatus,
         paid_amount: Math.round(previewData.paidAmount || 0), // Ensure rounded whole number
-        with_gst: previewData.withGst || false,
+        with_gst: false,
         previous_balance_paid: previewData.previousBalancePaid || 0
       };
       if (previewData.paymentStatus === 'partially_paid' && dueDate) {

@@ -12,7 +12,8 @@ import { getLocalDateString } from '../utils/dateUtils';
 import './DueSheet.css';
 import '../styles/petrolpump-theme.css';
 
-const DueSheet = () => {
+/** Full Due Sheet UI — use on `/due-sheet` or embedded on the home dashboard (`embedded`). */
+export function DueSheetPanel({ embedded = false }) {
   const { user } = useAuth();
   const toast = useToast();
 
@@ -32,15 +33,14 @@ const DueSheet = () => {
 
   const abortControllerRef = useRef(null);
 
-  // Only super_admin should access this screen
   useEffect(() => {
-    if (user && user.role !== 'super_admin') {
+    if (!user || user.role === 'super_admin') return;
+    if (!embedded) {
       toast.error('Access denied. Due Sheet is visible only to Super Admin.');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, embedded]);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery.trim());
@@ -49,20 +49,25 @@ const DueSheet = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch whenever filters change
   useEffect(() => {
     fetchDueSheet();
-    // Cleanup: cancel on unmount / param change
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromDueDate, toDueDate, debouncedSearchQuery, page, limit]);
+  }, [fromDueDate, toDueDate, debouncedSearchQuery, page, limit, user]);
 
   const fetchDueSheet = async () => {
-    // cancel previous
+    if (!user || user.role !== 'super_admin') {
+      setLoading(false);
+      setParties([]);
+      setSummary(null);
+      setPagination(null);
+      return;
+    }
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -174,9 +179,28 @@ const DueSheet = () => {
     return diff.toString();
   };
 
-  return (
-    <Layout>
+  if (!user) return null;
+
+  if (user.role !== 'super_admin') {
+    if (embedded) {
+      return (
+        <div className="card dashboard-hub-panel">
+          <p className="dashboard-hub-muted">Due Sheet is visible only to Super Admin.</p>
+        </div>
+      );
+    }
+    return (
       <div className="ds-page">
+        <div style={{ padding: 24, textAlign: 'center', color: '#b91c1c', fontWeight: 600 }}>
+          Access denied. Due Sheet is visible only to Super Admin.
+        </div>
+      </div>
+    );
+  }
+
+  const inner = (
+    <div className={`ds-page ${embedded ? 'ds-page--embedded' : ''}`}>
+      {!embedded && (
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -186,76 +210,80 @@ const DueSheet = () => {
             <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Outstanding balances and credit recovery. Track overdue payments globally.</p>
           </div>
         </div>
+      )}
 
-        <div className="ds-card">
-          <h2 className="ds-card-title">Filters</h2>
-          <div className="ds-filters">
-            <div className="ds-filter-group">
-              <label>From Due Date</label>
-              <DatePicker
-                selected={fromDueDate}
-                onChange={setFromDueDate}
-                dateFormat="dd/MM/yyyy"
-                className="ds-input react-datepicker-wrapper"
-                placeholderText="From date"
-                isClearable
-              />
-            </div>
-            <div className="ds-filter-group">
-              <label>To Due Date</label>
-              <DatePicker
-                selected={toDueDate}
-                onChange={setToDueDate}
-                dateFormat="dd/MM/yyyy"
-                className="ds-input react-datepicker-wrapper"
-                placeholderText="To date"
-                isClearable
-              />
-            </div>
-            <div className="ds-filter-group ds-filter-search">
-              <label>Search</label>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Name, mobile, address, vehicle..."
-                className="ds-input"
-              />
-            </div>
-            <div className="ds-filter-group">
-              <label>&nbsp;</label>
-              <button type="button" className="ds-btn ds-btn-outline" onClick={handleResetFilters}>
-                Reset
-              </button>
-            </div>
+      {embedded && <p className="ds-embedded-hint">Filters, summary, change due date, pagination — same as /due-sheet.</p>}
+
+      <div className="ds-card">
+        <h2 className="ds-card-title">Filters</h2>
+        <div className="ds-filters">
+          <div className="ds-filter-group">
+            <label>From Due Date</label>
+            <DatePicker
+              selected={fromDueDate}
+              onChange={setFromDueDate}
+              dateFormat="dd/MM/yyyy"
+              className="ds-input react-datepicker-wrapper"
+              placeholderText="From date"
+              isClearable
+            />
+          </div>
+          <div className="ds-filter-group">
+            <label>To Due Date</label>
+            <DatePicker
+              selected={toDueDate}
+              onChange={setToDueDate}
+              dateFormat="dd/MM/yyyy"
+              className="ds-input react-datepicker-wrapper"
+              placeholderText="To date"
+              isClearable
+            />
+          </div>
+          <div className="ds-filter-group ds-filter-search">
+            <label>Search</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Name, mobile, address, vehicle..."
+              className="ds-input"
+            />
+          </div>
+          <div className="ds-filter-group">
+            <label>&nbsp;</label>
+            <button type="button" className="ds-btn ds-btn-outline" onClick={handleResetFilters}>
+              Reset
+            </button>
           </div>
         </div>
+      </div>
 
-        {summary && (
-          <div className="ds-summary-row">
-            <div className="ds-summary-card ds-summary-total">
-              <span className="ds-summary-label">Total Creditors</span>
-              <span className="ds-summary-value">{summary.total_creditors || 0}</span>
-            </div>
-            <div className="ds-summary-card ds-summary-balance">
-              <span className="ds-summary-label">Total Outstanding</span>
-              <span className="ds-summary-value">₹ {formatCurrency(summary.total_balance)}</span>
-            </div>
-            <div className="ds-summary-card ds-summary-overdue">
-              <span className="ds-summary-label">Overdue</span>
-              <span className="ds-summary-value">{summary.overdue_count || 0}</span>
-            </div>
+      {summary && (
+        <div className="ds-summary-row">
+          <div className="ds-summary-card ds-summary-total">
+            <span className="ds-summary-label">Total Creditors</span>
+            <span className="ds-summary-value">{summary.total_creditors || 0}</span>
           </div>
-        )}
+          <div className="ds-summary-card ds-summary-balance">
+            <span className="ds-summary-label">Total Outstanding</span>
+            <span className="ds-summary-value">₹ {formatCurrency(summary.total_balance)}</span>
+          </div>
+          <div className="ds-summary-card ds-summary-overdue">
+            <span className="ds-summary-label">Overdue</span>
+            <span className="ds-summary-value">{summary.overdue_count || 0}</span>
+          </div>
+        </div>
+      )}
 
-        <div className="ds-table-wrap">
-          {loading ? (
-            <div className="ds-loading">
-              <TransactionLoader message="Loading due sheet..." />
-            </div>
-          ) : parties.length === 0 ? (
-            <div className="ds-empty">No creditors found for the selected filters.</div>
-          ) : (
+      <div className="ds-table-wrap">
+        {loading ? (
+          <div className="ds-loading">
+            <TransactionLoader message="Loading due sheet..." />
+          </div>
+        ) : parties.length === 0 ? (
+          <div className="ds-empty">No creditors found for the selected filters.</div>
+        ) : (
+          <div className="table-scroll">
             <table className="ds-table">
               <thead>
                 <tr>
@@ -337,24 +365,31 @@ const DueSheet = () => {
                 })}
               </tbody>
             </table>
-          )}
-        </div>
-
-        {pagination && pagination.totalPages > 1 && (
-          <div className="ds-pagination-wrap">
-            <Pagination
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={setPage}
-              limit={pagination.limit}
-              onLimitChange={setLimit}
-            />
           </div>
         )}
       </div>
-    </Layout>
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="ds-pagination-wrap">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            totalRecords={pagination.totalRecords}
+            showTotalRecords
+          />
+        </div>
+      )}
+    </div>
   );
-};
+
+  return inner;
+}
+
+const DueSheet = () => (
+  <Layout>
+    <DueSheetPanel embedded={false} />
+  </Layout>
+);
 
 export default DueSheet;
-

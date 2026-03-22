@@ -22,8 +22,11 @@
 
 /* Parties List Page */
 .parties-page {
-  max-width: 1400px;
+  width: 100%;
+  max-width: var(--app-readable, min(100%, 1680px));
   margin: 0 auto;
+  padding: 0 clamp(8px, 1.5vw, 12px);
+  box-sizing: border-box;
 }
 
 .parties-header {

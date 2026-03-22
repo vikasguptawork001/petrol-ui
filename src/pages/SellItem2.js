@@ -20,7 +20,9 @@ import {
   resetForm,
   clearMessages
 } from '../store/slices/sellItem2Slice';
+import Layout from '../components/Layout';
 import './SellItem2.css';
+import '../styles/petrolpump-theme.css';
 
 // Utility function to convert number to words
 const numberToWords = (num) => {
@@ -238,6 +240,7 @@ const SellItem2 = () => {
   }, [error, successMessage, dispatch]);
   
   return (
+    <Layout>
     <div className="sell-item2-container">
       {/* Header */}
       <div className="sell-item2-header">
@@ -664,6 +667,7 @@ const SellItem2 = () => {
         )}
       </div>
     </div>
+    </Layout>
   );
 };
 
