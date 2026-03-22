@@ -61,8 +61,8 @@ const Dashboard = () => {
   const [dueDateEditingId, setDueDateEditingId] = useState(null);
   const [dueDateEditingValue, setDueDateEditingValue] = useState('');
   const [dueDateSaving, setDueDateSaving] = useState(false);
-  const [homeTab, setHomeTab] = useState('items');
-
+  // const [homeTab, setHomeTab] = useState('items');
+  const homeTab = 'items';
   // Fetch items only on mount (not when page/limit changes - those are handled client-side)
   useEffect(() => {
     fetchItems();
