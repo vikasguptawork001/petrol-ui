@@ -320,10 +320,20 @@ const AddItem = () => {
     try {
       for (const item of selectedItems) {
         try {
+          const sale_rate = parseFloat(item.sale_rate) || 0;
+          const purchase_rate = parseFloat(item.purchase_rate) || 0;
+          const min_sale_rate = item.min_sale_rate != null && item.min_sale_rate !== '' && !isNaN(parseFloat(item.min_sale_rate)) && parseFloat(item.min_sale_rate) >= 0 ? parseFloat(item.min_sale_rate) : null;
+          
+          if (sale_rate > 0 && min_sale_rate !== null && sale_rate < min_sale_rate) {
+            toast.error(`Sale rate for ${item.product_name} cannot be less than minimum sale rate (₹${min_sale_rate.toFixed(2)})`);
+            setIsSaving(false);
+            return;
+          }
+
           const payload = {
-            sale_rate: parseFloat(item.sale_rate) || 0,
-            purchase_rate: parseFloat(item.purchase_rate) || 0,
-            min_sale_rate: item.min_sale_rate != null && item.min_sale_rate !== '' && !isNaN(parseFloat(item.min_sale_rate)) && parseFloat(item.min_sale_rate) >= 0 ? parseFloat(item.min_sale_rate) : null
+            sale_rate,
+            purchase_rate,
+            min_sale_rate
           };
           await apiClient.patch(`${config.api.items}/${item.item_id}`, payload);
           success++;
@@ -354,6 +364,14 @@ const AddItem = () => {
       }
       if (!item.quantity || item.quantity <= 0) {
         toast.error(`Quantity must be greater than 0 for ${item.product_name}`);
+        return;
+      }
+
+      const sale_rate = parseFloat(item.sale_rate) || 0;
+      const min_sale_rate = item.min_sale_rate != null && item.min_sale_rate !== '' ? parseFloat(item.min_sale_rate) : null;
+      if (sale_rate > 0 && min_sale_rate !== null && sale_rate < min_sale_rate) {
+        toast.error(`Sale rate for ${item.product_name} cannot be less than minimum sale rate (₹${min_sale_rate.toFixed(2)})`);
+        setIsSubmittingPurchase(false);
         return;
       }
     }
@@ -441,6 +459,11 @@ const AddItem = () => {
       if (!window.confirm('Sale rate is lower than purchase rate. Continue?')) {
         return;
       }
+    }
+
+    if (newItem.sale_rate && newItem.min_sale_rate && parseFloat(newItem.sale_rate) < parseFloat(newItem.min_sale_rate)) {
+      toast.error('Sale rate cannot be less than minimum sale rate');
+      return;
     }
 
     setIsAddingNewItem(true);

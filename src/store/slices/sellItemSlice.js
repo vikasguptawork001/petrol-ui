@@ -246,7 +246,7 @@ const initialState = {
   previewDirty: true,
   
   // Payment state
-  paymentStatus: 'partially_paid', // Default to partial payment
+  paymentStatus: 'fully_paid', // Changed to fully_paid for simplified workflow
   paidAmount: 0,
   
   // GST state

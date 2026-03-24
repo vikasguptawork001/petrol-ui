@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { DueSheetPanel } from './DueSheet';
 import { NozzleReadingPanel } from './NozzleReading';
@@ -61,8 +61,8 @@ const Dashboard = () => {
   const [dueDateEditingId, setDueDateEditingId] = useState(null);
   const [dueDateEditingValue, setDueDateEditingValue] = useState('');
   const [dueDateSaving, setDueDateSaving] = useState(false);
-  // const [homeTab, setHomeTab] = useState('items');
-  const homeTab = 'items';
+  const [searchParams] = useSearchParams();
+  const homeTab = searchParams.get('tab') || 'items';
   // Fetch items only on mount (not when page/limit changes - those are handled client-side)
   useEffect(() => {
     fetchItems();
@@ -586,8 +586,15 @@ const Dashboard = () => {
     // Validate sale_rate >= purchase_rate (check both current and original values)
     const finalSaleRate = editFormData.sale_rate !== undefined ? editFormData.sale_rate : originalItemData.sale_rate;
     const finalPurchaseRate = editFormData.purchase_rate !== undefined ? editFormData.purchase_rate : originalItemData.purchase_rate;
+    const finalMinSaleRate = editFormData.min_sale_rate !== undefined ? editFormData.min_sale_rate : originalItemData.min_sale_rate;
+
     if (finalSaleRate > 0 && finalPurchaseRate > 0 && parseFloat(finalSaleRate) < parseFloat(finalPurchaseRate)) {
       toast.error('Sale rate must be greater than or equal to purchase rate');
+      return;
+    }
+
+    if (finalSaleRate > 0 && finalMinSaleRate > 0 && parseFloat(finalSaleRate) < parseFloat(finalMinSaleRate)) {
+      toast.error(`Sale rate cannot be less than minimum sale rate (₹${parseFloat(finalMinSaleRate).toFixed(2)})`);
       return;
     }
 
@@ -1416,6 +1423,27 @@ const Dashboard = () => {
                       placeholder="Optional floor price"
                     />
                     <small style={{ color: '#666', fontSize: '12px' }}>Floor price for sales (optional)</small>
+                    {editFormData.sale_rate > 0 && editFormData.min_sale_rate > 0 && parseFloat(editFormData.sale_rate) < parseFloat(editFormData.min_sale_rate) && (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        marginTop: '6px',
+                        padding: '8px 12px',
+                        backgroundColor: '#fff5f5',
+                        borderRadius: '6px',
+                        border: '1px solid #fecaca'
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc3545" strokeWidth="2" style={{ flexShrink: 0 }}>
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                          <line x1="12" y1="9" x2="12" y2="13"/>
+                          <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <small style={{ color: '#dc3545', fontSize: '13px', fontWeight: '500' }}>
+                          Warning: Sale rate (₹{parseFloat(editFormData.sale_rate).toFixed(2)}) is below the minimum sale rate (₹{parseFloat(editFormData.min_sale_rate).toFixed(2)})
+                        </small>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="form-row">

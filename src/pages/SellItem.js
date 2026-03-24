@@ -315,6 +315,25 @@ const SellItem = () => {
       toast.error(`❌ Invalid quantity for: ${invalidItems.join(', ')}. Quantity must be greater than 0`);
       return;
     }
+
+    // Additional validation for min_sale_rate
+    const belowMinRateItems = [];
+    for (const item of selectedItems) {
+      const saleRate = parseFloat(item.sale_rate) || 0;
+      const minRate = item.min_sale_rate != null ? parseFloat(item.min_sale_rate) : null;
+      const discount = parseFloat(item.discount || 0);
+      const quantity = parseInt(item.quantity) || 1;
+      const effectiveRate = saleRate - (discount / quantity);
+
+      if (minRate !== null && effectiveRate < minRate) {
+        belowMinRateItems.push(`${item.product_name} (Rate: ₹${effectiveRate.toFixed(2)} < Min: ₹${minRate.toFixed(2)})`);
+      }
+    }
+
+    if (belowMinRateItems.length > 0) {
+      toast.error(`❌ Price after discount cannot be less than minimum sale rate for: ${belowMinRateItems.join(', ')}`);
+      return;
+    }
     
     if (hasStockIssue) {
       return;
@@ -1104,36 +1123,43 @@ const SellItem = () => {
                   marginBottom: '80px'
                 }}
               >
-            {/* Seller Info Only */}
-            <div style={{ marginBottom: '25px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-              <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: '600', color: '#2c3e50' }}>Customer Information</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px', fontSize: '14px' }}>
-                <div>
-                  <strong>Name:</strong> {previewData.seller?.party_name || '-'}
+            {/* Seller Info Compact */}
+            <div style={{ 
+              marginBottom: '15px', 
+              padding: '12px 16px', 
+              backgroundColor: '#f8f9fa', 
+              borderLeft: '4px solid #3498db',
+              borderRadius: '4px', 
+              border: '1px solid #dee2e6',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2c3e50' }}>{previewData.seller?.party_name || '-'}</div>
+                <div style={{ fontSize: '13px', color: '#34495e', display: 'flex', gap: '15px' }}>
+                  {previewData.billNumber && (
+                    <span><strong>Invoice No.:</strong> {previewData.billNumber}</span>
+                  )}
+                  <span><strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}</span>
                 </div>
-                {previewData.seller?.address && (
-                  <div>
-                    <strong>Address:</strong> {previewData.seller.address}
-                  </div>
-                )}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', fontSize: '13px', color: '#555' }}>
                 {previewData.seller?.mobile_number && (
-                  <div>
-                    <strong>Mobile No.:</strong> {previewData.seller.mobile_number}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#7f8c8d' }}>📱</span> {previewData.seller.mobile_number}
                   </div>
                 )}
                 {previewData.seller?.gst_number && (
-                  <div>
-                    <strong>GSTIN / UIN:</strong> {previewData.seller.gst_number}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid #ccc', paddingLeft: '15px' }}>
+                    <span style={{ color: '#7f8c8d' }}>GSTIN:</span> <span style={{ fontFamily: 'monospace' }}>{previewData.seller.gst_number}</span>
                   </div>
                 )}
-                {previewData.billNumber && (
-                  <div>
-                    <strong>Invoice No.:</strong> {previewData.billNumber}
+                {previewData.seller?.address && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid #ccc', paddingLeft: '15px', flex: 1 }}>
+                    <span style={{ color: '#7f8c8d' }}>📍</span> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{previewData.seller.address}</span>
                   </div>
                 )}
-                <div>
-                  <strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}
-                </div>
               </div>
             </div>
 
@@ -1228,7 +1254,14 @@ const SellItem = () => {
                             step="0.01"
                             min="0"
                             value={item.sale_rate ?? ''}
-                            onChange={(e) => dispatch(updatePreviewItemSaleRate({ itemId: item.item_id, saleRate: e.target.value }))}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const rate = parseFloat(val);
+                              if (!isNaN(rate) && item.min_sale_rate != null && rate < item.min_sale_rate) {
+                                toast.warning(`Sale rate cannot be less than minimum sale rate (₹${parseFloat(item.min_sale_rate).toFixed(2)})`);
+                              }
+                              dispatch(updatePreviewItemSaleRate({ itemId: item.item_id, saleRate: val }));
+                            }}
                             onBlur={() => { if (handlePreviewRef.current) handlePreviewRef.current(); }}
                             style={{ width: '72px', fontSize: '11px', textAlign: 'right', padding: '4px' }}
                           />
@@ -1270,7 +1303,14 @@ const SellItem = () => {
                                 dispatch(updatePreviewItemDiscount({ itemId: item.item_id, discount: 0, discountType: 'amount', discountPercentage: null }));
                                 return;
                               }
-                              dispatch(updatePreviewItemDiscount({ itemId: item.item_id, discount: Math.max(0, parseFloat(inputVal)) * q, discountType: 'amount', discountPercentage: null }));
+                              const val = parseFloat(inputVal);
+                              const saleRate = parseFloat(item.sale_rate) || 0;
+                              const effectiveRate = saleRate - val;
+                              if (item.min_sale_rate != null && effectiveRate < item.min_sale_rate) {
+                                toast.error(`Discounted price (₹${effectiveRate.toFixed(2)}) cannot be less than minimum sale rate (₹${parseFloat(item.min_sale_rate).toFixed(2)})`);
+                                return;
+                              }
+                              dispatch(updatePreviewItemDiscount({ itemId: item.item_id, discount: Math.max(0, val) * q, discountType: 'amount', discountPercentage: null }));
                             }}
                             style={{ width: '56px', fontSize: '11px', textAlign: 'center', padding: '4px' }}
                             placeholder="₹/qty"
@@ -1430,397 +1470,34 @@ const SellItem = () => {
                 </tr>
                       <tr style={{ backgroundColor: balanceDue > 0 ? '#f8d7da' : '#d4edda' }}>
                         <td colSpan={previewData.withGst ? 8 : 7} style={{ textAlign: 'right', padding: '8px', border: '1px solid #ddd', fontSize: '12px', fontWeight: '700' }}>
-                    Balance Due:
-                  </td>
+                          Balance Due:
+                        </td>
                         <td style={{ textAlign: 'right', padding: '8px', border: '1px solid #ddd', fontSize: '12px', fontWeight: '700' }}>
-                    ₹{balanceDue.toFixed(2)}
-                  </td>
+                          ₹{balanceDue.toFixed(2)}
+                        </td>
                         {!previewData.transactionId && <td></td>}
-                </tr>
+                      </tr>
+                      {/* Amount in Words */}
+                      <tr>
+                        <td colSpan={previewData.withGst ? 10 : 9} style={{ 
+                          padding: '12px 15px', 
+                          border: '1px solid #ddd', 
+                          backgroundColor: '#f8f9fa',
+                          fontSize: '13px',
+                          color: '#2c3e50',
+                          textAlign: 'left'
+                        }}>
+                          <strong style={{ textTransform: 'uppercase', fontSize: '11px', color: '#7f8c8d', marginRight: '8px' }}>Amount in Words:</strong>
+                          <span style={{ fontWeight: '600', textTransform: 'capitalize' }}>{numberToWords(finalGrandTotal)} Only</span>
+                        </td>
+                      </tr>
                     </>
                   );
                 })()}
               </tfoot>
             </table>
             
-            {/* White Container for Amount in Words and Payment Configuration */}
-            <div style={{ 
-              marginTop: '20px', 
-              padding: '20px',
-              paddingBottom: '50px',
-              marginBottom: '50px',
-              backgroundColor: '#ffffff', 
-              borderRadius: '12px', 
-              border: '1px solid #e1e8ed',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
-            }}>
-              {/* Amount in Words */}
-              <div style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '2px solid #e9ecef' }}>
-                <p style={{ margin: '0', fontSize: '14px', fontWeight: '600', color: '#212529' }}>
-                  <strong>Amount in Words:</strong> {numberToWords(previewData.grandTotal || previewData.total || 0)}
-                </p>
-              </div>
-
-            {!previewData.transactionId && (
-              <div className="payment-section" style={{ marginTop: '0', width: '100%' }}>
-                <div style={{
-                  marginBottom: '15px',
-                  paddingBottom: '10px',
-                  borderBottom: '2px solid #e9ecef'
-                }}>
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#212529',
-                    letterSpacing: '-0.3px'
-                  }}>
-                    Payment Configuration
-                  </h3>
-                </div>
-
-                {/* Professional Payment Controls Row */}
-                <div className="payment-controls-grid" style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto',
-                  gap: '15px',
-                  alignItems: 'center',
-                  padding: '15px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '8px',
-                  border: '1px solid #e0e0e0',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                  width: '100%'
-                }}>
-                  {/* Previous Balance Payment */}
-                  {previewData.seller && previewData.seller.balance_amount > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 15px',
-                      backgroundColor: '#fff8e1',
-                      borderRadius: '8px',
-                      border: '1px solid #ffc107',
-                      minWidth: '180px',
-                      height: '42px'
-                    }}>
-                      <span style={{ fontSize: '18px', lineHeight: 1 }}>⚠️</span>
-                      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.3' }}>
-                        <div style={{ fontWeight: '600', fontSize: '12px', color: '#856404', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Previous Balance
-                        </div>
-                        <div style={{ fontSize: '16px', fontWeight: '700', color: '#e65100', marginTop: '2px' }}>
-                          ₹{parseFloat(previewData.seller?.balance_amount || 0).toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payment Status Radio Buttons */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '10px',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 18px',
-                      border: paymentStatus === 'fully_paid' ? '2px solid #28a745' : '1px solid #dee2e6',
-                      borderRadius: '8px',
-                      backgroundColor: paymentStatus === 'fully_paid' ? '#d4edda' : '#ffffff',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      minWidth: '130px',
-                      justifyContent: 'center',
-                      boxShadow: paymentStatus === 'fully_paid' ? '0 2px 4px rgba(40, 167, 69, 0.2)' : 'none'
-                    }}>
-                      <input
-                        type="radio"
-                        value="fully_paid"
-                        checked={paymentStatus === 'fully_paid'}
-                        onChange={async (e) => {
-                          if (actionInProgress) return;
-                          setActionInProgress(true);
-                          try {
-                            const newStatus = e.target.value;
-                            dispatch(setPaymentStatus(newStatus));
-                            await handlePreview(null, { paymentStatus: newStatus });
-                          } finally {
-                            setActionInProgress(false);
-                          }
-                        }}
-                        disabled={actionInProgress}
-                        style={{ margin: 0, accentColor: '#28a745' }}
-                      />
-                      <span style={{ 
-                        fontWeight: '600', 
-                        color: paymentStatus === 'fully_paid' ? '#155724' : '#6c757d', 
-                        fontSize: '14px',
-                        letterSpacing: '0.2px'
-                      }}>
-                        Fully Paid
-                      </span>
-                    </label>
-
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 18px',
-                      border: paymentStatus === 'partially_paid' ? '2px solid #ffc107' : '1px solid #dee2e6',
-                      borderRadius: '8px',
-                      backgroundColor: paymentStatus === 'partially_paid' ? '#fff8e1' : '#ffffff',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      minWidth: '130px',
-                      justifyContent: 'center',
-                      boxShadow: paymentStatus === 'partially_paid' ? '0 2px 4px rgba(255, 193, 7, 0.2)' : 'none'
-                    }}>
-                      <input
-                        type="radio"
-                        value="partially_paid"
-                        checked={paymentStatus === 'partially_paid'}
-                        onChange={async (e) => {
-                          if (actionInProgress) return;
-                          setActionInProgress(true);
-                          try {
-                            const newStatus = e.target.value;
-                            dispatch(setPaymentStatus(newStatus));
-                            // ALWAYS set paidAmount to 0 when switching to partially_paid
-                            if (newStatus === 'partially_paid') {
-                              dispatch(setPaidAmount(0));
-                              await handlePreview(null, { paymentStatus: newStatus, paidAmount: 0 });
-                            } else {
-                              await handlePreview(null, { paymentStatus: newStatus });
-                            }
-                          } finally {
-                            setActionInProgress(false);
-                          }
-                        }}
-                        disabled={actionInProgress}
-                        style={{ margin: 0, accentColor: '#ffc107' }}
-                      />
-                      <span style={{ 
-                        fontWeight: '600', 
-                        color: paymentStatus === 'partially_paid' ? '#856404' : '#6c757d', 
-                        fontSize: '14px',
-                        letterSpacing: '0.2px'
-                      }}>
-                        Partially Paid
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Amount Paid Now & Due Date (required for partial payment) */}
-                  {paymentStatus === 'partially_paid' && (
-                    <>
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '5px',
-                      minWidth: '200px'
-                    }}>
-                      <label style={{ 
-                        fontSize: '11px', 
-                        fontWeight: '600', 
-                        color: '#495057',
-                        margin: 0,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        Amount Paid
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <span style={{
-                          position: 'absolute',
-                          left: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: '#6c757d',
-                          fontWeight: '600',
-                          fontSize: '13px'
-                        }}>₹</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max={previewData.grandTotal || previewData.total}
-                          value={amountPaidLocalValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === '') {
-                              setAmountPaidLocalValue('');
-                              dispatch(setPaidAmount(0));
-                              if (paidAmountDebounceRef.current) {
-                                clearTimeout(paidAmountDebounceRef.current);
-                                paidAmountDebounceRef.current = null;
-                              }
-                              return;
-                            }
-                            if (!/^\d+$/.test(val)) return;
-                            if (val.length > 1 && val.startsWith('0')) return;
-                            setAmountPaidLocalValue(val);
-                            if (paidAmountDebounceRef.current) clearTimeout(paidAmountDebounceRef.current);
-                            paidAmountDebounceRef.current = setTimeout(() => {
-                              const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
-                              const amt = Math.min(Math.max(0, parseInt(val) || 0), maxAmt);
-                              dispatch(setPaidAmount(amt));
-                              setAmountPaidLocalValue(amt === 0 ? '' : String(amt));
-                              handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: amt });
-                              paidAmountDebounceRef.current = null;
-                            }, 1000);
-                          }}
-                          onKeyDown={(e) => {
-                            if (['+', '-', '*', '/', 'e', 'E', '.', ','].includes(e.key)) {
-                              e.preventDefault();
-                            }
-                            if (e.key === 'Enter') {
-                              e.target.blur();
-                            }
-                          }}
-                          onBlur={(e) => {
-                            e.target.style.borderColor = '#ced4da';
-                            e.target.style.boxShadow = 'none';
-                            const parsed = parseInt(amountPaidLocalValue, 10);
-                            if (amountPaidLocalValue === '' || isNaN(parsed)) return;
-                            const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
-                            const finalAmount = Math.min(Math.max(0, parsed), maxAmt);
-                            if (finalAmount !== paidAmount) dispatch(setPaidAmount(finalAmount));
-                            setAmountPaidLocalValue(finalAmount === 0 ? '' : String(finalAmount));
-                          }}
-                          disabled={actionInProgress}
-                          style={{
-                            padding: '9px 10px 9px 28px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            border: '1px solid #ced4da',
-                            borderRadius: '8px',
-                            backgroundColor: actionInProgress ? '#f8f9fa' : '#ffffff',
-                            width: '100%',
-                            color: '#212529',
-                            transition: 'border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out'
-                          }}
-                          placeholder="0.00"
-                          onFocus={(e) => {
-                            e.target.style.borderColor = '#007bff';
-                            e.target.style.boxShadow = '0 0 0 0.2rem rgba(0, 123, 255, 0.25)';
-                          }}
-                        />
-                      </div>
-                      <div style={{
-                        fontSize: '10px',
-                        color: '#6c757d',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginTop: '2px'
-                      }}>
-                        <span>Total: <strong style={{ color: '#212529' }}>₹{(() => {
-                          const grandTotal = previewData.grandTotal || previewData.total || 0;
-                          return Math.round(grandTotal).toFixed(2);
-                        })()}</strong></span>
-                        {paidAmount > 0 && (
-                          <span style={{ color: '#dc3545', fontWeight: '600' }}>
-                            Due: ₹{(() => {
-                              const grandTotal = previewData.grandTotal || previewData.total || 0;
-                              const roundedGrandTotal = Math.round(grandTotal);
-                              const roundedPaidAmount = Math.round(paidAmount || 0);
-                              return Math.max(0, roundedGrandTotal - roundedPaidAmount).toFixed(2);
-                            })()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '180px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#495057', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Due Date <span style={{ color: '#dc3545' }}>*</span>
-                      </label>
-                      <input
-                        type="date"
-                        value={dueDateForPartial || ''}
-                        onChange={(e) => setDueDateForPartial(e.target.value)}
-                        required
-                        style={{ padding: '9px 10px', fontSize: '14px', border: '1px solid #ced4da', borderRadius: '8px', width: '100%' }}
-                      />
-                    </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Action Buttons at Bottom */}
-            {!previewData.transactionId && (
-              <div style={{ 
-                display: 'flex', 
-                gap: '15px', 
-                marginTop: '20px',
-                marginBottom: '30px',
-                paddingTop: '15px',
-                paddingBottom: '20px',
-                borderTop: '2px solid #e9ecef',
-                width: '100%'
-              }}>
-                <button 
-                  onClick={handleBackToEditClick}
-                  className="btn btn-secondary"
-                  disabled={isProcessing}
-                  aria-disabled={isProcessing}
-                  aria-label="Go back to edit the bill"
-                  tabIndex={isProcessing ? -1 : 0}
-                  style={{
-                    flex: '1 1 auto',
-                    padding: '12px 28px',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    minWidth: '150px'
-                  }}
-                >
-                  Back to Edit
-                </button>
-                <button 
-                  onClick={handleSubmitClick}
-                  className="btn btn-success"
-                  disabled={isProcessing || previewStale}
-                  aria-disabled={isProcessing || previewStale}
-                  aria-label={previewStale ? 'Please generate bill preview first' : (loading.submit ? 'Processing sale transaction' : 'Confirm and submit sale')}
-                  tabIndex={(isProcessing || previewStale) ? -1 : 0}
-                  style={{
-                    flex: '1 1 auto',
-                    padding: '12px 28px',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    minWidth: '150px',
-                    opacity: previewStale ? 0.6 : 1,
-                    cursor: previewStale ? 'not-allowed' : 'pointer'
-                  }}
-                  title={previewStale ? 'Please generate bill preview first. Changes detected - preview needs to be regenerated.' : ''}
-                >
-                  {loading.submit ? (
-                    <>
-                      <div style={{ 
-                        display: 'inline-block',
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                        borderTop: '2px solid #fff',
-                        borderRadius: '50%',
-                        animation: 'spin 0.8s linear infinite',
-                        marginRight: '8px'
-                      }}></div>
-                      Processing...
-                    </>
-                  ) : previewStale ? (
-                    'Generate Preview First'
-                  ) : (
-                    'Confirm Sale'
-                  )}
-                </button>
-              </div>
-            )}
-            </div>
+            {/* Bottom Section cleanup: Amount in words moved to table footer, bottom action buttons removed to rely on right sidebar */}
             
             {previewData.transactionId && (
               <div className="payment-section" style={{
@@ -2029,28 +1706,32 @@ const SellItem = () => {
             <aside className="sell-item-right-panel">
               <div className="right-panel-section">
                 <div className="right-panel-label">Actions</div>
-                <button onClick={isTransactionComplete ? handleNewSaleClick : handleBackToEditClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing}>
-                  {isTransactionComplete ? 'New Sale' : 'Back to Edit'}
-                </button>
-                {isTransactionComplete && (
-                  <>
+                {isTransactionComplete ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button onClick={handleNewSaleClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing}>
+                      New Sale
+                    </button>
                     <button onClick={handlePrintClick} className="btn btn-primary right-panel-btn" disabled={printDisabled || printClicked || isProcessing}>
                       {printClicked ? 'Printing...' : 'Print'}
                     </button>
                     <button onClick={handleDownloadPDFClick} className="btn btn-success right-panel-btn" disabled={!previewData.transactionId || isProcessing}>
                       Download PDF
                     </button>
-                  </>
-                )}
-                {!isTransactionComplete && (
-                  <>
-                    <button onClick={async () => { if (isProcessing || !previewStale) return; setActionInProgress(true); try { await handlePreview(); toast.success('✅ Bill preview updated'); } finally { setActionInProgress(false); } }} className="btn btn-primary right-panel-btn" disabled={isProcessing || !previewStale}>
-                      {previewStale ? 'Update Preview' : 'Preview Updated'}
-                    </button>
-                    <button onClick={handleSubmitClick} className="btn btn-success right-panel-btn" disabled={isProcessing || previewStale}>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button onClick={handleBackToEditClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing} style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}>
+                        Back
+                      </button>
+                      <button onClick={async () => { if (isProcessing || !previewStale) return; setActionInProgress(true); try { await handlePreview(); toast.success('✅ Bill preview updated'); } finally { setActionInProgress(false); } }} className="btn btn-primary right-panel-btn" disabled={isProcessing || !previewStale} style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}>
+                        {previewStale ? 'Update' : 'Updated'}
+                      </button>
+                    </div>
+                    <button onClick={handleSubmitClick} className="btn btn-success right-panel-btn" disabled={isProcessing || previewStale} style={{ margin: 0 }}>
                       {loading.submit ? 'Processing...' : previewStale ? 'Generate Preview First' : 'Confirm Sale'}
                     </button>
-                  </>
+                  </div>
                 )}
                 {isTransactionComplete && (
                   <div className="right-panel-badge success">Sale Confirmed</div>
@@ -2071,56 +1752,60 @@ const SellItem = () => {
                   </div>
                   {paymentStatus === 'partially_paid' && (
                     <>
-                    <div className="right-panel-section">
-                      <div className="right-panel-label">Amount Paid (₹)</div>
-                      <input
-                        type="number"
-                        className="right-panel-input"
-                        min="0"
-                        max={previewData.grandTotal || previewData.total}
-                        value={amountPaidLocalValue}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === '') {
-                            setAmountPaidLocalValue('');
-                            dispatch(setPaidAmount(0));
-                            if (paidAmountDebounceRef.current) {
-                              clearTimeout(paidAmountDebounceRef.current);
-                              paidAmountDebounceRef.current = null;
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                      <div className="right-panel-section" style={{ flex: 1, marginBottom: 0 }}>
+                        <div className="right-panel-label" style={{ fontSize: '12px' }}>Amount (₹)</div>
+                        <input
+                          type="number"
+                          className="right-panel-input"
+                          min="0"
+                          max={previewData.grandTotal || previewData.total}
+                          value={amountPaidLocalValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setAmountPaidLocalValue('');
+                              dispatch(setPaidAmount(0));
+                              if (paidAmountDebounceRef.current) {
+                                clearTimeout(paidAmountDebounceRef.current);
+                                paidAmountDebounceRef.current = null;
+                              }
+                              return;
                             }
-                            return;
-                          }
-                          if (!/^\d+$/.test(val)) return;
-                          setAmountPaidLocalValue(val);
-                          if (paidAmountDebounceRef.current) clearTimeout(paidAmountDebounceRef.current);
-                          paidAmountDebounceRef.current = setTimeout(() => {
+                            if (!/^\d+$/.test(val)) return;
+                            setAmountPaidLocalValue(val);
+                            if (paidAmountDebounceRef.current) clearTimeout(paidAmountDebounceRef.current);
+                            paidAmountDebounceRef.current = setTimeout(() => {
+                              const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
+                              const amt = Math.min(Math.max(0, parseInt(val) || 0), maxAmt);
+                              dispatch(setPaidAmount(amt));
+                              setAmountPaidLocalValue(amt === 0 ? '' : String(amt));
+                              handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: amt });
+                              paidAmountDebounceRef.current = null;
+                            }, 1000);
+                          }}
+                          onBlur={() => {
+                            const parsed = parseInt(amountPaidLocalValue, 10);
+                            if (amountPaidLocalValue === '' || isNaN(parsed)) return;
                             const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
-                            const amt = Math.min(Math.max(0, parseInt(val) || 0), maxAmt);
-                            dispatch(setPaidAmount(amt));
-                            setAmountPaidLocalValue(amt === 0 ? '' : String(amt));
-                            handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: amt });
-                            paidAmountDebounceRef.current = null;
-                          }, 1000);
-                        }}
-                        onBlur={() => {
-                          const parsed = parseInt(amountPaidLocalValue, 10);
-                          if (amountPaidLocalValue === '' || isNaN(parsed)) return;
-                          const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
-                          const finalAmount = Math.min(Math.max(0, parsed), maxAmt);
-                          if (finalAmount !== paidAmount) dispatch(setPaidAmount(finalAmount));
-                          setAmountPaidLocalValue(finalAmount === 0 ? '' : String(finalAmount));
-                        }}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="right-panel-section">
-                      <div className="right-panel-label">Due Date <span style={{ color: '#dc3545' }}>*</span></div>
-                      <input
-                        type="date"
-                        className="right-panel-input"
-                        value={dueDateForPartial || ''}
-                        onChange={(e) => setDueDateForPartial(e.target.value)}
-                      />
+                            const finalAmount = Math.min(Math.max(0, parsed), maxAmt);
+                            if (finalAmount !== paidAmount) dispatch(setPaidAmount(finalAmount));
+                            setAmountPaidLocalValue(finalAmount === 0 ? '' : String(finalAmount));
+                          }}
+                          placeholder="0"
+                          style={{ padding: '6px', fontSize: '13px' }}
+                        />
+                      </div>
+                      <div className="right-panel-section" style={{ flex: 1, marginBottom: 0 }}>
+                        <div className="right-panel-label" style={{ fontSize: '12px' }}>Due Date <span style={{ color: '#dc3545' }}>*</span></div>
+                        <input
+                          type="date"
+                          className="right-panel-input"
+                          value={dueDateForPartial || ''}
+                          onChange={(e) => setDueDateForPartial(e.target.value)}
+                          style={{ padding: '6px', fontSize: '13px' }}
+                        />
+                      </div>
                     </div>
                     </>
                   )}
@@ -2157,19 +1842,19 @@ const SellItem = () => {
       <div className="sell-item">
         <div className="sell-item-wrapper">
           <div className="sell-item-main">
-            <div className="pp-page-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '24px' }}>⛽</span>
-                <h2>Create New Sale</h2>
+            <div className="pp-page-header" style={{ padding: '10px 20px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>⛽</span>
+                <h2 style={{ margin: 0, fontSize: '20px' }}>Create New Sale</h2>
               </div>
-              <p>Process a new customer transaction and generate fuel bills</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '13px' }}>Process a new customer transaction and generate fuel bills</p>
             </div>
 
             {/* Sticky Header Section - Professional Design */}
             <div className="card sticky-search-section">
-          {/* Attendant & Nozzle at the beginning — recorded with sale and in reports */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #e2e8f0' }}>
-            <div className="form-group" style={{ marginBottom: 0, minWidth: '180px' }}>
+          {/* Attendant, Nozzle & Seller Selection in a single row */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start', marginBottom: '5px' }}>
+            <div className="form-group" style={{ marginBottom: '15px', flex: '1 1 180px', maxWidth: '300px' }}>
               <label>Attendant</label>
               <select
                 value={selectedAttendantId || ''}
@@ -2182,7 +1867,7 @@ const SellItem = () => {
                 ))}
               </select>
             </div>
-            <div className="form-group" style={{ marginBottom: 0, minWidth: '160px' }}>
+            <div className="form-group" style={{ marginBottom: '15px', flex: '1 1 160px', maxWidth: '300px' }}>
               <label>Nozzle</label>
               <select
                 value={selectedNozzleId || ''}
@@ -2195,12 +1880,18 @@ const SellItem = () => {
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Seller Selection */}
-          <div className="form-group">
-            <label>Select Seller Party *</label>
-            <div className="search-wrapper" style={{ position: 'relative' }}>
+            {/* Seller Selection */}
+            <div className="form-group" style={{ marginBottom: '15px', flex: '3 1 300px' }}>
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Select Seller Party *</span>
+                {sellerInfo && (
+                  <span style={{ fontSize: '13px', color: '#e65100', fontWeight: 'bold' }}>
+                    Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}
+                  </span>
+                )}
+              </label>
+              <div className="search-wrapper" style={{ position: 'relative' }}>
               <input
                 ref={sellerSearchInputRef}
                 type="text"
@@ -2304,26 +1995,47 @@ const SellItem = () => {
                 No seller parties found. Please <Link to="/add-seller-party">add a seller party</Link> first.
               </p>
             ) : null}
+            </div>
           </div>
 
-          {/* Seller Info Display */}
+          {/* Seller Info Display Compact */}
           {sellerInfo && (
-            <div className="seller-info" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-              gap: '15px',
-              marginTop: '15px',
-              padding: '15px',
-              backgroundColor: '#f9f9f9',
-              borderRadius: '5px'
+            <div className="seller-info-compact" style={{ 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              gap: '12px',
+              marginTop: '5px',
+              padding: '6px 12px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '6px',
+              border: '1px solid #e2e8f0',
+              fontSize: '13px',
+              alignItems: 'center',
+              color: '#4a5568'
             }}>
-              <div><strong>Name:</strong> {sellerInfo.party_name}</div>
-              <div><strong>Mobile:</strong> {sellerInfo.mobile_number || 'N/A'}</div>
-              <div><strong>Address:</strong> {sellerInfo.address || 'N/A'}</div>
-              {sellerInfo.gst_number && <div><strong>GST Number:</strong> {sellerInfo.gst_number}</div>}
-              <div><strong>Balance Amount:</strong> ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}</div>
-              <div><strong>Paid Amount:</strong> ₹{parseFloat(sellerInfo.paid_amount || 0).toFixed(2)}</div>
-              <div><strong>Due Date:</strong> {sellerInfo.due_date ? new Date(sellerInfo.due_date).toLocaleDateString('en-IN') : 'Not set'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <strong style={{ color: '#2d3748', fontSize: '14px' }}>{sellerInfo.party_name}</strong>
+              </div>
+              {sellerInfo.mobile_number && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid #cbd5e0', paddingLeft: '12px' }}>
+                  <span style={{ color: '#718096' }}>📱</span> {sellerInfo.mobile_number}
+                </div>
+              )}
+              {sellerInfo.gst_number && (
+                <div style={{ borderLeft: '1px solid #cbd5e0', paddingLeft: '12px' }}>
+                  <span style={{ color: '#718096', fontSize: '12px', marginRight: '4px' }}>GST:</span>
+                  <span style={{ fontFamily: 'monospace' }}>{sellerInfo.gst_number}</span>
+                </div>
+              )}
+              <div style={{ borderLeft: '1px solid #cbd5e0', paddingLeft: '12px', color: parseFloat(sellerInfo.balance_amount || 0) >= 0 ? '#e65100' : '#38a169', fontWeight: 'bold' }}>
+                Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}
+              </div>
+              {sellerInfo.due_date && (
+                <div style={{ borderLeft: '1px solid #cbd5e0', paddingLeft: '12px', color: '#e53e3e' }}>
+                  <span style={{ fontSize: '12px', marginRight: '4px' }}>Due:</span>
+                  {new Date(sellerInfo.due_date).toLocaleDateString('en-IN')}
+                </div>
+              )}
             </div>
           )}
 
@@ -2381,6 +2093,12 @@ const SellItem = () => {
                         const availableQty = item.available_quantity || 0;
                         const quantity = item.quantity === '' ? 0 : parseInt(item.quantity) || 0;
                         const isOverStock = quantity > availableQty;
+                        
+                        const saleRateVal = parseFloat(item.sale_rate || 0);
+                        const discountVal = parseFloat(item.discount || 0);
+                        const effectiveRate = saleRateVal - (quantity > 0 ? (discountVal / quantity) : 0);
+                        const isUnderMinRate = item.min_sale_rate != null && effectiveRate < parseFloat(item.min_sale_rate);
+                        
                         return (
                           <tr key={item.item_id} className={isOverStock ? 'over-stock-row' : ''}>
                             <td style={{ textAlign: 'center', fontWeight: '600', color: '#2c3e50', verticalAlign: 'middle' }}>
@@ -2396,9 +2114,25 @@ const SellItem = () => {
                                 step="0.01"
                                 min="0"
                                 value={item.sale_rate ?? ''}
-                                onChange={(e) => dispatch(updateItemSaleRate({ itemId: item.item_id, saleRate: e.target.value }))}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const rate = parseFloat(val);
+                                  if (!isNaN(rate) && item.min_sale_rate != null && rate < item.min_sale_rate) {
+                                    toast.warning(`Sale rate cannot be less than minimum sale rate (₹${parseFloat(item.min_sale_rate).toFixed(2)})`);
+                                    // We'll allow them to type it but keep the warning visible
+                                  }
+                                  dispatch(updateItemSaleRate({ itemId: item.item_id, saleRate: val }));
+                                }}
                                 onBlur={() => { if (previewDirty && handlePreviewRef.current) handlePreviewRef.current(); }}
-                                style={{ width: '90px', textAlign: 'right', padding: '4px 8px', fontWeight: '600' }}
+                                style={{ 
+                                  width: '90px', 
+                                  textAlign: 'right', 
+                                  padding: '4px 8px', 
+                                  fontWeight: '600',
+                                  border: isUnderMinRate ? '2px solid #dc3545' : '1px solid #ced4da',
+                                  backgroundColor: isUnderMinRate ? '#fff5f5' : 'white',
+                                  borderRadius: '4px'
+                                }}
                               />
                             </td>
                             <td style={{ textAlign: 'center' }}>
@@ -2436,10 +2170,20 @@ const SellItem = () => {
                                   dispatch(updateItemDiscount({ itemId: item.item_id, discount: Math.max(0, v) * quantity, discountType: 'amount', discountPercentage: null }));
                                 }}
                                 className="discount-input"
+                                style={{ 
+                                  border: isUnderMinRate ? '2px solid #dc3545' : '1px solid #ced4da',
+                                  backgroundColor: isUnderMinRate ? '#fff5f5' : 'white',
+                                  borderRadius: '4px'
+                                }}
                                 title="Discount per quantity"
                               />
                               {item.min_sale_rate != null && (
-                                <div style={{ marginTop: '4px', fontSize: '11px', color: '#6c757d' }} title="Minimum sale rate for this product">
+                                <div style={{ 
+                                  marginTop: '4px', 
+                                  fontSize: '11px', 
+                                  color: isUnderMinRate ? '#dc3545' : '#6c757d',
+                                  fontWeight: isUnderMinRate ? 'bold' : 'normal'
+                                }} title="Minimum sale rate for this product">
                                   Min sale rate: ₹{parseFloat(item.min_sale_rate).toFixed(2)}
                                 </div>
                               )}
@@ -2616,33 +2360,7 @@ const SellItem = () => {
                   </table>
                 </div>
 
-                {/* Bottom Action buttons */}
-                <div style={{ 
-                  marginTop: '25px', 
-                  display: 'flex', 
-                  gap: '15px', 
-                  alignItems: 'center',
-                  padding: '18px',
-                  background: '#f8f9fa',
-                  borderRadius: '10px',
-                  border: '1px solid #e1e8ed',
-                  flexWrap: 'wrap'
-                }}>
-                  <button 
-                    onClick={async () => {
-                      if (previewLoading || actionInProgress) return;
-                      if (selectedItems.length === 0) { toast.error('Add at least one item'); return; }
-                      setActionInProgress(true);
-                      try { await handlePreview(); } 
-                      finally { setActionInProgress(false); }
-                    }} 
-                    className="btn btn-primary" 
-                    disabled={previewLoading || actionInProgress || selectedItems.length === 0}
-                    style={{ padding: '12px 28px', fontSize: '15px', fontWeight: '600', minWidth: '180px' }}
-                  >
-                    {previewLoading ? 'Calculating...' : 'Preview Bill'}
-                  </button>
-                </div>
+                {/* Bottom Action buttons removed natively to utilize space smarter and rely on right sidebar Preview option */}
               </div>
             </div>
           )}
