@@ -183,7 +183,7 @@ body {
   border: var(--pp-card-border);
   border-radius: var(--pp-card-radius);
   box-shadow: var(--pp-card-shadow);
-  padding: 20px;
+  padding: 16px;
   position: relative;
   overflow: hidden;
   color: var(--pp-text-primary);
@@ -248,7 +248,7 @@ body {
   border: var(--pp-card-border);
   border-radius: var(--pp-card-radius);
   box-shadow: var(--pp-card-shadow);
-  padding: 18px 20px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -407,42 +407,50 @@ body {
 
 /* ─── Page Header ─── */
 .pp-page-header {
-  background: #0f151f;
-  padding: clamp(16px, 2.2vw, 26px) clamp(18px, 2.8vw, 32px);
-  border-radius: 14px;
-  border-left: 5px solid #f59a30;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  margin-bottom: clamp(16px, 2vw, 24px);
+  background: var(--pp-bg-elevated);
+  padding: 12px 20px;
+  border-radius: 10px;
+  border-left: 4px solid var(--pp-orange);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  margin-bottom: 16px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
-.pp-page-header h2 {
+.pp-page-header h1,
+.pp-page-header h2,
+.pp-page-title {
   margin: 0 !important;
   color: #ffffff !important;
-  font-size: clamp(1.1rem, 1.6vw, 1.45rem) !important;
+  font-size: 1.25rem !important;
   font-weight: 700 !important;
   border-bottom: none !important;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
-.pp-page-header p {
+.pp-page-header p,
+.pp-page-subtitle {
   margin: 0 !important;
   color: var(--pp-text-secondary) !important;
-  font-size: clamp(0.8125rem, 1.05vw, 0.94rem) !important;
+  font-size: 0.85rem !important;
   font-weight: 500 !important;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
-@media (min-width: 1100px) {
-  .pp-page-header.pp-page-header--row {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
+.pp-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ─── Misc utility ─── */
@@ -536,3 +544,16 @@ a:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: #3a4555;
 }
+/* React Datepicker Dark Theme Overrides */
+.react-datepicker { background-color: var(--pp-bg-elevated, #1a2330) !important; color: var(--pp-text-primary, #eef2f8) !important; border: 1px solid var(--pp-border, #2a3340) !important; font-family: inherit !important; }
+.react-datepicker__header { background-color: var(--pp-bg, #0a0f1a) !important; border-bottom: 1px solid var(--pp-border, #2a3340) !important; }
+.react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header, .react-datepicker__day-name { color: var(--pp-text-secondary, #9aaebf) !important; font-weight: 600 !important; }
+.react-datepicker__day, .react-datepicker__time-name { color: var(--pp-text-primary, #eef2f8) !important; }
+.react-datepicker__day:hover, .react-datepicker__day--keyboard-selected { background-color: var(--pp-navy-light, #2a3a4e) !important; border-radius: 4px; }
+.react-datepicker__day--selected, .react-datepicker__day--in-selecting-range, .react-datepicker__day--in-range, .react-datepicker__month-text--selected, .react-datepicker__quarter-text--selected, .react-datepicker__year-text--selected { background-color: var(--pp-info, #3b82f6) !important; color: #fff !important; border-radius: 4px; }
+.react-datepicker__time-container { border-left: 1px solid var(--pp-border, #2a3340) !important; }
+.react-datepicker__time { background-color: var(--pp-bg-elevated, #1a2330) !important; }
+.react-datepicker__time-list-item { color: var(--pp-text-primary, #eef2f8) !important; }
+.react-datepicker__time-list-item:hover { background-color: var(--pp-navy-light, #2a3a4e) !important; }
+.react-datepicker__time-list-item--selected { background-color: var(--pp-info, #3b82f6) !important; color: #fff !important; }
+

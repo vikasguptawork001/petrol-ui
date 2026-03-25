@@ -2,8 +2,8 @@
 
 .pp-page {
   min-height: 100%;
-  background: linear-gradient(160deg, #f0f4f8 0%, #e8eef4 50%, #f5f7fa 100%);
-  padding: clamp(16px, 2.2vw, 28px);
+  background: transparent;
+  padding: clamp(12px, 2vw, 20px);
   width: 100%;
   max-width: var(--app-readable, min(100%, 1680px));
   margin: 0 auto;
@@ -24,7 +24,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .pp-page-title {
@@ -50,12 +50,12 @@
 }
 
 .pp-card {
-  background: #ffffff;
+  background: transparent;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  padding: 24px;
-  margin-bottom: 24px;
+  box-shadow: none;
+  border: 1px solid var(--pp-border, #e2e8f0);
+  padding: 16px;
+  margin-bottom: 16px;
   transition: box-shadow 0.2s ease;
 }
 
@@ -64,11 +64,11 @@
 }
 
 .pp-card-title {
-  margin: 0 0 20px 0;
+  margin: 0 0 12px 0;
   font-size: 1.1rem;
   font-weight: 600;
   color: #334155;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -132,10 +132,11 @@
 }
 
 .pp-form-row .form-group label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #475569;
-  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pp-text-secondary, #9aaebf);
+  margin-bottom: 8px;
+  display: block;
 }
 
 .pp-input,
@@ -146,8 +147,8 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #1e293b;
-  background: #fff;
+  color: var(--pp-text-primary, #eef2f8);
+  background: var(--pp-bg-elevated, #1a2330);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -161,8 +162,8 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #1e293b;
-  background: #fff;
+  color: var(--pp-text-primary, #eef2f8);
+  background: var(--pp-bg-elevated, #1a2330);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -187,7 +188,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
-  background: #fff;
+  background: transparent;
 }
 
 .pp-table thead {
@@ -196,7 +197,7 @@
 }
 
 .pp-table th {
-  padding: 14px 16px;
+  padding: 10px 14px;
   text-align: left;
   font-weight: 600;
   white-space: nowrap;
@@ -208,7 +209,7 @@
 }
 
 .pp-table td {
-  padding: 14px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid #f1f5f9;
   color: #475569;
   vertical-align: middle;

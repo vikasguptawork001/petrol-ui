@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
@@ -12,17 +12,27 @@ import Pagination from '../components/Pagination';
 import './Party.css';
 import '../styles/petrolpump-theme.css';
 
+// Minimal Icons
+const Icons = {
+  User: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
+  Phone: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>,
+  Email: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>,
+  Location: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
+  Money: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>,
+  Close: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  ChevronUp: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>,
+  Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
+  Print: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 9V3h12v6" /><rect x="6" y="18" width="12" height="4" rx="1" /></svg>
+};
+
 const Parties = () => {
   const toast = useToast();
   const { user } = useAuth();
   const [parties, setParties] = useState([]);
-  const [, setFilter] = useState('seller'); // petrol pump: creditors only ('seller')
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [, setBuyerParties] = useState([]);
   const [sellerParties, setSellerParties] = useState([]);
-  // Removed pagination - not needed for Parties tab
   const [selectedParty, setSelectedParty] = useState(null);
   const [showPartyDetailsModal, setShowPartyDetailsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -34,55 +44,39 @@ const Parties = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPagination, setHistoryPagination] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [showTransactionDetailsModal, setShowTransactionDetailsModal] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [transactionDetails, setTransactionDetails] = useState(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
-  // Receipt modal state
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [downloadingReceipt, setDownloadingReceipt] = useState(false);
   const [printingReceipt, setPrintingReceipt] = useState(false);
-  // Edit and Delete states
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
   const [editFormData, setEditFormData] = useState({
-    party_name: '',
-    mobile_number: '',
-    email: '',
-    address: '',
-    opening_balance: '',
-    closing_balance: '',
-    gst_number: ''
+    party_name: '', mobile_number: '', email: '', address: '',
+    opening_balance: '', closing_balance: '', gst_number: ''
   });
   const [updating, setUpdating] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Manage body scroll when transaction is processing
   useEffect(() => {
-    if (processingPayment) {
-      document.body.classList.add('transaction-loading');
-    } else {
-      document.body.classList.remove('transaction-loading');
-    }
-    return () => {
-      document.body.classList.remove('transaction-loading');
-    };
+    const handleScroll = () => setShowScrollTop(window.scrollY > 300);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (processingPayment) document.body.classList.add('transaction-loading');
+    else document.body.classList.remove('transaction-loading');
+    return () => document.body.classList.remove('transaction-loading');
   }, [processingPayment]);
 
   useEffect(() => {
     fetchParties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounce search query - update debouncedSearchQuery after 1 second of no typing
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmedQuery = searchQuery.trim();
-      setDebouncedSearchQuery(trimmedQuery);
-    }, 1000); // 1 second delay
-
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery.trim()), 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -92,20 +86,15 @@ const Parties = () => {
       let allSellers = [];
       let sellerPage = 1;
       let hasMoreSellers = true;
-      const batchSize = 10000;
 
       while (hasMoreSellers) {
-        const sellersResponse = await apiClient.get(config.api.sellers, { params: { page: sellerPage, limit: batchSize } });
-        const sellers = sellersResponse.data.parties || [];
+        const response = await apiClient.get(config.api.sellers, { 
+          params: { page: sellerPage, limit: 5000 } 
+        });
+        const sellers = response.data.parties || [];
         allSellers = [...allSellers, ...sellers];
-
-        if (sellersResponse.data.pagination) {
-          hasMoreSellers = sellerPage < sellersResponse.data.pagination.totalPages;
-          sellerPage++;
-        } else {
-          hasMoreSellers = sellers.length === batchSize;
-          sellerPage++;
-        }
+        hasMoreSellers = sellers.length === 5000;
+        sellerPage++;
       }
 
       setSellerParties(allSellers);
@@ -118,11 +107,9 @@ const Parties = () => {
     }
   };
 
-  // Filter parties based on search query (creditors only; debounced search)
-  const getFilteredParties = () => {
+  const filteredParties = useMemo(() => {
     let filtered = parties;
-
-    if (debouncedSearchQuery.trim()) {
+    if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(party =>
         party.party_name?.toLowerCase().includes(query) ||
@@ -132,11 +119,13 @@ const Parties = () => {
         party.gst_number?.toLowerCase().includes(query)
       );
     }
+    return filtered.sort((a, b) => a.party_name?.localeCompare(b.party_name));
+  }, [parties, debouncedSearchQuery]);
 
-    return filtered.sort((a, b) => a.party_name.localeCompare(b.party_name));
-  };
-
-  const filteredParties = getFilteredParties();
+  const totalBalance = useMemo(() => 
+    filteredParties.reduce((sum, p) => sum + parseFloat(p.balance_amount || 0), 0), 
+    [filteredParties]
+  );
 
   const handleViewDetails = async (party) => {
     setSelectedParty(party);
@@ -169,21 +158,14 @@ const Parties = () => {
   };
 
   const handleUpdate = async () => {
-    if (!editingParty || updating) return;
-
-    // Validate required fields
-    if (!editFormData.party_name || editFormData.party_name.trim() === '') {
+    if (!editingParty || updating || !editFormData.party_name?.trim()) {
       toast.error('Party name is required');
       return;
     }
 
     setUpdating(true);
     try {
-      const endpoint = editingParty.party_type === 'buyer'
-        ? `${config.api.buyers}/${editingParty.id}`
-        : `${config.api.sellers}/${editingParty.id}`;
-
-      // Prepare update data - only include fields that have values
+      const endpoint = `${config.api.sellers}/${editingParty.id}`;
       const updateData = {};
       if (editFormData.party_name) updateData.party_name = editFormData.party_name.trim();
       if (editFormData.mobile_number) updateData.mobile_number = editFormData.mobile_number.trim();
@@ -194,27 +176,10 @@ const Parties = () => {
       if (editFormData.gst_number) updateData.gst_number = editFormData.gst_number.trim();
 
       await apiClient.patch(endpoint, updateData);
-      toast.success('Party updated successfully!');
-      const updatedParty = {
-        ...editingParty,
-        party_name: editFormData.party_name.trim(),
-        mobile_number: editFormData.mobile_number?.trim() || editingParty.mobile_number,
-        email: editFormData.email?.trim() || editingParty.email,
-        address: editFormData.address?.trim() || editingParty.address,
-        opening_balance: editFormData.opening_balance !== '' ? parseFloat(editFormData.opening_balance) : editingParty.opening_balance,
-        closing_balance: editFormData.closing_balance !== '' ? parseFloat(editFormData.closing_balance) : editingParty.closing_balance,
-        balance_amount: editFormData.closing_balance !== '' ? parseFloat(editFormData.closing_balance) : editingParty.balance_amount,
-        gst_number: editFormData.gst_number?.trim() || editingParty.gst_number
-      };
-      setParties(prev => prev.map(p => p.id === editingParty.id && p.party_type === editingParty.party_type ? updatedParty : p));
-      if (editingParty.party_type === 'buyer') {
-        setBuyerParties(prev => prev.map(p => p.id === editingParty.id ? { ...p, ...updatedParty } : p));
-      } else {
-        setSellerParties(prev => prev.map(p => p.id === editingParty.id ? { ...p, ...updatedParty } : p));
-      }
+      toast.success('Party updated successfully');
+      await fetchParties();
       setShowEditModal(false);
       setEditingParty(null);
-      fetchParties(); // Refresh in background when on 'all' filter
     } catch (error) {
       console.error('Error updating party:', error);
       toast.error(error.response?.data?.error || 'Failed to update party');
@@ -224,19 +189,12 @@ const Parties = () => {
   };
 
   const handleArchive = async (party) => {
-    if (!window.confirm(`Are you sure you want to delete "${party.party_name}"? This action cannot be undone.`)) {
-      return;
-    }
-
+    if (!window.confirm(`Delete "${party.party_name}"? This cannot be undone.`)) return;
     setArchiving(true);
     try {
-      const endpoint = party.party_type === 'buyer'
-        ? `${config.api.buyers}/${party.id}`
-        : `${config.api.sellers}/${party.id}`;
-
-      await apiClient.delete(endpoint);
-      toast.success('Party deleted successfully!');
-      fetchParties(); // Refresh the list
+      await apiClient.delete(`${config.api.sellers}/${party.id}`);
+      toast.success('Party deleted successfully');
+      await fetchParties();
     } catch (error) {
       console.error('Error deleting party:', error);
       toast.error(error.response?.data?.error || 'Failed to delete party');
@@ -245,31 +203,9 @@ const Parties = () => {
     }
   };
 
-  // eslint-disable-next-line no-unused-vars
-  const handleViewTransaction = async (transaction) => {
-    setSelectedTransaction(transaction);
-    setShowTransactionDetailsModal(true);
-    setLoadingDetails(true);
-    setTransactionDetails(null);
-
-    try {
-      const endpoint = `/api/parties/transactions/${transaction.type}/${transaction.id}/details?party_type=${selectedParty.party_type}&party_id=${selectedParty.id}`;
-      const response = await apiClient.get(endpoint);
-      setTransactionDetails(response.data);
-    } catch (error) {
-      console.error('Error fetching transaction details:', error);
-      toast.error('Failed to load transaction details');
-    } finally {
-      setLoadingDetails(false);
-    }
-  };
-
   const fetchPartyDetails = async (party) => {
     try {
-      const endpoint = party.party_type === 'buyer' 
-        ? `${config.api.buyers}/${party.id}`
-        : `${config.api.sellers}/${party.id}`;
-      const response = await apiClient.get(endpoint);
+      const response = await apiClient.get(`${config.api.sellers}/${party.id}`);
       setPartyDetails(response.data.party);
     } catch (error) {
       console.error('Error fetching party details:', error);
@@ -280,32 +216,14 @@ const Parties = () => {
   const fetchTransactionHistory = async (party, pageNum = 1) => {
     try {
       setHistoryLoading(true);
-      // Use unified transactions API
-      const endpoint = `/api/unified-transactions/party/${party.party_type}/${party.id}`;
-      const response = await apiClient.get(endpoint, {
+      const response = await apiClient.get(`/api/unified-transactions/party/seller/${party.id}`, {
         params: { page: pageNum, limit: 20 }
       });
       setTransactionHistory(response.data.transactions || []);
       setHistoryPagination(response.data.pagination);
     } catch (error) {
       console.error('Error fetching transaction history:', error);
-      // Fallback to old API if unified transactions table doesn't exist yet
-      if (error.response?.status === 404 || error.response?.status === 500) {
-        try {
-          const fallbackEndpoint = party.party_type === 'buyer'
-            ? `/api/parties/buyers/${party.id}/transactions`
-            : `/api/parties/sellers/${party.id}/transactions`;
-          const fallbackResponse = await apiClient.get(fallbackEndpoint, {
-            params: { page: pageNum, limit: 20 }
-          });
-          setTransactionHistory(fallbackResponse.data.transactions || []);
-          setHistoryPagination(fallbackResponse.data.pagination);
-        } catch (fallbackError) {
-          toast.error('Failed to load transaction history');
-        }
-      } else {
-        toast.error('Failed to load transaction history');
-      }
+      toast.error('Failed to load transaction history');
     } finally {
       setHistoryLoading(false);
     }
@@ -319,101 +237,41 @@ const Parties = () => {
 
     setProcessingPayment(true);
     try {
-      // Try using unified_transactions API first, fallback to old API
-      let response;
-      let paymentTransactionId;
-      let receiptNumber;
-      
-      try {
-        // Get current party balance for previous_balance
-        const partyDetails = await apiClient.get(
-          selectedParty.party_type === 'buyer'
-            ? `/api/parties/buyers/${selectedParty.id}`
-            : `/api/parties/sellers/${selectedParty.id}`
-        );
-        const currentBalance = parseFloat(partyDetails.data.party.balance_amount || 0);
-        const paymentAmt = parseFloat(paymentAmount);
-        
-        // Create payment using unified_transactions
-        const unifiedResponse = await apiClient.post('/api/unified-transactions', {
-          party_type: selectedParty.party_type,
-          party_id: selectedParty.id,
-          transaction_type: 'payment',
-          transaction_date: getLocalDateString(),
-          previous_balance: currentBalance,
-          transaction_amount: 0, // Payments don't create debt
-          paid_amount: paymentAmt,
-          balance_after: Math.max(0, currentBalance - paymentAmt),
-          payment_method: paymentMethod,
-          notes: paymentNotes
-        });
-        
-        response = unifiedResponse;
-        paymentTransactionId = unifiedResponse.data.transaction?.id;
-        receiptNumber = unifiedResponse.data.transaction?.bill_number;
-      } catch (unifiedError) {
-        // Fallback to old API if unified_transactions table doesn't exist
-        console.log('Falling back to old payment API:', unifiedError);
-        const endpoint = selectedParty.party_type === 'buyer'
-          ? `/api/parties/buyers/${selectedParty.id}/payment`
-          : `/api/parties/sellers/${selectedParty.id}/payment`;
-        
-        response = await apiClient.post(endpoint, {
-          amount: parseFloat(paymentAmount),
-          payment_date: getLocalDateString(),
-          payment_method: paymentMethod,
-          notes: paymentNotes
-        });
-        
-        paymentTransactionId = response.data.payment_transaction_id;
-        receiptNumber = response.data.receipt_number;
-      }
-      
-      toast.success(`Payment of ₹${parseFloat(paymentAmount).toFixed(2)} recorded successfully!`);
-      
-      // Show receipt modal for seller payments
-      if (paymentTransactionId && selectedParty.party_type === 'seller') {
+      const partyRes = await apiClient.get(`${config.api.sellers}/${selectedParty.id}`);
+      const currentBalance = parseFloat(partyRes.data.party.balance_amount || 0);
+      const paymentAmt = parseFloat(paymentAmount);
+
+      const response = await apiClient.post('/api/unified-transactions', {
+        party_type: 'seller',
+        party_id: selectedParty.id,
+        transaction_type: 'payment',
+        transaction_date: getLocalDateString(),
+        previous_balance: currentBalance,
+        transaction_amount: 0,
+        paid_amount: paymentAmt,
+        balance_after: Math.max(0, currentBalance - paymentAmt),
+        payment_method: paymentMethod,
+        notes: paymentNotes
+      });
+
+      toast.success(`Payment of ₹${paymentAmt.toFixed(2)} recorded successfully`);
+
+      if (response.data.transaction?.id) {
         setReceiptData({
-          transactionId: paymentTransactionId,
-          receiptNumber: receiptNumber || paymentTransactionId,
-          partyType: selectedParty.party_type,
-          amount: parseFloat(paymentAmount),
+          transactionId: response.data.transaction.id,
+          receiptNumber: response.data.transaction.bill_number || response.data.transaction.id,
+          amount: paymentAmt,
           partyName: selectedParty.party_name,
-          paymentMethod: paymentMethod,
-          paymentNotes: paymentNotes,
+          paymentMethod,
+          paymentNotes,
           date: getLocalDateString()
         });
         setShowReceiptModal(true);
-      } else if (paymentTransactionId && selectedParty.party_type === 'buyer') {
-        // For buyer payments, auto-download (existing behavior)
-        try {
-          const pdfResponse = await apiClient.get(
-            `/api/bills/payment/${paymentTransactionId}/pdf?party_type=${selectedParty.party_type}`,
-            { responseType: 'blob' }
-          );
-          
-          const blob = new Blob([pdfResponse.data], { type: 'application/pdf' });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `payment_receipt_${receiptNumber || paymentTransactionId}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          
-          toast.success('Payment receipt downloaded!');
-        } catch (pdfError) {
-          console.error('Error downloading receipt:', pdfError);
-        }
       }
-      
+
       setShowPaymentModal(false);
       setPaymentAmount('');
-      setPaymentMethod('Cash');
       setPaymentNotes('');
-      
-      // Refresh party list and details
       await fetchParties();
       if (showPartyDetailsModal && selectedParty) {
         await fetchPartyDetails(selectedParty);
@@ -429,28 +287,22 @@ const Parties = () => {
 
   const handleDownloadReceipt = async () => {
     if (!receiptData || downloadingReceipt) return;
-    
     setDownloadingReceipt(true);
     try {
-      const pdfResponse = await apiClient.get(
-        `/api/bills/payment/${receiptData.transactionId}/receipt?party_type=${receiptData.partyType}`,
+      const response = await apiClient.get(
+        `/api/bills/payment/${receiptData.transactionId}/receipt?party_type=seller`,
         { responseType: 'blob' }
       );
-      
-      const blob = new Blob([pdfResponse.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `payment_receipt_${receiptData.receiptNumber || receiptData.transactionId}.pdf`;
-      document.body.appendChild(link);
+      link.download = `payment_receipt_${receiptData.receiptNumber}.pdf`;
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Receipt downloaded successfully!');
+      URL.revokeObjectURL(url);
+      toast.success('Receipt downloaded');
     } catch (error) {
       console.error('Error downloading receipt:', error);
-      toast.error('Failed to download receipt: ' + (error.response?.data?.error || 'Unknown error'));
+      toast.error('Failed to download receipt');
     } finally {
       setDownloadingReceipt(false);
     }
@@ -458,577 +310,276 @@ const Parties = () => {
 
   const handlePrintReceipt = async () => {
     if (!receiptData || printingReceipt) return;
-    
     setPrintingReceipt(true);
     try {
-      const pdfResponse = await apiClient.get(
-        `/api/bills/payment/${receiptData.transactionId}/receipt?party_type=${receiptData.partyType}`,
+      const response = await apiClient.get(
+        `/api/bills/payment/${receiptData.transactionId}/receipt?party_type=seller`,
         { responseType: 'blob' }
       );
-      
-      const blob = new Blob([pdfResponse.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const printWindow = window.open(url, '_blank');
-      
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-      } else {
-        // Fallback: create iframe for printing
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = url;
-        document.body.appendChild(iframe);
-        iframe.onload = () => {
-          iframe.contentWindow.print();
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            window.URL.revokeObjectURL(url);
-          }, 1000);
-        };
-      }
-      
-      toast.success('Receipt opened for printing!');
+      if (printWindow) printWindow.onload = () => printWindow.print();
+      toast.success('Receipt ready for printing');
     } catch (error) {
       console.error('Error printing receipt:', error);
-      toast.error('Failed to print receipt: ' + (error.response?.data?.error || 'Unknown error'));
+      toast.error('Failed to print receipt');
     } finally {
       setPrintingReceipt(false);
     }
   };
 
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
   return (
     <Layout>
-      <TransactionLoader isLoading={loading || processingPayment} type={processingPayment ? "payment" : "transaction"} message={loading ? 'Loading parties...' : ''} />
-      <div className="parties-page">
-        <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <TransactionLoader isLoading={loading || processingPayment} type={processingPayment ? "payment" : "transaction"} />
+      
+      <div style={{ padding: '12px 16px', maxWidth: '1600px', margin: '0 auto' }}>
+        {/* Header - Compact */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}>👥</span>
-              <h2 style={{ color: '#fff', margin: 0 }}>Creditors / Parties</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icons.User />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Creditors</h2>
+              <span style={{ background: 'rgba(245,154,48,0.2)', padding: '2px 8px', borderRadius: '20px', fontSize: '0.75rem', color: '#f59a30' }}>
+                {sellerParties.length}
+              </span>
             </div>
-            <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Manage pump creditors. All payments and balance history for debtors/creditors.</p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Manage pump creditors and payments</p>
           </div>
-          <div className="header-actions">
-            <button
-              onClick={() => {
-                setFilter('all');
-                setSearchQuery('');
-                setDebouncedSearchQuery('');
-                fetchParties();
-              }}
-              className="btn btn-secondary"
-              disabled={loading}
-              style={{ marginRight: '10px' }}
-            >
-              {loading ? 'Refreshing...' : '🔄 Refresh'}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={fetchParties} disabled={loading} style={{ padding: '6px 12px', fontSize: '0.75rem' }} className="btn btn-secondary">
+              🔄
             </button>
             {user?.role !== 'sales' && (
-            <Link to="/add-seller-party" className="btn btn-success" style={{ fontWeight: '600' }}>
-              + Add Creditor
-            </Link>
+              <Link to="/add-seller-party" className="btn btn-success" style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: 500 }}>
+                + Add Creditor
+              </Link>
             )}
           </div>
         </div>
 
-        <div className="card">
-          {/* Creditors list header */}
-          <div className="filter-tabs">
-            <span className="filter-tab active" style={{ cursor: 'default' }}>
-              Creditors ({sellerParties.length})
-            </span>
-          </div>
-
-          {/* Search Bar */}
-          <div className="search-container" style={{ marginTop: '20px', display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="Search by name, mobile, email, address, or GST number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-              style={{ flex: 1, minWidth: '200px' }}
-            />
-          </div>
-
-          {/* Summary Card */}
-          <div className="summary-cards" style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '15px',
-            marginTop: '20px',
-            marginBottom: '20px'
-          }}>
-            <div className="summary-card" style={{
-              padding: '15px',
-              backgroundColor: '#fff3e0',
-              borderRadius: '8px',
-              border: '1px solid #ffb74d'
-            }}>
-              <div style={{ fontSize: '14px', color: '#f57c00', marginBottom: '5px' }}>Creditors</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e65100' }}>{sellerParties.length}</div>
-            </div>
-          </div>
-
-          {/* Parties Table */}
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <div className="loading">Loading parties...</div>
-            </div>
-          ) : (
-            <div className="table-container">
-              {filteredParties.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                  {searchQuery ? 'No parties found matching your search' : 'No parties found'}
-                </div>
-              ) : (
-                <table className="table">
-                  <thead style={{ backgroundColor: '#34495e', color: '#ffffff' }}>
-                    <tr>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>S.No</th>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Party Name</th>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Mobile</th>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Email</th>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Address</th>
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>GST (optional)</th>
-                      {user?.role === 'super_admin' && (
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Balance Amount</th>
-                      )}
-                      <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredParties.map((party, index) => (
-                      <tr key={`${party.party_type}-${party.id}`}>
-                        <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                        <td style={{ fontWeight: '600', textAlign: 'center' }}>{party.party_name}</td>
-                        <td style={{ textAlign: 'center' }}>{party.mobile_number || '-'}</td>
-                        <td style={{ textAlign: 'center' }}>{party.email || '-'}</td>
-                        <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                          {party.address || '-'}
-                        </td>
-                        <td style={{ textAlign: 'center' }}>{party.gst_number || '-'}</td>
-                        {user?.role === 'super_admin' && (
-                        <td style={{ 
-                          fontWeight: '600',
-                          color: parseFloat(party.balance_amount || 0) > 0 ? '#d32f2f' : '#388e3c',
-                          textAlign: 'center'
-                        }}>
-                          ₹{parseFloat(party.balance_amount || 0).toFixed(2)}
-                        </td>
-                        )}
-                        <td>
-                          <div className="inline-action-buttons" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                            <ActionMenu
-                              itemId={party.id}
-                              itemName={party.party_name}
-                              disabled={archiving}
-                              actions={[
-                                {
-                                  label: 'View Details',
-                                  icon: '👁️',
-                                  onClick: (id) => handleViewDetails(party)
-                                },
-                                ...(user?.role === 'super_admin' ? [{
-                                  label: 'Make Payment',
-                                  icon: '💰',
-                                  onClick: (id) => handleMakePayment(party)
-                                }] : []),
-                                ...(user?.role === 'admin' || user?.role === 'super_admin' ? [{
-                                  label: 'Edit',
-                                  icon: '✏️',
-                                  onClick: (id) => handleEdit(party)
-                                }] : []),
-                                ...(user?.role === 'super_admin' ? [{
-                                  label: 'Delete',
-                                  icon: '🗑️',
-                                  danger: true,
-                                  onClick: (id) => handleArchive(party),
-                                  disabled: archiving
-                                }] : [])
-                              ]}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  {user?.role === 'super_admin' && (
-                  <tfoot>
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'right', fontWeight: 'bold', padding: '12px' }}>
-                        Total Balance:
-                      </td>
-                      <td style={{ fontWeight: 'bold', padding: '12px', textAlign: 'center' }}>
-                        ₹{filteredParties.reduce((sum, p) => sum + parseFloat(p.balance_amount || 0), 0).toFixed(2)}
-                      </td>
-                      <td />
-                    </tr>
-                  </tfoot>
-                  )}
-                </table>
-              )}
-            </div>
-          )}
+        {/* Search - Compact */}
+        <div style={{ marginBottom: '12px' }}>
+          <input
+            type="text"
+            placeholder="Search by name, mobile, email, address, GST..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #2a3340', background: '#141b26', color: '#fff', fontSize: '0.85rem' }}
+          />
         </div>
+
+        {/* Summary Card - Compact */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ padding: '10px', background: 'rgba(245,154,48,0.1)', borderRadius: '6px', borderLeft: `3px solid #f59a30` }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Creditors</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f59a30' }}>{sellerParties.length}</div>
+          </div>
+          <div style={{ padding: '10px', background: 'rgba(29,158,117,0.1)', borderRadius: '6px', borderLeft: `3px solid #1d9e75` }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Total Outstanding</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1d9e75' }}>₹{totalBalance.toFixed(2)}</div>
+          </div>
+        </div>
+
+        {/* Table - Compact, No extra padding */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading...</div>
+        ) : (
+          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <thead style={{ background: '#0f151f' }}>
+                <tr>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>#</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Party Name</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Mobile</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Email</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Address</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>GST</th>
+                  {user?.role === 'super_admin' && (
+                    <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#94a3b8' }}>Balance</th>
+                  )}
+                  <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredParties.map((party, idx) => (
+                  <tr key={party.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#94a3b8' }}>{idx + 1}</td>
+                    <td style={{ padding: '8px 10px', fontWeight: 500, whiteSpace: 'nowrap' }}>{party.party_name}</td>
+                    <td style={{ padding: '8px 10px', color: '#9aaebf' }}>{party.mobile_number || '-'}</td>
+                    <td style={{ padding: '8px 10px', color: '#9aaebf', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{party.email || '-'}</td>
+                    <td style={{ padding: '8px 10px', color: '#9aaebf', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{party.address || '-'}</td>
+                    <td style={{ padding: '8px 10px', color: '#9aaebf' }}>{party.gst_number || '-'}</td>
+                    {user?.role === 'super_admin' && (
+                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: parseFloat(party.balance_amount || 0) > 0 ? '#e8593c' : '#1d9e75' }}>
+                        ₹{parseFloat(party.balance_amount || 0).toFixed(2)}
+                      </td>
+                    )}
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                        <button onClick={() => handleViewDetails(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#1e2a3a', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }} title="View Details">👁️</button>
+                        {user?.role === 'super_admin' && (
+                          <>
+                            <button onClick={() => handleMakePayment(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#1d9e75', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }} title="Make Payment">💰</button>
+                            <button onClick={() => handleEdit(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#f59a30', border: 'none', borderRadius: '4px', color: '#000', cursor: 'pointer' }} title="Edit">✏️</button>
+                            <button onClick={() => handleArchive(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#e8593c', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }} title="Delete">🗑️</button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {user?.role === 'super_admin' && filteredParties.length > 0 && (
+                <tfoot style={{ background: '#0f151f', borderTop: '1px solid #2a3340' }}>
+                  <tr>
+                    <td colSpan="6" style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>Total Outstanding:</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#f59a30' }}>₹{totalBalance.toFixed(2)}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+            {filteredParties.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                {searchQuery ? 'No matching creditors found' : 'No creditors found'}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Party Details Modal */}
+      {/* Party Details Modal - Compact */}
       {showPartyDetailsModal && selectedParty && partyDetails && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '900px', maxHeight: '90vh' }}>
-            <div className="modal-header">
-              <h3>Party Details - {partyDetails.party_name}</h3>
-              <button className="modal-close" onClick={() => {
-                setShowPartyDetailsModal(false);
-                setSelectedParty(null);
-                setPartyDetails(null);
-                setTransactionHistory([]);
-              }}>×</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowPartyDetailsModal(false)}>
+          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{partyDetails.party_name}</h3>
+              <button onClick={() => setShowPartyDetailsModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}><Icons.Close /></button>
             </div>
-            <div className="modal-body">
-              <div style={{ marginBottom: '28px' }}>
-                <h4 style={{ margin: '0 0 14px 0', color: '#1e293b', fontSize: '15px', fontWeight: 700, letterSpacing: '0.02em' }}>
-                  Creditor overview
-                </h4>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: '12px'
-                }}>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Name</div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{partyDetails.party_name}</div>
+            <div style={{ padding: '16px', overflowY: 'auto', flex: 1 }}>
+              {/* Party Info Grid - Compact */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Mobile</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{partyDetails.mobile_number || '—'}</div>
+                </div>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Email</div>
+                  <div style={{ fontSize: '0.85rem' }}>{partyDetails.email || '—'}</div>
+                </div>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>GST</div>
+                  <div style={{ fontSize: '0.85rem' }}>{partyDetails.gst_number || '—'}</div>
+                </div>
+                <div style={{ padding: '8px 12px', background: '#f59a3010', borderRadius: '6px', borderLeft: `2px solid #f59a30` }}>
+                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Outstanding</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#e8593c' : '#1d9e75' }}>
+                    ₹{parseFloat(partyDetails.balance_amount || 0).toFixed(2)}
                   </div>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Mobile</div>
-                    <div style={{ fontSize: '15px', color: '#334155' }}>{partyDetails.mobile_number || '—'}</div>
-                  </div>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Email</div>
-                    <div style={{ fontSize: '14px', color: '#334155', wordBreak: 'break-word' }}>{partyDetails.email || '—'}</div>
-                  </div>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Payment due date</div>
-                    <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
-                      {partyDetails.due_date
-                        ? new Date(partyDetails.due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                        : '—'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>Updated when a partial sale sets a new due date</div>
-                  </div>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0', gridColumn: '1 / -1' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>Address</div>
-                    <div style={{ fontSize: '14px', color: '#334155', lineHeight: 1.5 }}>{partyDetails.address || '—'}</div>
-                  </div>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>GST</div>
-                    <div style={{ fontSize: '14px', color: '#334155' }}>{partyDetails.gst_number || '—'}</div>
-                  </div>
+                </div>
+              </div>
+              
+              <div style={{ padding: '0 0 12px 0', borderBottom: '1px solid #2a3340', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600 }}>Transaction History</h4>
                   {user?.role === 'super_admin' && (
-                    <div style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)', borderRadius: '10px', padding: '14px 16px', border: '1px solid #fdba74' }}>
-                      <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#9a3412', fontWeight: 600, marginBottom: '6px' }}>Outstanding balance</div>
-                      <div style={{
-                        fontSize: '22px',
-                        fontWeight: 800,
-                        color: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#c2410c' : '#15803d',
-                        fontVariantNumeric: 'tabular-nums'
-                      }}>
-                        ₹{parseFloat(partyDetails.balance_amount || 0).toFixed(2)}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#9a3412', marginTop: '6px' }}>Opening: ₹{parseFloat(partyDetails.opening_balance || 0).toFixed(2)}</div>
-                    </div>
+                    <button onClick={() => { setShowPartyDetailsModal(false); handleMakePayment(selectedParty); }} className="btn btn-success" style={{ padding: '4px 12px', fontSize: '0.7rem' }}>Make Payment</button>
                   )}
                 </div>
               </div>
 
-              {/* Transaction History */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h4 style={{ margin: 0, color: '#333', borderBottom: '2px solid #3498db', paddingBottom: '10px', flex: 1 }}>
-                    Transaction History
-                  </h4>
-                  {user?.role === 'super_admin' && (
-                    <button
-                      onClick={() => {
-                        setShowPartyDetailsModal(false);
-                        handleMakePayment(selectedParty);
-                      }}
-                      className="btn btn-success"
-                      style={{ padding: '8px 16px', fontSize: '13px', marginLeft: '15px' }}
-                    >
-                      Make Payment
-                    </button>
-                  )}
-                </div>
-
-                {historyLoading ? (
-                  <div style={{ textAlign: 'center', padding: '40px' }}>Loading transactions...</div>
-                ) : transactionHistory.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                    No transactions found
-                  </div>
-                ) : (
-                  <>
-                    <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      <table className="table">
-                        <thead style={{ position: 'sticky', top: 0, backgroundColor: '#34495e', color: '#ffffff', zIndex: 10 }}>
-                          <tr>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Date</th>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Payment Type</th>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Bill/Ref No</th>
-                            {/* <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Description</th> */}
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Previous Amount</th>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Current Transaction</th>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Paid Amount</th>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }} title="From partial-payment sales">Prev due</th>
-                            <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }} title="New due date set on this sale">New due</th>
-                            {user?.role === 'super_admin' && (
-                              <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Balance Amount</th>
-                            )}
-                            {/* <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Status</th> */}
-                            {/* <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '12px', textAlign: 'center', fontWeight: '600', borderBottom: '2px solid #2c3e50' }}>Action</th> */}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transactionHistory.map((txn, idx) => {
-                            const safeNum = (v) => {
-                              const n = parseFloat(v);
-                              return Number.isNaN(n) ? 0 : n;
-                            };
-                            const currentTxnAmount = safeNum(
-                              txn.this_transaction_amount ?? txn.transaction_amount ?? txn.amount ?? txn.total_amount
-                            );
-                            const prevBalance = safeNum(txn.previous_balance);
-                            const paidAmt = safeNum(txn.paid_amount);
-                            const balanceAfter = safeNum(txn.balance_after ?? txn.balance_amount);
-                            const fmtDue = (d) => {
-                              if (d == null || d === '') return '—';
-                              const t = new Date(d);
-                              return Number.isNaN(t.getTime()) ? String(d).slice(0, 10) : t.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                            };
-                            return (
-                            <tr key={idx}>
-                             <td style={{ textAlign: 'center' }}>{new Date(txn.transaction_timestamp || txn.created_at).toLocaleString()}</td>
-                              <td style={{ textAlign: 'center' }}>
-                                <span style={{
-                                  padding: '4px 8px',
-                                  borderRadius: '4px',
-                                  fontSize: '12px',
-                                  fontWeight: '600',
-                                  backgroundColor: txn.type === 'sale' ? '#e3f2fd' : txn.type === 'purchase' || txn.type === 'purchase_payment' ? '#fff3e0' : txn.type === 'return' ? '#fce4ec' : '#e8f5e9',
-                                  color: txn.type === 'sale' ? '#1976d2' : txn.type === 'purchase' || txn.type === 'purchase_payment' ? '#f57c00' : txn.type === 'return' ? '#c2185b' : '#388e3c'
-                                }}>
-                                 {txn?.transaction_type}
+              {historyLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Loading...</div>
+              ) : transactionHistory.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No transactions</div>
+              ) : (
+                <>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+                      <thead>
+                        <tr style={{ background: '#0f151f' }}>
+                          <th style={{ padding: '6px 8px', textAlign: 'left' }}>Date</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left' }}>Type</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Amount</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Paid</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactionHistory.map((txn, idx) => {
+                          const amount = parseFloat(txn.transaction_amount || txn.amount || 0);
+                          const paid = parseFloat(txn.paid_amount || 0);
+                          const balance = parseFloat(txn.balance_after || txn.balance_amount || 0);
+                          return (
+                            <tr key={idx} style={{ borderBottom: '1px solid #2a3340' }}>
+                              <td style={{ padding: '6px 8px' }}>{new Date(txn.transaction_timestamp || txn.created_at).toLocaleDateString()}</td>
+                              <td style={{ padding: '6px 8px' }}>
+                                <span style={{ padding: '2px 6px', borderRadius: '4px', background: txn.transaction_type === 'sale' ? '#1976d220' : txn.transaction_type === 'payment' ? '#1d9e7520' : '#f59a3020', fontSize: '0.65rem' }}>
+                                  {txn.transaction_type === 'sale' ? 'Sale' : txn.transaction_type === 'payment' ? 'Payment' : txn.transaction_type}
                                 </span>
                               </td>
-                              <td style={{ textAlign: 'center' }}>{txn.bill_number || txn.id || '-'}</td>
-                              <td style={{ textAlign: 'center' }}>
-                                <div style={{ fontWeight: '600', color: '#333' }}>
-                                  ₹{prevBalance.toFixed(2)}
-                                </div>
-                              </td>
-                              <td style={{ textAlign: 'center' }}>
-                                <div>
-                                  ₹{currentTxnAmount.toFixed(2)}
-                                </div>
-                              </td>
-                              <td style={{ textAlign: 'center' }}>
-                                <div style={{ 
-                                  fontWeight: (txn.type === 'payment' || txn.type === 'purchase_payment') ? '600' : '500',
-                                  color: balanceAfter > 0 ? '#d32f2f' : '#2e7d32'
-                                }}>
-                                  ₹{paidAmt.toFixed(2)}
-                                </div>
-                              </td>
-                              <td style={{ textAlign: 'center', fontSize: '13px', color: '#475569' }}>{fmtDue(txn.previous_due_date)}</td>
-                              <td style={{ textAlign: 'center', fontSize: '13px', color: '#0f172a', fontWeight: txn.new_due_date ? 600 : 400 }}>{fmtDue(txn.new_due_date)}</td>
-                              {user?.role === 'super_admin' && (
-                                <td style={{ textAlign: 'center' }}>
-                                  <div>₹{balanceAfter.toFixed(2)}</div>
-                                </td>
-                              )}
-                              
-                              {/* <td>
-                                {txn.payment_status && (
-                                  <span style={{
-                                    padding: '4px 8px',
-                                    borderRadius: '4px',
-                                    fontSize: '12px',
-                                    backgroundColor: txn.payment_status === 'fully_paid' ? '#d4edda' : '#fff3cd',
-                                    color: txn.payment_status === 'fully_paid' ? '#155724' : '#856404'
-                                  }}>
-                                    {txn.payment_status.replace('_', ' ').toUpperCase()}
-                                  </span>
-                                )}
-                              </td> */}
-                              {/* <td style={{ textAlign: 'center' }}>
-                                <button
-                                  onClick={() => handleViewTransaction(txn)}
-                                  className="btn btn-sm btn-primary"
-                                  style={{ padding: '4px 12px', fontSize: '12px' }}
-                                >
-                                  View
-                                </button>
-                              </td> */}
+                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>{amount > 0 ? `₹${amount.toFixed(2)}` : '-'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: paid > 0 ? '#1d9e75' : '#94a3b8' }}>{paid > 0 ? `₹${paid.toFixed(2)}` : '-'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: balance > 0 ? '#e8593c' : '#1d9e75' }}>₹{balance.toFixed(2)}</td>
                             </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {historyPagination && (
+                    <div style={{ marginTop: '12px' }}>
+                      <Pagination currentPage={historyPage} totalPages={historyPagination.totalPages} onPageChange={(p) => { setHistoryPage(p); fetchTransactionHistory(selectedParty, p); }} totalRecords={historyPagination.totalRecords} showTotalRecords />
                     </div>
-                    {historyPagination && (
-                      <div style={{ 
-                        marginTop: '20px', 
-                        marginBottom: '10px',
-                        padding: '15px',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '6px',
-                        border: '1px solid #e0e0e0'
-                      }}>
-                        <Pagination
-                          currentPage={historyPage}
-                          totalPages={historyPagination.totalPages}
-                          onPageChange={(newPage) => {
-                            setHistoryPage(newPage);
-                            fetchTransactionHistory(selectedParty, newPage);
-                          }}
-                          totalRecords={historyPagination.totalRecords}
-                          showTotalRecords={true}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                  )}
+                </>
+              )}
             </div>
-            <div className="modal-footer">
-              <button onClick={() => {
-                setShowPartyDetailsModal(false);
-                setSelectedParty(null);
-                setPartyDetails(null);
-                setTransactionHistory([]);
-              }} className="btn btn-secondary">
-                Close
-              </button>
+            <div style={{ padding: '12px 16px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowPartyDetailsModal(false)} className="btn btn-secondary" style={{ padding: '6px 16px', fontSize: '0.75rem' }}>Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Make Payment Modal */}
+      {/* Payment Modal - Compact */}
       {showPaymentModal && selectedParty && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '500px' }}>
-            <div className="modal-header">
-              <h3>Make Payment - {selectedParty.party_name}</h3>
-              <button className="modal-close" onClick={() => {
-                setShowPaymentModal(false);
-                setSelectedParty(null);
-                setPaymentAmount('');
-              }}>×</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowPaymentModal(false)}>
+          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid #2a3340' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>Make Payment - {selectedParty.party_name}</h3>
+              <button onClick={() => setShowPaymentModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icons.Close /></button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Current Balance</label>
-                <div style={{
-                  padding: '15px',
-                  backgroundColor: parseFloat(selectedParty.balance_amount || 0) > 0 ? '#fff3cd' : '#d4edda',
-                  borderRadius: '6px',
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: parseFloat(selectedParty.balance_amount || 0) > 0 ? '#856404' : '#155724',
-                  textAlign: 'center'
-                }}>
+            <div style={{ padding: '16px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '4px' }}>Current Balance</div>
+                <div style={{ padding: '10px', background: parseFloat(selectedParty.balance_amount || 0) > 0 ? '#e8593c20' : '#1d9e7520', borderRadius: '6px', textAlign: 'center', fontSize: '1.1rem', fontWeight: 600 }}>
                   ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}
                 </div>
               </div>
-              <div className="form-group">
-                <label>Payment Amount *</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={parseFloat(selectedParty.balance_amount || 0)}
-                  value={paymentAmount}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      setPaymentAmount('');
-                      return;
-                    }
-                    // Only allow whole numbers (no decimals, no leading zeros)
-                    // Prevent values like 0.5, 0.25, etc.
-                    if (!/^\d+$/.test(val)) return;
-                    // Prevent leading zero (like 01, 02, etc.) unless it's just "0"
-                    if (val.length > 1 && val.startsWith('0')) return;
-                    const maxAmount = parseFloat(selectedParty.balance_amount || 0);
-                    const amount = parseInt(val) || 0;
-                    if (amount >= 1 && amount <= maxAmount) {
-                      setPaymentAmount(val);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    // Prevent decimal point, comma, and mathematical signs
-                    if (['+', '-', '*', '/', 'e', 'E', '.', ','].includes(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  placeholder="Enter payment amount"
-                  style={{ width: '100%', padding: '12px', fontSize: '16px' }}
-                />
-                <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '5px' }}>
-                  Maximum: ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}
-                </small>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Payment Amount *</label>
+                <input type="number" min="1" max={parseFloat(selectedParty.balance_amount || 0)} value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="Enter amount" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff' }} />
+                <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px' }}>Max: ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}</div>
               </div>
               {paymentAmount && parseFloat(paymentAmount) > 0 && (
-                <div className="form-group">
-                  <label>Balance After Payment</label>
-                  <div style={{
-                    padding: '15px',
-                    backgroundColor: '#e3f2fd',
-                    borderRadius: '6px',
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#1976d2',
-                    textAlign: 'center'
-                  }}>
-                    ₹{(parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount || 0)).toFixed(2)}
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '4px' }}>After Payment</div>
+                  <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', textAlign: 'center' }}>
+                    ₹{(parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)).toFixed(2)}
                   </div>
                 </div>
               )}
-              {/* Payment Method field hidden - defaulting to 'Cash' */}
-              <div className="form-group">
-                <label>Notes (Optional)</label>
-                <textarea
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="Add any notes about this payment..."
-                  rows="3"
-                  style={{ width: '100%', padding: '12px', fontSize: '14px', resize: 'vertical' }}
-                />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Notes</label>
+                <textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows="2" placeholder="Optional notes..." style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.8rem', resize: 'vertical' }} />
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                onClick={() => {
-                  setShowPaymentModal(false);
-                  setSelectedParty(null);
-                  setPaymentAmount('');
-                  setPaymentMethod('Cash');
-                  setPaymentNotes('');
-                }}
-                className="btn btn-secondary"
-                disabled={processingPayment}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePaymentSubmit}
-                className="btn btn-success"
-                disabled={processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}
-                style={{ opacity: (processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0) ? 0.6 : 1 }}
-              >
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 16px', borderTop: '1px solid #2a3340' }}>
+              <button onClick={() => setShowPaymentModal(false)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={processingPayment}>Cancel</button>
+              <button onClick={handlePaymentSubmit} className="btn btn-success" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}>
                 {processingPayment ? 'Processing...' : 'Record Payment'}
               </button>
             </div>
@@ -1036,564 +587,79 @@ const Parties = () => {
         </div>
       )}
 
-      {/* Payment Receipt Modal - For Seller Payments */}
+      {/* Receipt Modal - Compact */}
       {showReceiptModal && receiptData && (
-        <div className="modal-overlay" onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            setShowReceiptModal(false);
-            setReceiptData(null);
-          }
-        }}>
-          <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Payment Receipt</h3>
-              <button className="modal-close" onClick={() => {
-                setShowReceiptModal(false);
-                setReceiptData(null);
-              }}>×</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowReceiptModal(false)}>
+          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '480px', border: '1px solid #2a3340' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>Payment Receipt</h3>
+              <button onClick={() => setShowReceiptModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icons.Close /></button>
             </div>
-            <div className="modal-body">
-              <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', marginBottom: '20px' }}>
-                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>Payment Successful!</h4>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
-                    ₹{receiptData.amount.toFixed(2)}
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
-                  <div>
-                    <strong>Receipt Number:</strong><br />
-                    {receiptData.receiptNumber}
-                  </div>
-                  <div>
-                    <strong>Date:</strong><br />
-                    {receiptData.date}
-                  </div>
-                  <div>
-                    <strong>Party Name:</strong><br />
-                    {receiptData.partyName}
-                  </div>
-                  <div>
-                    <strong>Payment Method:</strong><br />
-                    {receiptData.paymentMethod}
-                  </div>
-                  {receiptData.paymentNotes && (
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <strong>Notes:</strong><br />
-                      {receiptData.paymentNotes}
-                    </div>
-                  )}
-                </div>
+            <div style={{ padding: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1d9e75' }}>₹{receiptData.amount.toFixed(2)}</div>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Payment Successful</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.75rem' }}>
+                <div><strong>Receipt No:</strong><br />{receiptData.receiptNumber}</div>
+                <div><strong>Date:</strong><br />{receiptData.date}</div>
+                <div><strong>Party:</strong><br />{receiptData.partyName}</div>
+                <div><strong>Method:</strong><br />{receiptData.paymentMethod}</div>
+                {receiptData.paymentNotes && <div style={{ gridColumn: '1/-1' }}><strong>Notes:</strong><br />{receiptData.paymentNotes}</div>}
               </div>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => {
-                  setShowReceiptModal(false);
-                  setReceiptData(null);
-                }}
-                className="btn btn-secondary"
-                disabled={downloadingReceipt || printingReceipt}
-              >
-                Close
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 16px', borderTop: '1px solid #2a3340' }}>
+              <button onClick={() => setShowReceiptModal(false)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>Close</button>
+              <button onClick={handleDownloadReceipt} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }} disabled={downloadingReceipt}>
+                <Icons.Download /> {downloadingReceipt ? '...' : 'Download'}
               </button>
-              <button
-                onClick={handleDownloadReceipt}
-                className="btn btn-primary"
-                disabled={downloadingReceipt || printingReceipt}
-              >
-                {downloadingReceipt ? 'Downloading...' : '📥 Download Receipt'}
-              </button>
-              <button
-                onClick={handlePrintReceipt}
-                className="btn btn-success"
-                disabled={downloadingReceipt || printingReceipt}
-              >
-                {printingReceipt ? 'Opening...' : '🖨️ Print Receipt'}
+              <button onClick={handlePrintReceipt} className="btn btn-success" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }} disabled={printingReceipt}>
+                <Icons.Print /> {printingReceipt ? '...' : 'Print'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Transaction Details Modal */}
-      {showTransactionDetailsModal && selectedTransaction && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '900px', maxHeight: '90vh' }}>
-            <div className="modal-header">
-              <h3>
-                Transaction Details - {
-                  selectedTransaction.type === 'sale' ? 'Sale' : 
-                  selectedTransaction.type === 'purchase' ? 'Purchase' : 
-                  selectedTransaction.type === 'purchase_payment' ? 'Purchase Payment' : 
-                  selectedTransaction.type === 'return' ? 'Return' : 
-                  'Payment'
-                }
-              </h3>
-              <button className="modal-close" onClick={() => {
-                setShowTransactionDetailsModal(false);
-                setSelectedTransaction(null);
-                setTransactionDetails(null);
-              }}>×</button>
-            </div>
-            <div className="modal-body">
-              {loadingDetails ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>Loading transaction details...</div>
-              ) : transactionDetails ? (
-                <>
-                  {/* Transaction Header    */}
-                  <div style={{ marginBottom: '30px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <strong>Date & Time:</strong><br />
-                        {new Date(transactionDetails.transaction_date || transactionDetails.return_date || transactionDetails.payment_date || transactionDetails.created_at).toLocaleString()}
-                      </div>
-                      {(transactionDetails.bill_number || transactionDetails.receipt_number) && (
-                        <div style={{ textAlign: 'center' }}>
-                          <strong>{(transactionDetails.type === 'payment' || transactionDetails.type === 'purchase_payment') ? 'Receipt' : 'Bill'} Number:</strong><br />
-                          {transactionDetails.bill_number || transactionDetails.receipt_number}
-                        </div>
-                      )}
-                      {transactionDetails.summary && (
-                        <>
-                          <div style={{ textAlign: 'center' }}>
-                            <strong>Total Amount:</strong><br />
-                            ₹{parseFloat(transactionDetails.summary.total_amount || transactionDetails.summary.amount || 0).toFixed(2)}
-                          </div>
-                          {transactionDetails.type === 'sale' && (
-                            <>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Paid Amount:</strong><br />
-                                ₹{parseFloat(transactionDetails.summary.paid_amount || 0).toFixed(2)}
-                              </div>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Remaining Balance:</strong><br />
-                                ₹{parseFloat(transactionDetails.summary.balance_amount || 0).toFixed(2)}
-                              </div>
-                            </>
-                          )}
-                          {transactionDetails.type === 'purchase' && (
-                            <>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Total Purchase Amount:</strong><br />
-                                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#1976d2' }}>
-                                  ₹{parseFloat(transactionDetails.summary.total_amount || transactionDetails.summary.amount || selectedTransaction?.amount || 0).toFixed(2)}
-                                </span>
-                              </div>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Payment Made:</strong><br />
-                                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#2e7d32' }}>
-                                  ₹{parseFloat(transactionDetails.summary.paid_amount || selectedTransaction?.paid_amount || 0).toFixed(2)}
-                                </span>
-                              </div>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Remaining Balance:</strong><br />
-                                <span style={{ fontSize: '18px', fontWeight: 'bold', color: parseFloat(transactionDetails.summary.total_amount || transactionDetails.summary.amount || selectedTransaction?.amount || 0) - parseFloat(transactionDetails.summary.paid_amount || selectedTransaction?.paid_amount || 0) > 0 ? '#d32f2f' : '#2e7d32' }}>
-                                  ₹{Math.max(0, parseFloat(transactionDetails.summary.total_amount || transactionDetails.summary.amount || selectedTransaction?.amount || 0) - parseFloat(transactionDetails.summary.paid_amount || selectedTransaction?.paid_amount || 0)).toFixed(2)}
-                                </span>
-                              </div>
-                              {transactionDetails.summary.previous_balance !== undefined && (
-                                <div style={{ textAlign: 'center' }}>
-                                  <strong>Previous Balance:</strong><br />
-                                  ₹{parseFloat(transactionDetails.summary.previous_balance || selectedTransaction?.previous_balance || 0).toFixed(2)}
-                                </div>
-                              )}
-                              {transactionDetails.summary.balance_amount !== undefined && (
-                                <div style={{ textAlign: 'center' }}>
-                                  <strong>Balance After Transaction:</strong><br />
-                                  ₹{parseFloat(transactionDetails.summary.balance_amount || selectedTransaction?.balance_amount || 0).toFixed(2)}
-                                </div>
-                              )}
-                            </>
-                          )}
-                          {(transactionDetails.type === 'payment' || transactionDetails.type === 'purchase_payment') && (
-                            <>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Previous Balance:</strong><br />
-                                ₹{parseFloat(transactionDetails.summary.previous_balance || 0).toFixed(2)}
-                              </div>
-                              <div style={{ textAlign: 'center' }}>
-                                <strong>Updated Balance:</strong><br />
-                                ₹{parseFloat(transactionDetails.summary.updated_balance || 0).toFixed(2)}
-                              </div>
-                            </>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Party Information */}
-                  {transactionDetails.party && (
-                    <div style={{ marginBottom: '30px' }}>
-                      <h4 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
-                        Party Information
-                      </h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                        <div style={{ textAlign: 'center' }}><strong>Name:</strong> {transactionDetails.party.party_name}</div>
-                        {transactionDetails.party.mobile_number && (
-                          <div style={{ textAlign: 'center' }}><strong>Mobile:</strong> {transactionDetails.party.mobile_number}</div>
-                        )}
-                        {transactionDetails.party.email && (
-                          <div style={{ textAlign: 'center' }}><strong>Email:</strong> {transactionDetails.party.email}</div>
-                        )}
-                        {transactionDetails.party.gst_number && (
-                          <div style={{ textAlign: 'center' }}><strong>GST Number:</strong> {transactionDetails.party.gst_number}</div>
-                        )}
-                        {transactionDetails.party.address && (
-                          <div style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
-                            <strong>Address:</strong> {transactionDetails.party.address}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Items List */}
-                  {transactionDetails.items && transactionDetails.items.length > 0 && (
-                    <div style={{ marginBottom: '30px' }}>
-                      <h4 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
-                        Items ({transactionDetails.items.length})
-                      </h4>
-                      <div className="table-container">
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th style={{ textAlign: 'center' }}>S.N.</th>
-                              <th style={{ textAlign: 'center' }}>Product Name</th>
-                              <th style={{ textAlign: 'center' }}>Brand</th>
-                              <th style={{ textAlign: 'center' }}>HSN</th>
-                              <th style={{ textAlign: 'center' }}>Quantity</th>
-                              <th style={{ textAlign: 'center' }}>Rate</th>
-                              {(transactionDetails.type === 'sale' || transactionDetails.type === 'return') && <th style={{ textAlign: 'center' }}>Discount</th>}
-                              <th style={{ textAlign: 'center' }}>Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {transactionDetails.items.map((item, idx) => (
-                              <tr key={idx}>
-                                <td style={{ textAlign: 'center' }}>{idx + 1}</td>
-                                <td style={{ textAlign: 'center' }}>{item.product_name}</td>
-                                <td style={{ textAlign: 'center' }}>{item.brand || '-'}</td>
-                                <td style={{ textAlign: 'center' }}>{item.hsn_number || '-'}</td>
-                                <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                <td style={{ textAlign: 'center' }}>₹{parseFloat(item.sale_rate || item.purchase_rate || item.return_rate || 0).toFixed(2)}</td>
-                                {(transactionDetails.type === 'sale' || transactionDetails.type === 'return') && (
-                                  <td style={{ textAlign: 'center' }}>
-                                    {item.discount && parseFloat(item.discount) > 0 ? (
-                                      `${item.discount_type === 'percentage' ? item.discount_percentage + '%' : '₹' + parseFloat(item.discount).toFixed(2)}`
-                                    ) : '-'}
-                                  </td>
-                                )}
-                                <td style={{ fontWeight: '600', textAlign: 'center' }}>₹{parseFloat(item.total_amount || 0).toFixed(2)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Summary */}
-                  {transactionDetails.summary && (
-                    <div style={{ marginBottom: '30px', padding: '15px', backgroundColor: '#e8f5e9', borderRadius: '8px' }}>
-                      <h4 style={{ marginBottom: '15px', color: '#333' }}>Transaction Summary</h4>
-                      {transactionDetails.type === 'sale' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                          <div style={{ textAlign: 'center' }}><strong>Subtotal:</strong> ₹{parseFloat(transactionDetails.summary.subtotal || 0).toFixed(2)}</div>
-                          {transactionDetails.summary.discount > 0 && (
-                            <div style={{ textAlign: 'center' }}><strong>Discount:</strong> ₹{parseFloat(transactionDetails.summary.discount || 0).toFixed(2)}</div>
-                          )}
-                          {transactionDetails.summary.tax_amount > 0 && (
-                            <div style={{ textAlign: 'center' }}><strong>Tax (GST):</strong> ₹{parseFloat(transactionDetails.summary.tax_amount || 0).toFixed(2)}</div>
-                          )}
-                          <div style={{ textAlign: 'center' }}><strong>Total Amount:</strong> ₹{parseFloat(transactionDetails.summary.total_amount || 0).toFixed(2)}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Paid Amount:</strong> ₹{parseFloat(transactionDetails.summary.paid_amount || 0).toFixed(2)}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Remaining Balance:</strong> ₹{parseFloat(transactionDetails.summary.balance_amount || 0).toFixed(2)}</div>
-                          {transactionDetails.summary.previous_balance_paid > 0 && (
-                            <div style={{ textAlign: 'center' }}><strong>Previous Balance Paid:</strong> ₹{parseFloat(transactionDetails.summary.previous_balance_paid || 0).toFixed(2)}</div>
-                          )}
-                          <div style={{ textAlign: 'center' }}><strong>Payment Status:</strong> {transactionDetails.summary.payment_status?.replace('_', ' ').toUpperCase() || 'N/A'}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Total Items:</strong> {transactionDetails.summary.total_items || 0}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Total Quantity:</strong> {transactionDetails.summary.total_quantity || 0}</div>
-                        </div>
-                      )}
-                      {transactionDetails.type === 'purchase' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                          <div style={{ textAlign: 'center' }}><strong>Total Items:</strong> {transactionDetails.summary.total_items || transactionDetails.items?.length || 0}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Total Quantity:</strong> {transactionDetails.summary.total_quantity || transactionDetails.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Total Purchase Amount:</strong> ₹{parseFloat(transactionDetails.summary.total_amount || transactionDetails.summary.amount || 0).toFixed(2)}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Payment Made:</strong> ₹{parseFloat(transactionDetails.summary.paid_amount || selectedTransaction?.paid_amount || 0).toFixed(2)}</div>
-                          <div style={{ textAlign: 'center' }}><strong>Remaining Balance:</strong> ₹{Math.max(0, parseFloat(transactionDetails.summary.total_amount || transactionDetails.summary.amount || selectedTransaction?.amount || 0) - parseFloat(transactionDetails.summary.paid_amount || selectedTransaction?.paid_amount || 0)).toFixed(2)}</div>
-                          {transactionDetails.summary.previous_balance !== undefined && (
-                            <div style={{ textAlign: 'center' }}><strong>Previous Balance:</strong> ₹{parseFloat(transactionDetails.summary.previous_balance || selectedTransaction?.previous_balance || 0).toFixed(2)}</div>
-                          )}
-                          {transactionDetails.summary.balance_amount !== undefined && (
-                            <div style={{ textAlign: 'center' }}><strong>Balance After Transaction:</strong> ₹{parseFloat(transactionDetails.summary.balance_amount || selectedTransaction?.balance_amount || 0).toFixed(2)}</div>
-                          )}
-                          {transactionDetails.summary.payment_status && (
-                            <div style={{ textAlign: 'center' }}><strong>Payment Status:</strong> 
-                              <span style={{
-                                marginLeft: '8px',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                backgroundColor: transactionDetails.summary.payment_status === 'fully_paid' ? '#d4edda' : transactionDetails.summary.payment_status === 'partially_paid' ? '#fff3cd' : '#f8d7da',
-                                color: transactionDetails.summary.payment_status === 'fully_paid' ? '#155724' : transactionDetails.summary.payment_status === 'partially_paid' ? '#856404' : '#721c24'
-                              }}>
-                                {transactionDetails.summary.payment_status.replace('_', ' ').toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {transactionDetails.type === 'return' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                          <div><strong>Total Items:</strong> {transactionDetails.summary.total_items || 0}</div>
-                          <div><strong>Total Quantity:</strong> {transactionDetails.summary.total_quantity || 0}</div>
-                          <div><strong>Total Return Amount:</strong> ₹{parseFloat(transactionDetails.summary.total_amount || 0).toFixed(2)}</div>
-                          {transactionDetails.reason && (
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <strong>Reason:</strong> {transactionDetails.reason}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {transactionDetails.type === 'payment' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                          <div><strong>Payment Amount:</strong> ₹{parseFloat(transactionDetails.summary.amount || 0).toFixed(2)}</div>
-                          <div><strong>Payment Method:</strong> {transactionDetails.summary.payment_method || 'Cash'}</div>
-                          <div><strong>Previous Balance:</strong> ₹{parseFloat(transactionDetails.summary.previous_balance || 0).toFixed(2)}</div>
-                          <div><strong>Updated Balance:</strong> ₹{parseFloat(transactionDetails.summary.updated_balance || 0).toFixed(2)}</div>
-                          {transactionDetails.summary.notes && (
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <strong>Notes:</strong> {transactionDetails.summary.notes}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                  No transaction details found
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button
-                onClick={() => {
-                  setShowTransactionDetailsModal(false);
-                  setSelectedTransaction(null);
-                  setTransactionDetails(null);
-                }}
-                className="btn btn-secondary"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Party Modal */}
+      {/* Edit Modal - Compact */}
       {showEditModal && editingParty && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Edit Creditor</h3>
-              <button className="modal-close" onClick={() => {
-                setShowEditModal(false);
-                setEditingParty(null);
-                setEditFormData({
-                  party_name: '',
-                  mobile_number: '',
-                  email: '',
-                  address: '',
-                  opening_balance: '',
-                  closing_balance: '',
-                  gst_number: ''
-                });
-              }}>×</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}>
+          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '520px', border: '1px solid #2a3340' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>Edit Creditor</h3>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icons.Close /></button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Party Name *</label>
-                <input
-                  type="text"
-                  value={editFormData.party_name}
-                  onChange={(e) => setEditFormData({ ...editFormData, party_name: e.target.value })}
-                  required
-                  placeholder="Enter party name"
-                />
+            <div style={{ padding: '16px' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <input type="text" placeholder="Party Name *" value={editFormData.party_name} onChange={(e) => setEditFormData({ ...editFormData, party_name: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Mobile Number</label>
-                  <input
-                    type="text"
-                    value={editFormData.mobile_number}
-                    onChange={(e) => setEditFormData({ ...editFormData, mobile_number: e.target.value })}
-                    placeholder="Enter mobile number"
-                    maxLength={20}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                    placeholder="Enter email address"
-                    maxLength={100}
-                  />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <input type="text" placeholder="Mobile" value={editFormData.mobile_number} onChange={(e) => setEditFormData({ ...editFormData, mobile_number: e.target.value })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
+                <input type="email" placeholder="Email" value={editFormData.email} onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
               </div>
-              <div className="form-group">
-                <label>Address</label>
-                <textarea
-                  value={editFormData.address}
-                  onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                  placeholder="Enter address"
-                  rows="3"
-                />
+              <div style={{ marginBottom: '10px' }}>
+                <textarea placeholder="Address" value={editFormData.address} onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })} rows="2" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem', resize: 'vertical' }} />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Opening Balance</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editFormData.opening_balance}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      // Only allow digits, decimal point, and empty string
-                      // Block mathematical signs: +, -, *, /, e, E
-                      if (val !== '' && !/^[\d.]*$/.test(val)) return;
-                      // Prevent multiple decimal points
-                      if ((val.match(/\./g) || []).length > 1) return;
-                      setEditFormData({ ...editFormData, opening_balance: val });
-                    }}
-                    onKeyDown={(e) => {
-                      // Block mathematical signs and 'e', 'E'
-                      if (['+', '-', '*', '/', 'e', 'E'].includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Closing Balance</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editFormData.closing_balance}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      // Only allow digits, decimal point, and empty string
-                      // Block mathematical signs: +, -, *, /, e, E
-                      if (val !== '' && !/^[\d.]*$/.test(val)) return;
-                      // Prevent multiple decimal points
-                      if ((val.match(/\./g) || []).length > 1) return;
-                      setEditFormData({ ...editFormData, closing_balance: val });
-                    }}
-                    onKeyDown={(e) => {
-                      // Block mathematical signs and 'e', 'E'
-                      if (['+', '-', '*', '/', 'e', 'E'].includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>GST number (optional)</label>
-                <input
-                  type="text"
-                  value={editFormData.gst_number}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^A-Za-z0-9]/g, '');
-                    if (value.length <= 20) {
-                      setEditFormData({ ...editFormData, gst_number: value });
-                    }
-                  }}
-                  placeholder="Enter GST number (alphanumeric, max 20 chars)"
-                  maxLength={20}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <input type="text" placeholder="GST Number" value={editFormData.gst_number} onChange={(e) => setEditFormData({ ...editFormData, gst_number: e.target.value })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingParty(null);
-                  setEditFormData({
-                    party_name: '',
-                    mobile_number: '',
-                    email: '',
-                    address: '',
-                    opening_balance: '',
-                    closing_balance: '',
-                    gst_number: ''
-                  });
-                }}
-                className="btn btn-secondary"
-                disabled={updating}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdate}
-                className="btn btn-primary"
-                disabled={updating}
-              >
-                {updating ? 'Updating...' : 'Update Party'}
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 16px', borderTop: '1px solid #2a3340' }}>
+              <button onClick={() => setShowEditModal(false)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={updating}>Cancel</button>
+              <button onClick={handleUpdate} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={updating}>{updating ? 'Updating...' : 'Update'}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Scroll to Top Button */}
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        style={{
-          position: 'fixed',
-          bottom: '30px',
-          right: '30px',
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          backgroundColor: '#3498db',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-          zIndex: 1000,
-          transition: 'all 0.3s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#2980b9';
-          e.target.style.transform = 'scale(1.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = '#3498db';
-          e.target.style.transform = 'scale(1)';
-        }}
-        title="Scroll to top"
-      >
-        ↑
-      </button>
+      {/* Scroll to Top */}
+      {showScrollTop && (
+        <button onClick={scrollToTop} style={{ position: 'fixed', bottom: '20px', right: '20px', width: '36px', height: '36px', borderRadius: '50%', background: '#f59a30', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', zIndex: 999 }}>
+          <Icons.ChevronUp />
+        </button>
+      )}
     </Layout>
   );
 };
 
 export default Parties;
-

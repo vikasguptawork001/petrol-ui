@@ -1,3 +1,203 @@
+// import React, { useState, useEffect } from 'react';
+// import Layout from '../components/Layout';
+// import apiClient from '../config/axios';
+// import config from '../config/config';
+// import { useAuth } from '../context/AuthContext';
+// import { useToast } from '../context/ToastContext';
+// import TransactionLoader from '../components/TransactionLoader';
+// import './Party.css';
+// import './PetrolPump.css';
+// import '../styles/petrolpump-theme.css';
+
+// const Nozzles = () => {
+//   const { user } = useAuth();
+//   const toast = useToast();
+//   const [nozzles, setNozzles] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [showForm, setShowForm] = useState(false);
+//   const [editingId, setEditingId] = useState(null);
+//   const [formData, setFormData] = useState({ name: '' });
+//   const [submitting, setSubmitting] = useState(false);
+//   const [deleting, setDeleting] = useState(false);
+
+//   useEffect(() => {
+//     if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+//       fetchNozzles();
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [user]);
+
+//   const fetchNozzles = async () => {
+//     try {
+//       setLoading(true);
+//       const res = await apiClient.get(config.api.nozzles);
+//       setNozzles(res.data.nozzles || []);
+//     } catch (e) {
+//       console.error(e);
+//       toast.error('Failed to load nozzles');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const openAdd = () => {
+//     setEditingId(null);
+//     setFormData({ name: '' });
+//     setShowForm(true);
+//   };
+
+//   const openEdit = (n) => {
+//     setEditingId(n.id);
+//     setFormData({ name: n.name });
+//     setShowForm(true);
+//   };
+
+//   const closeForm = () => {
+//     setShowForm(false);
+//     setEditingId(null);
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!formData.name.trim()) {
+//       toast.error('Nozzle name is required');
+//       return;
+//     }
+//     setSubmitting(true);
+//     try {
+//       const payload = { name: formData.name.trim() };
+//       if (editingId) {
+//         await apiClient.put(`${config.api.nozzles}/${editingId}`, payload);
+//         toast.success('Nozzle updated');
+//       } else {
+//         await apiClient.post(config.api.nozzles, payload);
+//         toast.success('Nozzle added');
+//       }
+//       closeForm();
+//       fetchNozzles();
+//     } catch (err) {
+//       toast.error(err.response?.data?.error || 'Failed to save nozzle');
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   };
+
+//   const handleDelete = async (id) => {
+//     if (!window.confirm('Delete this nozzle? It will be archived and hidden from the list. You can restore it later.')) return;
+//     setDeleting(true);
+//     try {
+//       await apiClient.delete(`${config.api.nozzles}/${id}`);
+//       toast.success('Nozzle deleted');
+//       fetchNozzles();
+//     } catch (err) {
+//       toast.error(err.response?.data?.error || 'Failed to delete');
+//     } finally {
+//       setDeleting(false);
+//     }
+//   };
+
+//   if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+//     return (
+//       <Layout>
+//         <div className="pp-page">
+//           <p style={{ color: '#dc3545', textAlign: 'center', padding: '24px' }}>Access denied. Only Admin and Super Admin can manage nozzles.</p>
+//         </div>
+//       </Layout>
+//     );
+//   }
+
+//   return (
+//     <Layout>
+//       <div className="pp-page">
+//         <div className="pp-page-header">
+//           <div className="pp-header-content">
+//             <h1 className="pp-page-title">Nozzles</h1>
+//             <p className="pp-page-subtitle">Manage pump nozzles. Delete hides a nozzle from the list (archived internally).</p>
+//           </div>
+//           <div className="pp-header-actions">
+//             <button type="button" className="btn btn-primary" onClick={openAdd}>
+//               + Add Nozzle
+//             </button>
+//           </div>
+//         </div>
+
+//         <div className="pp-card">
+//           <h2 className="pp-card-title">Nozzle list</h2>
+//           {loading ? (
+//             <TransactionLoader type="petrol" message="Loading nozzles..." />
+//           ) : nozzles.length === 0 ? (
+//             <div className="pp-empty">No nozzles yet. Add one to get started.</div>
+//           ) : (
+//             <div className="pp-table-wrap">
+//               <table className="pp-table">
+//                 <thead>
+//                   <tr>
+//                     <th>S.No</th>
+//                     <th>Name</th>
+//                     <th>Actions</th>
+//                   </tr>
+//                 </thead>
+//                 <tbody>
+//                   {nozzles.map((n, i) => (
+//                     <tr key={n.id}>
+//                       <td>{i + 1}</td>
+//                       <td style={{ fontWeight: '600', color: '#1e293b' }}>{n.name}</td>
+//                       <td style={{ textAlign: 'center' }}>
+//                         <button type="button" className="btn btn-secondary" onClick={() => openEdit(n)}>Edit</button>
+//                         <button type="button" className="btn btn-danger" onClick={() => handleDelete(n.id)} disabled={deleting}>Delete</button>
+//                       </td>
+//                     </tr>
+//                   ))}
+//                 </tbody>
+//               </table>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {showForm && (
+//         <div className="pp-modal-overlay" onClick={closeForm}>
+//           <div className="pp-modal" onClick={e => e.stopPropagation()}>
+//             <div className="pp-modal-header">
+//               <h3>{editingId ? 'Edit Nozzle' : 'Add Nozzle'}</h3>
+//               <button type="button" className="pp-modal-close" onClick={closeForm} aria-label="Close">×</button>
+//             </div>
+//             <form onSubmit={handleSubmit}>
+//               <div className="pp-modal-body">
+//                 <div className="form-group">
+//                   <label>Name *</label>
+//                   <input
+//                     type="text"
+//                     value={formData.name}
+//                     onChange={e => setFormData({ ...formData, name: e.target.value })}
+//                     placeholder="e.g. Nozzle 1"
+//                     required
+//                     autoFocus
+//                     className="pp-input"
+//                   />
+//                 </div>
+//               </div>
+//               <div className="pp-modal-footer">
+//                 <button type="button" className="btn btn-secondary" onClick={closeForm}>Cancel</button>
+//                 <button type="submit" className="btn btn-primary" disabled={submitting}>
+//                   {submitting ? 'Saving…' : (editingId ? 'Update' : 'Add')}
+//                 </button>
+//               </div>
+//             </form>
+//           </div>
+//         </div>
+//       )}
+//     </Layout>
+//   );
+// };
+
+// export default Nozzles;
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
@@ -5,9 +205,26 @@ import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
+import ActionMenu from '../components/ActionMenu';
 import './Party.css';
 import './PetrolPump.css';
 import '../styles/petrolpump-theme.css';
+
+// Minimal Icons
+const Icon = ({ name, size = 14 }) => {
+  const icons = {
+    nozzle: <><path d="M4 22h16" /><path d="M18 4L8 14" /><path d="M6 12l4-4" /><circle cx="19" cy="5" r="2" /></>,
+    edit: <><path d="M17 3l4 4-7 7H10v-4l7-7z" /><path d="M4 20h16" /></>,
+    delete: <><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13" /><path d="M9 3h6" /></>,
+    plus: <><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>,
+    close: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+      {icons[name]}
+    </svg>
+  );
+};
 
 const Nozzles = () => {
   const { user } = useAuth();
@@ -19,12 +236,15 @@ const Nozzles = () => {
   const [formData, setFormData] = useState({ name: '' });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 300);
+    window.addEventListener('scroll', handleScroll);
     if (user && (user.role === 'admin' || user.role === 'super_admin')) {
       fetchNozzles();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [user]);
 
   const fetchNozzles = async () => {
@@ -82,8 +302,8 @@ const Nozzles = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this nozzle? It will be archived and hidden from the list. You can restore it later.')) return;
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Delete "${name}"? It will be archived and hidden from the list.`)) return;
     setDeleting(true);
     try {
       await apiClient.delete(`${config.api.nozzles}/${id}`);
@@ -96,11 +316,13 @@ const Nozzles = () => {
     }
   };
 
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
   if (user && user.role !== 'admin' && user.role !== 'super_admin') {
     return (
       <Layout>
-        <div className="pp-page">
-          <p style={{ color: '#dc3545', textAlign: 'center', padding: '24px' }}>Access denied. Only Admin and Super Admin can manage nozzles.</p>
+        <div style={{ padding: '24px', textAlign: 'center', color: '#e8593c', fontWeight: 500 }}>
+          Access denied. Only Admin and Super Admin can manage nozzles.
         </div>
       </Layout>
     );
@@ -108,87 +330,141 @@ const Nozzles = () => {
 
   return (
     <Layout>
-      <div className="pp-page">
-        <div className="pp-page-header">
-          <div className="pp-header-content">
-            <h1 className="pp-page-title">Nozzles</h1>
-            <p className="pp-page-subtitle">Manage pump nozzles. Delete hides a nozzle from the list (archived internally).</p>
+      <div style={{ padding: '8px 12px', maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon name="nozzle" size={18} />
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Nozzles</h1>
+            </div>
+            <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Manage pump nozzles. Delete archives the nozzle.</p>
           </div>
-          <div className="pp-header-actions">
-            <button type="button" className="btn btn-primary" onClick={openAdd}>
-              + Add Nozzle
-            </button>
+          <button onClick={openAdd} style={{ padding: '6px 12px', background: '#f59a30', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Icon name="plus" size={12} /> Add Nozzle
+          </button>
+        </div>
+
+        {/* Stats Card */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #f59a30' }}>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Nozzles</div>
+            <div style={{ fontSize: '20px', fontWeight: 700 }}>{nozzles.length}</div>
+          </div>
+          <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #3b82f6' }}>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Active Nozzles</div>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: '#3b82f6' }}>{nozzles.filter(n => !n.is_archived).length}</div>
           </div>
         </div>
 
-        <div className="pp-card">
-          <h2 className="pp-card-title">Nozzle list</h2>
-          {loading ? (
-            <TransactionLoader type="petrol" message="Loading nozzles..." />
-          ) : nozzles.length === 0 ? (
-            <div className="pp-empty">No nozzles yet. Add one to get started.</div>
-          ) : (
-            <div className="pp-table-wrap">
-              <table className="pp-table">
-                <thead>
-                  <tr>
-                    <th>S.No</th>
-                    <th>Name</th>
-                    <th>Actions</th>
+        {/* Table */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading...</div>
+        ) : nozzles.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#6c7f8f', background: '#0f151f', borderRadius: '6px' }}>
+            No nozzles yet. Click "Add Nozzle" to get started.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto', borderRadius: '6px', border: '1px solid #2a3340' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <thead>
+                <tr style={{ background: '#0f151f' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', width: '50px' }}>#</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left' }}>Nozzle Name</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', width: '80px' }}>Actions</th>
+                 </tr>
+              </thead>
+              <tbody>
+                {nozzles.map((n, idx) => (
+                  <tr key={n.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
+                    <td style={{ padding: '8px 10px', fontWeight: 500 }}>{n.name}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button onClick={() => openEdit(n)} style={{ padding: '4px 8px', background: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => handleDelete(n.id, n.name)} style={{ padding: '4px 8px', background: '#e8593c', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {nozzles.map((n, i) => (
-                    <tr key={n.id}>
-                      <td>{i + 1}</td>
-                      <td style={{ fontWeight: '600', color: '#1e293b' }}>{n.name}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button type="button" className="btn btn-secondary" onClick={() => openEdit(n)}>Edit</button>
-                        <button type="button" className="btn btn-danger" onClick={() => handleDelete(n.id)} disabled={deleting}>Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
+      {/* Add/Edit Modal */}
       {showForm && (
-        <div className="pp-modal-overlay" onClick={closeForm}>
-          <div className="pp-modal" onClick={e => e.stopPropagation()}>
-            <div className="pp-modal-header">
-              <h3>{editingId ? 'Edit Nozzle' : 'Add Nozzle'}</h3>
-              <button type="button" className="pp-modal-close" onClick={closeForm} aria-label="Close">×</button>
+        <div style={modalOverlay} onClick={closeForm}>
+          <div style={{ ...modalContent, maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div style={modalHeader}>
+              <h3 style={{ fontSize: '14px', margin: 0 }}>{editingId ? 'Edit Nozzle' : 'Add Nozzle'}</h3>
+              <button onClick={closeForm} style={closeBtn}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="pp-modal-body">
-                <div className="form-group">
-                  <label>Name *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Nozzle 1"
-                    required
-                    autoFocus
-                    className="pp-input"
-                  />
-                </div>
+              <div style={modalBody}>
+                <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nozzle Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Nozzle 1"
+                  autoFocus
+                  style={inputStyle}
+                />
               </div>
-              <div className="pp-modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={closeForm}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? 'Saving…' : (editingId ? 'Update' : 'Add')}
-                </button>
+              <div style={modalFooter}>
+                <button type="button" onClick={closeForm} style={secondaryBtn}>Cancel</button>
+                <button type="submit" disabled={submitting} style={primaryBtn}>{submitting ? 'Saving...' : (editingId ? 'Update' : 'Add')}</button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Scroll to Top */}
+      {showScrollTop && (
+        <button onClick={scrollToTop} style={scrollBtnStyle}>↑</button>
+      )}
     </Layout>
   );
+};
+
+// Styles
+const inputStyle = {
+  padding: '6px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #2a3340',
+  background: '#0f151f', color: '#fff', width: '100%', boxSizing: 'border-box'
+};
+
+const modalOverlay = {
+  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex',
+  alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px'
+};
+
+const modalContent = {
+  background: '#141b26', borderRadius: '8px', width: '100%', display: 'flex',
+  flexDirection: 'column', border: '1px solid #2a3340'
+};
+
+const modalHeader = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  padding: '10px 12px', borderBottom: '1px solid #2a3340'
+};
+
+const modalBody = { padding: '12px' };
+const modalFooter = { padding: '10px 12px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', gap: '8px' };
+const closeBtn = { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px' };
+const primaryBtn = { padding: '5px 12px', fontSize: '11px', background: '#f59a30', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: 500 };
+const secondaryBtn = { padding: '5px 12px', fontSize: '11px', background: 'transparent', border: '1px solid #2a3340', borderRadius: '3px', cursor: 'pointer', color: '#94a3b8' };
+const scrollBtnStyle = {
+  position: 'fixed', bottom: '16px', right: '16px', width: '32px', height: '32px',
+  borderRadius: '50%', background: '#f59a30', border: 'none', cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.3)', zIndex: 999
 };
 
 export default Nozzles;
