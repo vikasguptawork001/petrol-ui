@@ -427,7 +427,7 @@ const Attendants = () => {
           </div>
           <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #3b82f6' }}>
             <div style={{ fontSize: '10px', color: '#94a3b8' }}>With Mobile</div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: '#3b82f6' }}>{withMobile}</div>
+            <div style={{ fontSize:  '20px', fontWeight: 700, color: '#3b82f6' }}>{withMobile}</div>
           </div>
         </div>
 
