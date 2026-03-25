@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { getLocalDateString } from '../utils/dateUtils';
 import TransactionLoader from '../components/TransactionLoader';
-import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import './Party.css';
 import '../styles/petrolpump-theme.css';
@@ -56,7 +55,6 @@ const Parties = () => {
     opening_balance: '', closing_balance: '', gst_number: ''
   });
   const [updating, setUpdating] = useState(false);
-  const [archiving, setArchiving] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -73,6 +71,7 @@ const Parties = () => {
 
   useEffect(() => {
     fetchParties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -190,7 +189,6 @@ const Parties = () => {
 
   const handleArchive = async (party) => {
     if (!window.confirm(`Delete "${party.party_name}"? This cannot be undone.`)) return;
-    setArchiving(true);
     try {
       await apiClient.delete(`${config.api.sellers}/${party.id}`);
       toast.success('Party deleted successfully');
@@ -198,8 +196,6 @@ const Parties = () => {
     } catch (error) {
       console.error('Error deleting party:', error);
       toast.error(error.response?.data?.error || 'Failed to delete party');
-    } finally {
-      setArchiving(false);
     }
   };
 

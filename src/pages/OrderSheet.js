@@ -292,6 +292,7 @@ const OrderSheet = () => {
         abortControllerRef.current.abort();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit]);
 
   const fetchOrders = async () => {

@@ -252,7 +252,6 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 import './PetrolPump.css';
 import '../styles/petrolpump-theme.css';
@@ -284,7 +283,6 @@ const Attendants = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ attendance_id: '', name: '', mobile_number: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -294,6 +292,7 @@ const Attendants = () => {
       fetchAttendants();
     }
     return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchAttendants = async () => {
@@ -374,15 +373,13 @@ const Attendants = () => {
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? They will be archived.`)) return;
-    setDeleting(true);
+    // We remove setDeleting state usage since we don't need it or it's unused
     try {
       await apiClient.delete(`${config.api.attendants}/${id}`);
       toast.success('Attendant deleted');
       fetchAttendants();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete');
-    } finally {
-      setDeleting(false);
     }
   };
 

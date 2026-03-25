@@ -3569,7 +3569,6 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { DueSheetPanel } from './DueSheet';
@@ -3608,7 +3607,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const currentTab = searchParams.get('tab') || 'items';
   
   const [items, setItems] = useState([]);
@@ -3650,16 +3649,12 @@ const Dashboard = () => {
   const [dueDateSaving, setDueDateSaving] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Tab navigation handler
-  const handleTabChange = (tab) => {
-    setSearchParams({ tab });
-  };
-
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
     fetchItems();
     return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

@@ -1219,7 +1219,7 @@
 
 
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
@@ -1294,14 +1294,17 @@ export function NozzleReadingPanel({ embedded = false }) {
   useEffect(() => {
     fetchMeta();
     fetchReadings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchReadings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, page]);
 
   useEffect(() => {
     if (showModal && recordMode === 'add_closing') fetchPendingReadings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal, recordMode, filters.from, filters.to]);
 
   useEffect(() => {

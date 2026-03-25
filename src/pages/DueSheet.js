@@ -456,6 +456,7 @@ export function DueSheetPanel({ embedded = false }) {
     if (!embedded) {
       toast.error('Access denied. Due Sheet is visible only to Super Admin.');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, embedded]);
 
   useEffect(() => {
@@ -473,6 +474,7 @@ export function DueSheetPanel({ embedded = false }) {
         abortControllerRef.current.abort();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromDueDate, toDueDate, debouncedSearchQuery, page, limit, user]);
 
   const fetchDueSheet = async () => {

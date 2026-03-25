@@ -204,8 +204,6 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import TransactionLoader from '../components/TransactionLoader';
-import ActionMenu from '../components/ActionMenu';
 import './Party.css';
 import './PetrolPump.css';
 import '../styles/petrolpump-theme.css';
@@ -235,7 +233,6 @@ const Nozzles = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -245,6 +242,7 @@ const Nozzles = () => {
       fetchNozzles();
     }
     return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchNozzles = async () => {
@@ -304,15 +302,12 @@ const Nozzles = () => {
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? It will be archived and hidden from the list.`)) return;
-    setDeleting(true);
     try {
       await apiClient.delete(`${config.api.nozzles}/${id}`);
       toast.success('Nozzle deleted');
       fetchNozzles();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete');
-    } finally {
-      setDeleting(false);
     }
   };
 
