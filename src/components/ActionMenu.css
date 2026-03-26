@@ -5,7 +5,7 @@
 
 .action-menu-button {
   background: transparent;
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--pp-border, #2a3340);
   border-radius: 6px;
   padding: 6px 10px;
   cursor: pointer;
@@ -15,7 +15,7 @@
   transition: all 0.2s ease;
   min-width: 32px;
   height: 32px;
-  color: #495057;
+  color: var(--pp-text-secondary, #9aaebf);
   font-size: 18px;
   line-height: 1;
 }
@@ -23,7 +23,7 @@
 /* Single action button - shows directly instead of three-dots */
 .action-menu-single-button {
   background: transparent;
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--pp-border, #2a3340);
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
@@ -34,20 +34,20 @@
   transition: all 0.2s ease;
   min-width: auto;
   height: 32px;
-  color: #495057;
+  color: var(--pp-text-secondary, #9aaebf);
   font-size: 14px;
   line-height: 1;
   white-space: nowrap;
 }
 
 .action-menu-single-button:hover:not(.disabled) {
-  background: #f8f9fa;
-  border-color: #3498db;
-  color: #3498db;
+  background: var(--pp-orange-glow, rgba(245, 154, 48, 0.1));
+  border-color: var(--pp-orange, #f59a30);
+  color: var(--pp-orange, #f59a30);
 }
 
 .action-menu-single-button:active:not(.disabled) {
-  background: #e9ecef;
+  background: rgba(245, 154, 48, 0.15);
   transform: scale(0.98);
 }
 
@@ -62,24 +62,24 @@
 }
 
 .action-menu-single-button.danger {
-  color: #dc3545;
-  border-color: #f5c6cb;
+  color: var(--pp-danger, #e8593c);
+  border-color: rgba(232, 89, 60, 0.3);
 }
 
 .action-menu-single-button.danger:hover:not(.disabled) {
-  background: #fff5f5;
-  border-color: #dc3545;
-  color: #c82333;
+  background: var(--pp-danger-bg, rgba(232, 89, 60, 0.12));
+  border-color: var(--pp-danger, #e8593c);
+  color: #ff6b4a;
 }
 
 .action-menu-button:hover:not(.disabled) {
-  background: #f8f9fa;
-  border-color: #3498db;
-  color: #3498db;
+  background: var(--pp-orange-glow, rgba(245, 154, 48, 0.1));
+  border-color: var(--pp-orange, #f59a30);
+  color: var(--pp-orange, #f59a30);
 }
 
 .action-menu-button:active:not(.disabled) {
-  background: #e9ecef;
+  background: rgba(245, 154, 48, 0.15);
   transform: scale(0.98);
 }
 
@@ -121,9 +121,10 @@
 
 /* Modal Container */
 .action-menu-modal {
-  background: white;
+  background: var(--pp-bg-elevated, #1a2330);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--pp-border, #2a3340);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
   width: 100%;
   max-width: 400px;
   max-height: calc(100vh - 40px);
@@ -138,22 +139,23 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e1e8ed;
+  border-bottom: 1px solid var(--pp-border, #2a3340);
+  background: linear-gradient(135deg, #0d1828 0%, #1a2330 100%);
 }
 
 .action-menu-modal-header h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #2c3e50;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 .action-menu-modal-close {
-  background: none;
+  background: rgba(255,255,255,0.08);
   border: none;
-  font-size: 28px;
+  font-size: 22px;
   line-height: 1;
-  color: #6c757d;
+  color: var(--pp-text-secondary, #9aaebf);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -161,19 +163,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .action-menu-modal-close:hover {
-  background: #f8f9fa;
-  color: #2c3e50;
+  background: rgba(255,255,255,0.15);
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 .action-menu-modal-content {
   padding: 8px 0;
   overflow-y: auto;
   max-height: calc(100vh - 120px);
+  scrollbar-width: thin;
+  scrollbar-color: #2a3340 #0f151f;
 }
 
 @keyframes slideUp {
@@ -209,29 +213,30 @@
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--pp-text-primary, #eef2f8);
   transition: background-color 0.15s ease;
   white-space: nowrap;
   overflow: visible;
   min-width: 100%;
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
 }
 
 .action-menu-item:hover:not(.disabled) {
-  background: #f8f9fa;
-  color: #2c3e50;
+  background: rgba(245, 154, 48, 0.06);
+  color: var(--pp-orange, #f59a30);
 }
 
 .action-menu-item:active:not(.disabled) {
-  background: #e9ecef;
+  background: rgba(245, 154, 48, 0.1);
 }
 
 .action-menu-item.danger {
-  color: #dc3545;
+  color: var(--pp-danger, #e8593c);
 }
 
 .action-menu-item.danger:hover:not(.disabled) {
-  background: #fff5f5;
-  color: #c82333;
+  background: var(--pp-danger-bg, rgba(232, 89, 60, 0.1));
+  color: #ff6b4a;
 }
 
 .action-menu-item.disabled {
@@ -242,7 +247,7 @@
 
 .action-menu-item.loading {
   cursor: wait;
-  background: #f8f9fa !important;
+  background: rgba(245, 154, 48, 0.04) !important;
 }
 
 .action-menu-icon {
@@ -259,38 +264,22 @@
   text-align: left;
 }
 
-/* Custom scrollbar for modal content */
-.action-menu-modal-content::-webkit-scrollbar {
-  width: 6px;
-}
+.action-menu-modal-content::-webkit-scrollbar { width: 6px; }
+.action-menu-modal-content::-webkit-scrollbar-track { background: #0f151f; border-radius: 3px; }
+.action-menu-modal-content::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
+.action-menu-modal-content::-webkit-scrollbar-thumb:hover { background: var(--pp-orange, #f59a30); }
 
-.action-menu-modal-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.action-menu-modal-content::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.action-menu-modal-content::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Firefox scrollbar */
 .action-menu-modal-content {
   scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
+  scrollbar-color: #2a3340 #0f151f;
 }
 
-/* Loading Spinner Styles */
 .action-menu-spinner {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(73, 80, 87, 0.3);
-  border-top: 2px solid #495057;
+  border: 2px solid rgba(155, 170, 190, 0.2);
+  border-top: 2px solid var(--pp-orange, #f59a30);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -299,8 +288,8 @@
   display: inline-block;
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(44, 62, 80, 0.3);
-  border-top: 2px solid #2c3e50;
+  border: 2px solid rgba(155, 170, 190, 0.2);
+  border-top: 2px solid var(--pp-orange, #f59a30);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
@@ -311,29 +300,12 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Custom scrollbar for dropdown */
-.action-menu-dropdown::-webkit-scrollbar {
-  width: 6px;
-}
+.action-menu-dropdown::-webkit-scrollbar { width: 6px; }
+.action-menu-dropdown::-webkit-scrollbar-track { background: #0f151f; border-radius: 3px; }
+.action-menu-dropdown::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
+.action-menu-dropdown::-webkit-scrollbar-thumb:hover { background: var(--pp-orange, #f59a30); }
 
-.action-menu-dropdown::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.action-menu-dropdown::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.action-menu-dropdown::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Firefox scrollbar */
 .action-menu-dropdown {
   scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
+  scrollbar-color: #2a3340 #0f151f;
 }
-
-/* High z-index ensures visibility above other elements (already set above) */

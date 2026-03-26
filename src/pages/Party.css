@@ -5,7 +5,7 @@
 
 .party-form h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 .form-row {
@@ -27,6 +27,7 @@
   margin: 0 auto;
   padding: 0 clamp(8px, 1.5vw, 12px);
   box-sizing: border-box;
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 .parties-header {
@@ -40,7 +41,7 @@
 
 .parties-header h2 {
   margin: 0;
-  color: #2c3e50;
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 .header-actions {
@@ -52,34 +53,36 @@
 /* Filter Tabs */
 .filter-tabs {
   display: flex;
-  gap: 10px;
-  border-bottom: 2px solid #e0e0e0;
+  gap: 4px;
+  border-bottom: 1px solid var(--pp-border, #2a3340);
   margin-bottom: 20px;
 }
 
 .filter-tab {
-  padding: 12px 24px;
+  padding: 10px 20px;
   border: none;
   background: transparent;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--pp-text-muted, #6c7f8f);
   border-bottom: 3px solid transparent;
-  transition: all 0.3s;
+  transition: all 0.2s;
   position: relative;
-  top: 2px;
+  top: 1px;
+  border-radius: 6px 6px 0 0;
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
 }
 
 .filter-tab:hover {
-  color: #007bff;
-  background-color: #f8f9fa;
+  color: var(--pp-text-secondary, #9aaebf);
+  background-color: rgba(255,255,255,0.04);
 }
 
 .filter-tab.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
-  font-weight: 600;
+  color: var(--pp-orange, #f59a30);
+  border-bottom-color: var(--pp-orange, #f59a30);
+  font-weight: 700;
 }
 
 /* Search Input */
@@ -89,37 +92,43 @@
 
 .search-input {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--pp-border, #2a3340);
+  border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.3s;
+  background: var(--pp-bg-input, #0f151f);
+  color: var(--pp-text-primary, #eef2f8);
+  transition: border-color 0.2s;
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: var(--pp-orange, #f59a30);
+  box-shadow: 0 0 0 3px rgba(245, 154, 48, 0.18);
 }
 
 /* Party Type Badge */
 .party-type-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .party-type-badge.buyer {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: rgba(29, 158, 117, 0.15);
+  color: #2bc48f;
 }
 
 .party-type-badge.seller {
-  background-color: #fff3e0;
-  color: #e65100;
+  background-color: rgba(245, 154, 48, 0.15);
+  color: var(--pp-orange, #f59a30);
 }
 
 /* Summary Cards */
@@ -129,14 +138,19 @@
 
 .summary-card {
   padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: var(--pp-bg-card, #141b26);
+  border: 1px solid var(--pp-border, #2a3340);
+  box-shadow: var(--pp-card-shadow, 0 4px 16px rgba(0,0,0,0.35));
 }
 
 /* Table Container */
 .table-container {
   overflow-x: auto;
   margin-top: 20px;
+  background: var(--pp-bg-card, #141b26);
+  border-radius: 10px;
+  border: 1px solid var(--pp-border, #2a3340);
 }
 
 /* Responsive */
@@ -252,45 +266,45 @@
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  gap: 15px;
+  gap: 8px;
   margin-top: 20px;
   margin-bottom: 10px;
-  padding: 15px;
+  padding: 12px;
   flex-wrap: wrap;
   width: 100%;
   box-sizing: border-box;
 }
 
 .pagination button {
-  padding: 10px 20px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  min-width: 100px;
-  border: 1px solid #ddd !important;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  min-width: 80px;
+  border: 1px solid var(--pp-border, #2a3340) !important;
   border-radius: 6px !important;
-  background: white !important;
-  color: #333 !important;
+  background: var(--pp-bg-elevated, #1a2330) !important;
+  color: var(--pp-text-secondary, #9aaebf) !important;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
 }
 
 .pagination button:hover:not(:disabled) {
-  background-color: #f0f0f0 !important;
-  border-color: #007bff !important;
-  color: #007bff !important;
+  border-color: var(--pp-orange, #f59a30) !important;
+  color: var(--pp-orange, #f59a30) !important;
+  background: rgba(245, 154, 48, 0.06) !important;
 }
 
 .pagination button:disabled {
-  opacity: 0.6 !important;
+  opacity: 0.4 !important;
   cursor: not-allowed !important;
-  background-color: #f5f5f5 !important;
 }
 
 .pagination span {
-  padding: 10px 15px;
-  font-size: 14px;
+  padding: 8px 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--pp-text-secondary, #9aaebf);
   white-space: nowrap;
 }
 
@@ -314,37 +328,37 @@
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(5, 8, 16, 0.72);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9000;
 }
 
 .modal-content {
-  background: white;
-  border-radius: 8px;
+  background: var(--pp-bg-elevated, #1a2330);
+  border-radius: 14px;
   padding: 0;
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--pp-border, #2a3340);
   overflow: hidden;
+  animation: modalSlideUp 0.22s cubic-bezier(0.4,0,0.2,1);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-  background: white;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--pp-border, #2a3340);
+  background: linear-gradient(135deg, #0d1828 0%, #1a2330 100%);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -353,64 +367,50 @@
 
 .modal-header h3 {
   margin: 0;
-  color: #333;
+  color: var(--pp-text-primary, #eef2f8);
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .modal-close {
-  background: none;
+  background: rgba(255,255,255,0.08);
   border: none;
-  font-size: 28px;
+  font-size: 22px;
   cursor: pointer;
-  color: #666;
+  color: var(--pp-text-secondary, #9aaebf);
   padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .modal-close:hover {
-  background-color: #f0f0f0;
+  background: rgba(255,255,255,0.15);
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 20px 22px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  /* Custom scrollbar styles */
+  color: var(--pp-text-primary, #eef2f8);
   scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
+  scrollbar-color: #2a3340 #0f151f;
 }
 
-.modal-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track { background: #0f151f; }
+.modal-body::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 20px;
-  border-top: 1px solid #eee;
-  background: white;
+  padding: 16px 22px;
+  border-top: 1px solid var(--pp-border, #2a3340);
+  background: var(--pp-bg-card, #141b26);
   position: sticky;
   bottom: 0;
   z-index: 10;

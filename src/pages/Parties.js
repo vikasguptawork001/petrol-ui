@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { getLocalDateString } from '../utils/dateUtils';
 import TransactionLoader from '../components/TransactionLoader';
 import Pagination from '../components/Pagination';
+import ActionMenu from '../components/ActionMenu';
 import './Party.css';
 import '../styles/petrolpump-theme.css';
 
@@ -389,10 +390,8 @@ const Parties = () => {
                   <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>#</th>
                   <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Party Name</th>
                   <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Mobile</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Email</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Address</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>GST</th>
-                  {user?.role === 'super_admin' && (
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>GST No.</th>
+                  {(user?.role === 'super_admin' || user?.role === 'admin') && (
                     <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#94a3b8' }}>Balance</th>
                   )}
                   <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>Actions</th>
@@ -404,25 +403,42 @@ const Parties = () => {
                     <td style={{ padding: '8px 10px', textAlign: 'center', color: '#94a3b8' }}>{idx + 1}</td>
                     <td style={{ padding: '8px 10px', fontWeight: 500, whiteSpace: 'nowrap' }}>{party.party_name}</td>
                     <td style={{ padding: '8px 10px', color: '#9aaebf' }}>{party.mobile_number || '-'}</td>
-                    <td style={{ padding: '8px 10px', color: '#9aaebf', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{party.email || '-'}</td>
-                    <td style={{ padding: '8px 10px', color: '#9aaebf', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{party.address || '-'}</td>
-                    <td style={{ padding: '8px 10px', color: '#9aaebf' }}>{party.gst_number || '-'}</td>
-                    {user?.role === 'super_admin' && (
+                    <td style={{ padding: '8px 10px', color: '#9aaebf', fontFamily: 'monospace', fontSize: '11px' }}>{party.gst_number || '-'}</td>
+                    {(user?.role === 'super_admin' || user?.role === 'admin') && (
                       <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: parseFloat(party.balance_amount || 0) > 0 ? '#e8593c' : '#1d9e75' }}>
                         ₹{parseFloat(party.balance_amount || 0).toFixed(2)}
                       </td>
                     )}
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                        <button onClick={() => handleViewDetails(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#1e2a3a', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }} title="View Details">👁️</button>
-                        {user?.role === 'super_admin' && (
-                          <>
-                            <button onClick={() => handleMakePayment(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#1d9e75', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }} title="Make Payment">💰</button>
-                            <button onClick={() => handleEdit(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#f59a30', border: 'none', borderRadius: '4px', color: '#000', cursor: 'pointer' }} title="Edit">✏️</button>
-                            <button onClick={() => handleArchive(party)} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#e8593c', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }} title="Delete">🗑️</button>
-                          </>
-                        )}
-                      </div>
+                      <ActionMenu
+                        itemId={party.id}
+                        itemName={party.party_name}
+                        actions={[
+                          {
+                            label: 'View Details',
+                            icon: '👁️',
+                            onClick: () => handleViewDetails(party)
+                          },
+                          ...(user?.role === 'super_admin' ? [
+                            {
+                              label: 'Make Payment',
+                              icon: '💰',
+                              onClick: () => handleMakePayment(party)
+                            },
+                            {
+                              label: 'Edit Creditor',
+                              icon: '✏️',
+                              onClick: () => handleEdit(party)
+                            },
+                            {
+                              label: 'Delete',
+                              icon: '🗑️',
+                              danger: true,
+                              onClick: () => handleArchive(party)
+                            }
+                          ] : [])
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -430,7 +446,7 @@ const Parties = () => {
               {user?.role === 'super_admin' && filteredParties.length > 0 && (
                 <tfoot style={{ background: '#0f151f', borderTop: '1px solid #2a3340' }}>
                   <tr>
-                    <td colSpan="6" style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>Total Outstanding:</td>
+                    <td colSpan="4" style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>Total Outstanding:</td>
                     <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#f59a30' }}>₹{totalBalance.toFixed(2)}</td>
                     <td></td>
                   </tr>
@@ -448,7 +464,7 @@ const Parties = () => {
 
       {/* Party Details Modal - Compact */}
       {showPartyDetailsModal && selectedParty && partyDetails && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowPartyDetailsModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
           <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{partyDetails.party_name}</h3>
@@ -456,25 +472,33 @@ const Parties = () => {
             </div>
             <div style={{ padding: '16px', overflowY: 'auto', flex: 1 }}>
               {/* Party Info Grid - Compact */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '20px' }}>
-                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Mobile</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{partyDetails.mobile_number || '—'}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
+                  <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Mobile</div>
+                  <div style={{ fontSize: '12px', fontWeight: 500 }}>{partyDetails.mobile_number || '—'}</div>
                 </div>
-                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Email</div>
-                  <div style={{ fontSize: '0.85rem' }}>{partyDetails.email || '—'}</div>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
+                  <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Email</div>
+                  <div style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{partyDetails.email || '—'}</div>
                 </div>
-                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>GST</div>
-                  <div style={{ fontSize: '0.85rem' }}>{partyDetails.gst_number || '—'}</div>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
+                  <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>GST No.</div>
+                  <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>{partyDetails.gst_number || '—'}</div>
                 </div>
-                <div style={{ padding: '8px 12px', background: '#f59a3010', borderRadius: '6px', borderLeft: `2px solid #f59a30` }}>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Outstanding</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#e8593c' : '#1d9e75' }}>
-                    ₹{parseFloat(partyDetails.balance_amount || 0).toFixed(2)}
+                {partyDetails.address && (
+                  <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340', gridColumn: 'span 2' }}>
+                    <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Address</div>
+                    <div style={{ fontSize: '12px' }}>{partyDetails.address}</div>
                   </div>
-                </div>
+                )}
+                {(user?.role === 'super_admin' || user?.role === 'admin') && (
+                  <div style={{ padding: '8px 12px', background: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#e8593c15' : '#1d9e7515', borderRadius: '6px', border: `1px solid ${parseFloat(partyDetails.balance_amount || 0) > 0 ? '#e8593c40' : '#1d9e7540'}` }}>
+                    <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Outstanding Balance</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: parseFloat(partyDetails.balance_amount || 0) > 0 ? '#e8593c' : '#1d9e75' }}>
+                      ₹{parseFloat(partyDetails.balance_amount || 0).toFixed(2)}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div style={{ padding: '0 0 12px 0', borderBottom: '1px solid #2a3340', marginBottom: '12px' }}>
@@ -493,14 +517,17 @@ const Parties = () => {
               ) : (
                 <>
                   <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                       <thead>
-                        <tr style={{ background: '#0f151f' }}>
-                          <th style={{ padding: '6px 8px', textAlign: 'left' }}>Date</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'left' }}>Type</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Amount</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Paid</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Balance</th>
+                        <tr style={{ background: '#0f151f', borderBottom: '1px solid #2a3340' }}>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>Date</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Type</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Bill / Ref</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Prev. Balance</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Amount</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Paid</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Balance After</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>Due Date</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -508,17 +535,23 @@ const Parties = () => {
                           const amount = parseFloat(txn.transaction_amount || txn.amount || 0);
                           const paid = parseFloat(txn.paid_amount || 0);
                           const balance = parseFloat(txn.balance_after || txn.balance_amount || 0);
+                          const prevBal = parseFloat(txn.previous_balance || 0);
+                          const txType = txn.transaction_type;
+                          const typeColor = txType === 'sale' ? '#3b82f6' : txType === 'payment' ? '#22c55e' : '#f59a30';
                           return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #2a3340' }}>
-                              <td style={{ padding: '6px 8px' }}>{new Date(txn.transaction_timestamp || txn.created_at).toLocaleDateString()}</td>
+                            <tr key={idx} style={{ borderBottom: '1px solid #1a2330' }}>
+                              <td style={{ padding: '6px 8px', color: '#9aaebf', whiteSpace: 'nowrap' }}>{new Date(txn.transaction_timestamp || txn.created_at).toLocaleDateString('en-IN')}</td>
                               <td style={{ padding: '6px 8px' }}>
-                                <span style={{ padding: '2px 6px', borderRadius: '4px', background: txn.transaction_type === 'sale' ? '#1976d220' : txn.transaction_type === 'payment' ? '#1d9e7520' : '#f59a3020', fontSize: '0.65rem' }}>
-                                  {txn.transaction_type === 'sale' ? 'Sale' : txn.transaction_type === 'payment' ? 'Payment' : txn.transaction_type}
+                                <span style={{ padding: '2px 7px', borderRadius: '4px', background: `${typeColor}20`, color: typeColor, fontSize: '10px', fontWeight: 600 }}>
+                                  {txType === 'sale' ? 'Sale' : txType === 'payment' ? 'Payment' : txType}
                                 </span>
                               </td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>{amount > 0 ? `₹${amount.toFixed(2)}` : '-'}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', color: paid > 0 ? '#1d9e75' : '#94a3b8' }}>{paid > 0 ? `₹${paid.toFixed(2)}` : '-'}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: balance > 0 ? '#e8593c' : '#1d9e75' }}>₹{balance.toFixed(2)}</td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontSize: '10px', color: '#9aaebf' }}>{txn.bill_number || txn.reference_number || '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf' }}>{prevBal > 0 ? `₹${prevBal.toFixed(2)}` : '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#eef2f8' }}>{amount > 0 ? `₹${amount.toFixed(2)}` : '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: paid > 0 ? '#22c55e' : '#9aaebf' }}>{paid > 0 ? `₹${paid.toFixed(2)}` : '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: balance > 0 ? '#e8593c' : '#22c55e' }}>₹{balance.toFixed(2)}</td>
+                              <td style={{ padding: '6px 8px', color: '#9aaebf', whiteSpace: 'nowrap', fontSize: '10px' }}>{txn.due_date ? new Date(txn.due_date).toLocaleDateString('en-IN') : '—'}</td>
                             </tr>
                           );
                         })}
@@ -542,7 +575,7 @@ const Parties = () => {
 
       {/* Payment Modal - Compact */}
       {showPaymentModal && selectedParty && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowPaymentModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
           <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
               <h3 style={{ margin: 0, fontSize: '1rem' }}>Make Payment - {selectedParty.party_name}</h3>
@@ -585,7 +618,7 @@ const Parties = () => {
 
       {/* Receipt Modal - Compact */}
       {showReceiptModal && receiptData && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowReceiptModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
           <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '480px', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
               <h3 style={{ margin: 0, fontSize: '1rem' }}>Payment Receipt</h3>
@@ -619,7 +652,7 @@ const Parties = () => {
 
       {/* Edit Modal - Compact */}
       {showEditModal && editingParty && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
           <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '520px', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
               <h3 style={{ margin: 0, fontSize: '1rem' }}>Edit Creditor</h3>

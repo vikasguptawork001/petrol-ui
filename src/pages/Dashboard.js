@@ -3994,7 +3994,7 @@ const Dashboard = () => {
           </select>
           <input type="text" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '12px', flex: 1, outline: 'none' }} />
         </div>
-        <button onClick={() => setShowAdvancedSearch(!showAdvancedSearch)} style={{ padding: '4px 10px', background: '#2a3340', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <button onClick={() => setShowAdvancedSearch(!showAdvancedSearch)} style={{ padding: '4px 10px', background: showAdvancedSearch ? '#f59a30' : '#2a3340', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: showAdvancedSearch ? '#1a1200' : '#9aaebf', fontWeight: showAdvancedSearch ? 700 : 400 }}>
           <Icon name="filter" size={10} /> Advanced
         </button>
         <select value={limit >= allItems.length ? 'all' : limit} onChange={e => { setLimit(e.target.value === 'all' ? allItems.length : parseInt(e.target.value)); setPage(1); }} style={{ padding: '4px 8px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '4px', color: '#fff', fontSize: '11px' }}>
@@ -4008,14 +4008,14 @@ const Dashboard = () => {
 
       {/* Advanced Search Panel */}
       {showAdvancedSearch && (
-        <div style={{ background: '#0f151f', padding: '10px', borderRadius: '6px', marginBottom: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '8px' }}>
-          <input type="text" placeholder="Product Name" value={advancedSearch.product_name} onChange={e => setAdvancedSearch({ ...advancedSearch, product_name: e.target.value })} style={inputStyle} />
-          <input type="text" placeholder="Unit" value={advancedSearch.unit} onChange={e => setAdvancedSearch({ ...advancedSearch, unit: e.target.value })} style={inputStyle} />
-          <input type="text" placeholder="Brand" value={advancedSearch.brand} onChange={e => setAdvancedSearch({ ...advancedSearch, brand: e.target.value })} style={inputStyle} />
-          <input type="text" placeholder="Remarks" value={advancedSearch.remarks} onChange={e => setAdvancedSearch({ ...advancedSearch, remarks: e.target.value })} style={inputStyle} />
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button onClick={handleAdvancedSearch} disabled={searching} style={{ padding: '4px 12px', background: '#f59a30', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>{searching ? '...' : 'Search'}</button>
-            <button onClick={() => { setAdvancedSearch({ product_name: '', unit: '', brand: '', remarks: '' }); setSearch(''); fetchItems(); }} style={{ padding: '4px 12px', background: '#2a3340', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>Clear</button>
+        <div style={{ background: '#1a2330', border: '1px solid #2a3340', padding: '12px', borderRadius: '8px', marginBottom: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '8px' }}>
+          <input type="text" placeholder="Product Name" value={advancedSearch.product_name} onChange={e => setAdvancedSearch({ ...advancedSearch, product_name: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
+          <input type="text" placeholder="Unit" value={advancedSearch.unit} onChange={e => setAdvancedSearch({ ...advancedSearch, unit: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
+          <input type="text" placeholder="Brand" value={advancedSearch.brand} onChange={e => setAdvancedSearch({ ...advancedSearch, brand: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
+          <input type="text" placeholder="Remarks" value={advancedSearch.remarks} onChange={e => setAdvancedSearch({ ...advancedSearch, remarks: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+            <button onClick={handleAdvancedSearch} disabled={searching} style={{ padding: '6px 14px', background: '#f59a30', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#1a1200', fontWeight: 600 }}>{searching ? '...' : 'Search'}</button>
+            <button onClick={() => { setAdvancedSearch({ product_name: '', unit: '', brand: '', remarks: '' }); setSearch(''); fetchItems(); }} style={{ padding: '6px 10px', background: '#2a3340', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#9aaebf' }}>Clear</button>
           </div>
         </div>
       )}
@@ -4109,64 +4109,130 @@ const Dashboard = () => {
 
       {/* Modals - All remain the same */}
       {showEditModal && editingItem && (
-        <div style={modalOverlay} onClick={e => e.target === e.currentTarget && setShowEditModal(false)}>
+        <div style={modalOverlay}>
           <div style={{ ...modalContent, maxWidth: '520px' }}>
             <div style={modalHeader}>
-              <h3 style={{ fontSize: '14px', margin: 0 }}>Edit Item</h3>
+              <div>
+                <div style={{ fontSize: '11px', color: '#9aaebf', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Edit Item</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#eef2f8' }}>{editingItem.product_name}</div>
+              </div>
               <button onClick={() => setShowEditModal(false)} style={closeBtn}>×</button>
             </div>
             <div style={modalBody}>
-              <input type="text" placeholder="Product Name *" value={editFormData.product_name} onChange={e => setEditFormData({ ...editFormData, product_name: e.target.value })} style={inputStyle} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
-                <select value={editFormData.unit} onChange={e => setEditFormData({ ...editFormData, unit: e.target.value })} style={inputStyle}>
-                  <option value="">Unit</option><option value="liter">Liter</option><option value="kg">KG</option><option value="packet">Packet</option><option value="pcs">Pcs</option>
-                </select>
-                <input type="text" placeholder="Brand" value={editFormData.brand} onChange={e => setEditFormData({ ...editFormData, brand: e.target.value })} style={inputStyle} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ gridColumn: '1/-1' }}>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Product Name *</div>
+                  <input type="text" placeholder="Product Name *" value={editFormData.product_name} onChange={e => setEditFormData({ ...editFormData, product_name: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Unit</div>
+                  <select value={editFormData.unit} onChange={e => setEditFormData({ ...editFormData, unit: e.target.value })} style={inputStyle}>
+                    <option value="">— Select Unit —</option><option value="liter">Liter</option><option value="kg">KG</option><option value="packet">Packet</option><option value="pcs">Pcs</option><option value="box">Box</option><option value="mtr">Meter</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Brand</div>
+                  <input type="text" placeholder="Brand" value={editFormData.brand} onChange={e => setEditFormData({ ...editFormData, brand: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Sale Rate *</div>
+                  <input type="number" step="0.01" placeholder="Sale Rate" value={editFormData.sale_rate} onChange={e => setEditFormData({ ...editFormData, sale_rate: parseFloat(e.target.value) || 0 })} style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Tax Rate</div>
+                  <select value={editFormData.tax_rate} onChange={e => setEditFormData({ ...editFormData, tax_rate: parseInt(e.target.value) })} style={inputStyle}>
+                    <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Quantity *</div>
+                  <input type="number" placeholder="Quantity" value={editFormData.quantity} onChange={e => setEditFormData({ ...editFormData, quantity: parseInt(e.target.value) || 0 })} style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Alert Qty</div>
+                  <input type="number" placeholder="Alert Qty" value={editFormData.alert_quantity} onChange={e => setEditFormData({ ...editFormData, alert_quantity: parseInt(e.target.value) || 0 })} style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Rack Number</div>
+                  <input type="text" placeholder="Rack Number" value={editFormData.rack_number} onChange={e => setEditFormData({ ...editFormData, rack_number: e.target.value })} style={inputStyle} />
+                </div>
+                {user?.role === 'super_admin' && (
+                  <div>
+                    <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Purchase Rate</div>
+                    <input type="number" step="0.01" placeholder="Purchase Rate" value={editFormData.purchase_rate} onChange={e => setEditFormData({ ...editFormData, purchase_rate: parseFloat(e.target.value) || 0 })} style={inputStyle} />
+                  </div>
+                )}
+                <div style={{ gridColumn: '1/-1' }}>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Remarks</div>
+                  <textarea placeholder="Remarks" value={editFormData.remarks} onChange={e => setEditFormData({ ...editFormData, remarks: e.target.value })} rows="2" style={{ ...inputStyle, resize: 'vertical' }} />
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
-                <input type="number" step="0.01" placeholder="Sale Rate *" value={editFormData.sale_rate} onChange={e => setEditFormData({ ...editFormData, sale_rate: parseFloat(e.target.value) || 0 })} style={inputStyle} />
-                <select value={editFormData.tax_rate} onChange={e => setEditFormData({ ...editFormData, tax_rate: parseInt(e.target.value) })} style={inputStyle}>
-                  <option value="5">5%</option><option value="18">18%</option><option value="28">28%</option>
-                </select>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
-                <input type="number" placeholder="Quantity *" value={editFormData.quantity} onChange={e => setEditFormData({ ...editFormData, quantity: parseInt(e.target.value) || 0 })} style={inputStyle} />
-                <input type="number" placeholder="Alert Qty" value={editFormData.alert_quantity} onChange={e => setEditFormData({ ...editFormData, alert_quantity: parseInt(e.target.value) || 0 })} style={inputStyle} />
-              </div>
-              <input type="text" placeholder="Rack Number" value={editFormData.rack_number} onChange={e => setEditFormData({ ...editFormData, rack_number: e.target.value })} style={{ ...inputStyle, marginTop: '8px' }} />
-              <textarea placeholder="Remarks" value={editFormData.remarks} onChange={e => setEditFormData({ ...editFormData, remarks: e.target.value })} rows="2" style={{ ...inputStyle, marginTop: '8px', resize: 'vertical' }} />
-              {user?.role === 'super_admin' && (
-                <input type="number" step="0.01" placeholder="Purchase Rate" value={editFormData.purchase_rate} onChange={e => setEditFormData({ ...editFormData, purchase_rate: parseFloat(e.target.value) || 0 })} style={{ ...inputStyle, marginTop: '8px' }} />
-              )}
             </div>
             <div style={modalFooter}>
               <button onClick={() => setShowEditModal(false)} style={secondaryBtn}>Cancel</button>
-              <button onClick={handleUpdate} disabled={updating} style={primaryBtn}>{updating ? '...' : 'Update'}</button>
+              <button onClick={handleUpdate} disabled={updating} style={primaryBtn}>{updating ? 'Updating...' : 'Update Item'}</button>
             </div>
           </div>
         </div>
       )}
 
       {showViewModal && viewItem && (
-        <div style={modalOverlay} onClick={e => e.target === e.currentTarget && setShowViewModal(false)}>
+        <div style={modalOverlay}>
           <div style={{ ...modalContent, maxWidth: '560px' }}>
-            <div style={modalHeader}>
-              <h3 style={{ fontSize: '14px', margin: 0 }}>{viewItem.product_name}</h3>
-              <button onClick={() => setShowViewModal(false)} style={closeBtn}>×</button>
+            <div style={{ ...modalHeader, paddingBottom: '12px', flexDirection: 'column', alignItems: 'flex-start', gap: '0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Item Details</div>
+                  <div style={{ fontSize: '17px', fontWeight: 700, color: '#eef2f8', lineHeight: 1.2 }}>{viewItem.product_name}</div>
+                  {viewItem.brand && <div style={{ fontSize: '12px', color: '#f59a30', marginTop: '3px', fontWeight: 600 }}>🏷️ {viewItem.brand}</div>}
+                </div>
+                <button onClick={() => setShowViewModal(false)} style={closeBtn}>×</button>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                {viewItem.unit && <span style={{ background: '#2a3340', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: '#9aaebf' }}>📦 {viewItem.unit}</span>}
+                <span style={{ background: viewItem.quantity <= (viewItem.alert_quantity || 0) ? 'rgba(232,89,60,0.2)' : 'rgba(34,197,94,0.15)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: viewItem.quantity <= (viewItem.alert_quantity || 0) ? '#e8593c' : '#22c55e', fontWeight: 700 }}>Stock: {viewItem.quantity}</span>
+                {viewItem.rack_number && <span style={{ background: '#2a3340', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: '#9aaebf' }}>Rack: {viewItem.rack_number}</span>}
+              </div>
             </div>
             <div style={modalBody}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div><div style={labelStyle}>Brand</div><div style={valueStyle}>{viewItem.brand || '-'}</div></div>
-                <div><div style={labelStyle}>Unit</div><div style={valueStyle}>{viewItem.unit || '-'}</div></div>
-                <div><div style={labelStyle}>Stock</div><div style={{ ...valueStyle, fontWeight: 700, color: viewItem.quantity <= (viewItem.alert_quantity || 0) ? '#e8593c' : '#22c55e' }}>{viewItem.quantity}</div></div>
-                <div><div style={labelStyle}>Alert Qty</div><div style={valueStyle}>{viewItem.alert_quantity || 0}</div></div>
-                <div><div style={labelStyle}>Sale Rate</div><div style={valueStyle}>₹{parseFloat(viewItem.sale_rate).toFixed(2)}</div></div>
-                <div><div style={labelStyle}>Tax Rate</div><div style={valueStyle}>{viewItem.tax_rate}%</div></div>
-                {user?.role === 'super_admin' && <div><div style={labelStyle}>Purchase Rate</div><div style={valueStyle}>₹{parseFloat(viewItem.purchase_rate).toFixed(2)}</div></div>}
-                {viewItem.min_sale_rate && viewItem.min_sale_rate > 0 && <div><div style={labelStyle}>Min Sale Rate</div><div style={valueStyle}>₹{parseFloat(viewItem.min_sale_rate).toFixed(2)}</div></div>}
-                <div><div style={labelStyle}>Rack No</div><div style={valueStyle}>{viewItem.rack_number || '-'}</div></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                  <div style={labelStyle}>Sale Rate</div>
+                  <div style={{ ...valueStyle, color: '#f59a30', fontSize: '16px' }}>₹{parseFloat(viewItem.sale_rate).toFixed(2)}</div>
+                </div>
+                {user?.role === 'super_admin' && (
+                  <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                    <div style={labelStyle}>Purchase Rate</div>
+                    <div style={{ ...valueStyle, fontSize: '16px' }}>₹{parseFloat(viewItem.purchase_rate || 0).toFixed(2)}</div>
+                  </div>
+                )}
+                {viewItem.min_sale_rate > 0 && (
+                  <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                    <div style={labelStyle}>Min Sale Rate</div>
+                    <div style={valueStyle}>₹{parseFloat(viewItem.min_sale_rate).toFixed(2)}</div>
+                  </div>
+                )}
+                <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                  <div style={labelStyle}>Tax Rate</div>
+                  <div style={valueStyle}>{viewItem.tax_rate}%</div>
+                </div>
+                <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                  <div style={labelStyle}>Alert Qty</div>
+                  <div style={valueStyle}>{viewItem.alert_quantity || 0}</div>
+                </div>
+                {viewItem.hsn_number && (
+                  <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                    <div style={labelStyle}>HSN Code</div>
+                    <div style={valueStyle}>{viewItem.hsn_number}</div>
+                  </div>
+                )}
               </div>
-              {viewItem.remarks && <div style={{ marginTop: '12px' }}><div style={labelStyle}>Remarks</div><div style={valueStyle}>{viewItem.remarks}</div></div>}
+              {viewItem.remarks && (
+                <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
+                  <div style={labelStyle}>Remarks</div>
+                  <div style={{ ...valueStyle, fontSize: '12px', color: '#9aaebf' }}>{viewItem.remarks}</div>
+                </div>
+              )}
             </div>
             <div style={modalFooter}>
               <button onClick={() => setShowViewModal(false)} style={primaryBtn}>Close</button>
@@ -4176,7 +4242,7 @@ const Dashboard = () => {
       )}
 
       {showQuickSaleModal && quickSaleItem && (
-        <div style={modalOverlay} onClick={e => e.target === e.currentTarget && setShowQuickSaleModal(false)}>
+        <div style={modalOverlay}>
           <div style={{ ...modalContent, maxWidth: '380px' }}>
             <div style={modalHeader}>
               <h3 style={{ fontSize: '14px', margin: 0 }}>Quick Sale</h3>
@@ -4197,7 +4263,7 @@ const Dashboard = () => {
       )}
 
       {showStockAmountModal && (
-        <div style={modalOverlay} onClick={e => e.target === e.currentTarget && setShowStockAmountModal(false)}>
+        <div style={modalOverlay}>
           <div style={{ ...modalContent, maxWidth: '420px' }}>
             <div style={modalHeader}>
               <h3 style={{ fontSize: '14px', margin: 0 }}>Total Stock Value</h3>
@@ -4228,7 +4294,7 @@ const Dashboard = () => {
       )}
 
       {showDueAlertModal && dueAlertParties.length > 0 && (
-        <div style={modalOverlay} onClick={e => e.target === e.currentTarget && setShowDueAlertModal(false)}>
+        <div style={modalOverlay}>
           <div style={{ ...modalContent, maxWidth: '580px' }}>
             <div style={{ ...modalHeader, background: '#e8593c10', borderBottomColor: '#e8593c' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -4341,8 +4407,8 @@ const modalFooter = { padding: '10px 12px', borderTop: '1px solid #2a3340', disp
 const closeBtn = { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px' };
 const primaryBtn = { padding: '5px 12px', fontSize: '11px', background: '#f59a30', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: 500 };
 const secondaryBtn = { padding: '5px 12px', fontSize: '11px', background: 'transparent', border: '1px solid #2a3340', borderRadius: '3px', cursor: 'pointer', color: '#94a3b8' };
-const labelStyle = { fontSize: '9px', color: '#94a3b8', marginBottom: '2px' };
-const valueStyle = { fontSize: '13px', fontWeight: 500, color: '#fff' };
+const labelStyle = { fontSize: '11px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 };
+const valueStyle = { fontSize: '14px', fontWeight: 600, color: '#eef2f8' };
 const scrollBtnStyle = {
   position: 'fixed', bottom: '16px', right: '16px', width: '32px', height: '32px',
   borderRadius: '50%', background: '#f59a30', border: 'none', cursor: 'pointer',

@@ -521,85 +521,67 @@ const AddItem = () => {
       <div className="add-item">
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}>📦</span>
-              <h2>Add Item to Inventory</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>📦</span>
+              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Add Item to Inventory</h2>
             </div>
-            <p>Create new stock entries or manage existing dispenser items</p>
+            <p style={{ margin: '2px 0 0 24px', fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Search to add existing items • Use button to create new</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowAddItemForm(true)}
-            className="btn btn-primary"
-            style={{
-              padding: '10px 20px',
-              fontSize: '15px',
-              fontWeight: '600',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              flexShrink: 0
-            }}
-          >
-            <span>+</span>
-            Add New Item
-          </button>
         </div>
 
         <div className="card">
-          <div style={{ marginBottom: '20px', color: '#666', fontSize: '14px' }}>
-            <p>Use &quot;Add New Item&quot; to create a product in inventory (it will not appear in the list below). Search below to add <strong>existing</strong> items only to your list.</p>
-          </div>
-
-          {selectedItems.length > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0 }}>Your list ({selectedItems.length})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: selectedItems.length > 0 ? '12px' : '0' }}>
+            {selectedItems.length > 0 
+              ? <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--pp-text-primary, #eef2f8)' }}>Your list ({selectedItems.length} items)</h3>
+              : <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Search below to add existing items to your list</span>
+            }
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {selectedItems.length > 0 && (
+                <button
+                  onClick={() => { if (window.confirm('Clear all items from list?')) { setSelectedItems([]); toast.info('List cleared'); } }}
+                  className="btn btn-danger"
+                  style={{ padding: '5px 10px', fontSize: '12px' }}
+                >
+                  🗑️ Clear All
+                </button>
+              )}
               <button
-                onClick={() => {
-                  if (window.confirm('Clear all items from list?')) {
-                    setSelectedItems([]);
-                    toast.info('List cleared');
-                  }
-                }}
-                className="btn btn-danger"
-                style={{ padding: '8px 16px', fontSize: '13px' }}
+                type="button"
+                onClick={() => setShowAddItemForm(true)}
+                className="btn btn-primary"
+                style={{ padding: '6px 14px', fontSize: '12px' }}
               >
-                🗑️ Clear All
+                + New Item
               </button>
             </div>
-          )}
+          </div>
 
           <div className="table-responsive-container">
             <table className="table">
-                  <thead style={{ backgroundColor: '#34495e', color: '#ffffff' }}>
+                  <thead style={{ background: '#0d1523' }}>
                     <tr>
-                      <th style={{ textAlign: 'left', padding: '14px 18px' }}>Product Details</th>
-                      <th style={{ textAlign: 'left', padding: '14px 18px' }}>Brand</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px' }}>Purchase Rate</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px' }}>Sale Rate</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px' }}>Min Sale Rate</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px' }}>Tax Rate</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px', width: '90px' }}>Current Qty</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px', width: '100px' }}>Quantity</th>
-                      <th style={{ textAlign: 'right', padding: '14px 18px' }}>Total</th>
-                      <th style={{ textAlign: 'center', padding: '14px 18px' }}>Action</th>
+                      <th style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Product Details</th>
+                      <th style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Brand</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Purchase Rate</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Sale Rate</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Min Sale Rate</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Tax Rate</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, width: '90px' }}>Current Qty</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, width: '100px' }}>Quantity</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Total</th>
+                      <th style={{ textAlign: 'center', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedItems.map((item, index) => (
                       <tr key={index}>
-                        <td style={{ textAlign: 'left' }}>
-                          <div style={{ fontWeight: '700', fontSize: '15px' }}>{item.product_name}</div>
-                          <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                        <td style={{ textAlign: 'left', padding: '10px 14px' }}>
+                          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--pp-text-primary, #eef2f8)' }}>{item.product_name}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)', marginTop: '2px' }}>
                             {item.product_name} {item.unit ? `• Unit: ${item.unit}` : ''}
                           </div>
                         </td>
-                        <td style={{ textAlign: 'left' }}>{item.brand || '-'}</td>
+                        <td style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)' }}>{item.brand || '-'}</td>
                         <td style={{ textAlign: 'right', fontWeight: '600', padding: '6px' }}>
                           {editingCell?.rowIndex === index && editingCell?.field === 'purchase_rate' ? (
                             <input
@@ -709,23 +691,14 @@ const AddItem = () => {
                             style={{ width: '80px', textAlign: 'center', padding: '6px' }}
                           />
                         </td>
-                        <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#2c3e50' }}>
+                        <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--pp-orange, #f59a30)', padding: '10px 14px' }}>
                           ₹{(parseFloat(item.purchase_rate || 0) * (parseInt(item.quantity) || 0)).toFixed(2)}
                         </td>
-                        <td style={{ textAlign: 'center' }}>
+                        <td style={{ textAlign: 'center', padding: '6px 10px' }}>
                           <button
                             onClick={() => removeItem(item.item_id)}
-                            style={{ 
-                              background: '#fff5f5', 
-                              border: '1px solid #feb2b2', 
-                              color: '#e53e3e', 
-                              cursor: 'pointer', 
-                              padding: '6px 10px',
-                              borderRadius: '6px',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#fed7d7'}
-                            onMouseLeave={(e) => e.target.style.background = '#fff5f5'}
+                            className="btn btn-danger"
+                            style={{ padding: '5px 10px', fontSize: '13px' }}
                             title="Remove"
                           >
                             🗑️
@@ -838,7 +811,7 @@ const AddItem = () => {
                           )}
                         </div>
                       </td>
-                      <td colSpan="5" style={{ color: '#95a5a6', fontStyle: 'italic', fontSize: '13px', verticalAlign: 'middle' }}>
+                      <td colSpan="5" style={{ color: 'var(--pp-text-muted, #6c7f8f)', fontStyle: 'italic', fontSize: '12px', verticalAlign: 'middle' }}>
                         &nbsp;&nbsp;← Search and add existing items
                       </td>
                     </tr>
@@ -848,21 +821,21 @@ const AddItem = () => {
 
           {selectedItems.length > 0 && (
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <span style={{ fontSize: '13px', color: '#64748b' }}>Click rate to edit • Enter → next field</span>
+              <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Click rate to edit • Enter → next field</span>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   onClick={handleSaveRates}
                   disabled={isSaving}
                   className="btn btn-secondary"
-                  style={{ padding: '12px 24px', opacity: isSaving ? 0.6 : 1 }}
+                  style={{ opacity: isSaving ? 0.6 : 1 }}
                 >
-                  {isSaving ? 'Saving...' : 'Save rates'}
+                  {isSaving ? 'Saving...' : 'Save Rates'}
                 </button>
                 <button
                   onClick={handleSubmitPurchase}
                   disabled={isSubmittingPurchase}
                   className="btn btn-success"
-                  style={{ padding: '12px 24px', opacity: isSubmittingPurchase ? 0.6 : 1 }}
+                  style={{ opacity: isSubmittingPurchase ? 0.6 : 1 }}
                 >
                   {isSubmittingPurchase ? 'Adding...' : 'Add to Inventory'}
                 </button>
@@ -875,9 +848,8 @@ const AddItem = () => {
                     }
                   }}
                   className="btn btn-danger"
-                  style={{ padding: '12px 24px' }}
                 >
-                  Clear list
+                  Clear List
                 </button>
               </div>
             </div>
@@ -888,47 +860,57 @@ const AddItem = () => {
 
       {/* Add New Item modal - portaled to body */}
       {showAddItemForm && createPortal(
-        <div className="add-item-modal-overlay modal-overlay">
-          <div className="modal-content add-item-modal-content" style={{ maxWidth: '640px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div className="modal-header">
-              <h3>Add New Product to Inventory</h3>
-              <button type="button" className="modal-close" onClick={closeAddItemModal} aria-label="Close">×</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '12px' }}>
+          <div style={{ background: '#141b26', borderRadius: '10px', width: '100%', maxWidth: '620px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid #2a3340' }}>
+              <div>
+                <div style={{ fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Create New</div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#eef2f8' }}>Add Product to Inventory</div>
+              </div>
+              <button type="button" onClick={closeAddItemModal} style={{ background: 'none', border: 'none', color: '#9aaebf', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }} aria-label="Close">×</button>
             </div>
-            <div className="modal-body" style={{ overflow: 'auto', flex: 1, padding: '20px' }}>
-              <p style={{ color: '#666', marginBottom: '15px', fontSize: '14px' }}>
-                Fill in the product details below. Fields marked with * are required.
-              </p>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Product Name *</label>
+
+            {/* Modal Body */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '16px 18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+
+                {/* Product Name */}
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Product Name *</label>
                   <input
                     type="text"
                     value={newItem.product_name}
                     onChange={(e) => setNewItem({ ...newItem, product_name: e.target.value })}
                     placeholder="Enter product name"
                     required
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Brand</label>
+
+                {/* Brand */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Brand</label>
                   <input
                     type="text"
                     value={newItem.brand}
                     onChange={(e) => setNewItem({ ...newItem, brand: e.target.value })}
-                    placeholder="Enter brand name"
+                    placeholder="e.g. Castrol, Shell"
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Unit (liter / packet / kg) *</label>
+
+                {/* Unit */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Unit *</label>
                   <select
                     value={newItem.unit}
                     onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
                     required
-                    style={{ flex: 1 }}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   >
-                    <option value="">Select Unit</option>
+                    <option value="">— Select Unit —</option>
                     <option value="liter">Liter</option>
                     <option value="packet">Packet</option>
                     <option value="kg">KG</option>
@@ -937,160 +919,128 @@ const AddItem = () => {
                     <option value="mtr">Meter</option>
                   </select>
                 </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Purchase Rate *</label>
+
+                {/* Purchase Rate */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Purchase Rate *</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="number" step="0.01" min="0"
                     value={newItem.purchase_rate === 0 ? '' : newItem.purchase_rate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const purchaseRate = val === '' ? 0 : parseFloat(val) || 0;
-                      setNewItem({ ...newItem, purchase_rate: purchaseRate });
-                    }}
-                    placeholder="0.00"
-                    required
-                    style={{
-                      borderColor: newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate ? '#dc3545' : undefined
-                    }}
+                    onChange={(e) => { const val = e.target.value; setNewItem({ ...newItem, purchase_rate: val === '' ? 0 : parseFloat(val) || 0 }); }}
+                    placeholder="0.00" required
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: `1px solid ${newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate ? '#e8593c' : '#2a3340'}`, borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                   {newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate && (
-                    <small style={{ color: '#dc3545', display: 'block', marginTop: '5px' }}>
-                      ⚠️ Purchase rate cannot be greater than sale rate
-                    </small>
+                    <div style={{ color: '#e8593c', fontSize: '11px', marginTop: '4px' }}>⚠️ Purchase rate cannot exceed sale rate</div>
                   )}
                 </div>
-                <div className="form-group">
-                  <label>Tax Rate (%)</label>
+
+                {/* Sale Rate */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Sale Rate *</label>
+                  <input
+                    type="number" step="0.01" min="0"
+                    value={newItem.sale_rate === 0 ? '' : newItem.sale_rate}
+                    onChange={(e) => { const val = e.target.value; setNewItem({ ...newItem, sale_rate: val === '' ? 0 : parseFloat(val) || 0 }); }}
+                    placeholder="0.00" required
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: `1px solid ${newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate ? '#e8593c' : '#2a3340'}`, borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Tax Rate */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Tax Rate (%)</label>
                   <select
                     value={newItem.tax_rate}
-                    onChange={(e) => {
-                      const selectedTaxRate = parseFloat(e.target.value);
-                      const validTaxRates = [5, 18, 28];
-                      const finalTaxRate = validTaxRates.includes(selectedTaxRate) ? selectedTaxRate : 18;
-                      setNewItem({ ...newItem, tax_rate: finalTaxRate });
-                    }}
+                    onChange={(e) => { const r = parseFloat(e.target.value); setNewItem({ ...newItem, tax_rate: [5,18,28].includes(r) ? r : 18 }); }}
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   >
                     <option value="5">5%</option>
                     <option value="18">18%</option>
                     <option value="28">28%</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Sale Rate *</label>
+
+                {/* Min Sale Rate */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Min Sale Rate</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newItem.sale_rate === 0 ? '' : newItem.sale_rate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const saleRate = val === '' ? 0 : parseFloat(val) || 0;
-                      setNewItem({ ...newItem, sale_rate: saleRate });
-                    }}
-                    placeholder="0.00"
-                    required
-                    style={{
-                      borderColor: newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate ? '#dc3545' : undefined
-                    }}
-                  />
-                  {newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate && (
-                    <small style={{ color: '#dc3545', display: 'block', marginTop: '5px' }}>
-                      ⚠️ Sale rate must be ≥ purchase rate
-                    </small>
-                  )}
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Minimum Sale Rate</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="number" step="0.01" min="0"
                     value={newItem.min_sale_rate === 0 ? '' : newItem.min_sale_rate}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const minSaleRate = val === '' ? 0 : parseFloat(val) || 0;
-                      setNewItem({ ...newItem, min_sale_rate: minSaleRate });
-                    }}
+                    onChange={(e) => { const val = e.target.value; setNewItem({ ...newItem, min_sale_rate: val === '' ? 0 : parseFloat(val) || 0 }); }}
                     placeholder="0.00"
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Quantity *</label>
+
+                {/* Quantity */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Quantity *</label>
                   <input
                     type="number"
-                    // min="0"
                     value={newItem.quantity === 0 ? '' : newItem.quantity}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewItem({ ...newItem, quantity: val === '' ? 0 : parseInt(val) || 0 });
-                    }}
-                    // placeholder="0"
-                    required
+                    onChange={(e) => { const val = e.target.value; setNewItem({ ...newItem, quantity: val === '' ? 0 : parseInt(val) || 0 }); }}
+                    placeholder="0" required
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Alert Quantity</label>
+
+                {/* Alert Quantity */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Alert Quantity</label>
                   <input
                     type="number"
                     value={newItem.alert_quantity === 0 ? '' : newItem.alert_quantity}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewItem({ ...newItem, alert_quantity: val === '' ? 0 : parseInt(val) || 0 });
-                    }}
+                    onChange={(e) => { const val = e.target.value; setNewItem({ ...newItem, alert_quantity: val === '' ? 0 : parseInt(val) || 0 }); }}
+                    placeholder="0"
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Rack Number</label>
+
+                {/* Rack Number */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Rack Number</label>
                   <input
                     type="text"
                     value={newItem.rack_number}
                     onChange={(e) => setNewItem({ ...newItem, rack_number: e.target.value })}
+                    placeholder="e.g. A-12"
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Remarks (Max 200 characters)</label>
-                <textarea
-                  value={newItem.remarks}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value.length <= 200) {
-                      setNewItem({ ...newItem, remarks: value });
-                    }
-                  }}
-                  rows="3"
-                  maxLength={200}
-                  placeholder="Enter remarks..."
-                />
-                <small style={{ color: '#666', fontSize: '12px' }}>
-                  {newItem.remarks?.length || 0}/200 characters
-                </small>
-              </div>
 
+                {/* Remarks */}
+                <div style={{ gridColumn: '1/-1' }}>
+                  <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Remarks</label>
+                  <textarea
+                    value={newItem.remarks}
+                    onChange={(e) => { if (e.target.value.length <= 200) setNewItem({ ...newItem, remarks: e.target.value }); }}
+                    rows={3} maxLength={200}
+                    placeholder="Enter any notes or remarks..."
+                    style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                  <div style={{ textAlign: 'right', fontSize: '11px', color: (newItem.remarks?.length || 0) >= 180 ? '#e8593c' : '#6c7f8f', marginTop: '3px' }}>
+                    {newItem.remarks?.length || 0}/200
+                  </div>
+                </div>
 
-              <div className="form-actions">
-                <button 
-                  onClick={handleAddNewItem} 
-                  className="btn btn-primary"
-                  disabled={isAddingNewItem}
-                  style={{
-                    opacity: isAddingNewItem ? 0.6 : 1,
-                    cursor: isAddingNewItem ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {isAddingNewItem ? 'Adding...' : 'Add to Inventory'}
-                </button>
-                <button type="button" onClick={closeAddItemModal} className="btn btn-secondary">Cancel</button>
               </div>
             </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '12px 18px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button type="button" onClick={closeAddItemModal} style={{ padding: '7px 16px', fontSize: '12px', background: 'transparent', border: '1px solid #2a3340', borderRadius: '5px', cursor: 'pointer', color: '#9aaebf', fontWeight: 500 }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleAddNewItem}
+                disabled={isAddingNewItem}
+                style={{ padding: '7px 20px', fontSize: '12px', background: '#f59a30', border: 'none', borderRadius: '5px', cursor: isAddingNewItem ? 'not-allowed' : 'pointer', color: '#1a1200', fontWeight: 700, opacity: isAddingNewItem ? 0.6 : 1 }}
+              >
+                {isAddingNewItem ? '⏳ Adding...' : '+ Add to Inventory'}
+              </button>
+            </div>
+
           </div>
         </div>,
         document.body

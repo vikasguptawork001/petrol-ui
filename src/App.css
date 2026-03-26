@@ -159,21 +159,25 @@
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-  color: #334155;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pp-text-muted, #6c7f8f);
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd8d0;
-  border-radius: 6px;
+  padding: 9px 13px;
+  border: 1px solid var(--pp-border, #2a3340);
+  border-radius: 8px;
   font-size: 14px;
-  background: #ffffff;
-  color: #0d1828;
+  background: var(--pp-bg-input, #0f151f);
+  color: var(--pp-text-primary, #eef2f8);
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
 }
 
 .form-group input:focus,
@@ -196,47 +200,48 @@ input[type="number"] {
   appearance: textfield;
 }
 
-/* Tables — fully opaque, dark navy header, white rows */
+/* Tables — dark themed */
 .table {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
+  background: var(--pp-bg-card, #141b26);
   border-radius: 12px;
   overflow: hidden;
 }
 
 .table th,
 .table td {
-  padding: 12px;
+  padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid #f0ede8;
+  border-bottom: 1px solid var(--pp-border, #2a3340);
 }
 
 .table th {
-  background-color: #0d1828;
-  color: #f59a30;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  font-weight: 600;
+  background: #0d1523;
+  color: var(--pp-text-secondary, #9aaebf);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .table td {
-  color: #1e293b;
+  color: var(--pp-text-secondary, #9aaebf);
 }
 
 .table tr:hover {
-  background-color: #fdf6ec;
+  background-color: rgba(245, 154, 48, 0.05);
 }
 
-/* Cards — fully opaque white, dark content */
+/* Cards — dark themed */
 .card {
-  background: #ffffff;
+  background: var(--pp-bg-card, #141b26);
   border-radius: var(--pp-card-radius, 12px);
   padding: clamp(16px, 2vw, 24px);
   margin-bottom: clamp(16px, 2vw, 22px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  color: #1e293b;
+  box-shadow: var(--pp-card-shadow, 0 4px 16px rgba(0,0,0,0.35));
+  border: 1px solid var(--pp-border, #2a3340);
+  color: var(--pp-text-primary, #eef2f8);
   width: 100%;
   max-width: var(--app-readable, min(100%, 1680px));
   margin-left: auto;
@@ -245,12 +250,12 @@ input[type="number"] {
 }
 
 .card-header {
-  font-size: 18px;
+  font-size: 1.05rem;
   font-weight: 700;
   margin-bottom: 15px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #f0ede8;
-  color: #0d1828;
+  border-bottom: 1px solid var(--pp-border, #2a3340);
+  color: var(--pp-text-primary, #eef2f8);
 }
 
 

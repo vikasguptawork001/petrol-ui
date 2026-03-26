@@ -446,7 +446,7 @@ const ReturnReport = () => {
                   <>
                     {/* Return Bill Information */}
                     <div style={{ marginBottom: '30px' }}>
-                      <h4 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
+                        <h4 style={{ marginBottom: '12px', color: '#eef2f8', borderBottom: '1px solid #2a3340', paddingBottom: '8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Return Information
                       </h4>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
@@ -488,7 +488,7 @@ const ReturnReport = () => {
                     {/* Party Information */}
                     {billDetails.party && (
                       <div style={{ marginBottom: '30px' }}>
-                        <h4 style={{ marginBottom: '15px', color: '#333', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
+                          <h4 style={{ marginBottom: '12px', color: '#eef2f8', borderBottom: '1px solid #2a3340', paddingBottom: '8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Party Information
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
@@ -618,30 +618,21 @@ const ReturnReport = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         style={{
           position: 'fixed',
-          bottom: '30px',
-          right: '30px',
-          width: '50px',
-          height: '50px',
+          bottom: '20px',
+          right: '20px',
+          width: '36px',
+          height: '36px',
           borderRadius: '50%',
-          backgroundColor: '#3498db',
-          color: 'white',
+          backgroundColor: '#f59a30',
+          color: '#1a1200',
           border: 'none',
           cursor: 'pointer',
-          fontSize: '24px',
+          fontSize: '18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-          zIndex: 1000,
-          transition: 'all 0.3s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#2980b9';
-          e.target.style.transform = 'scale(1.1)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = '#3498db';
-          e.target.style.transform = 'scale(1)';
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          zIndex: 999
         }}
         title="Scroll to top"
       >

@@ -1712,7 +1712,7 @@ export function NozzleReadingPanel({ embedded = false }) {
 
       {/* Record Modal - Same as before but with compact styling */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px' }} onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px' }}>
           <div style={{ background: '#141b26', borderRadius: '10px', width: '100%', maxWidth: '800px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #2a3340' }}>
               <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Record Nozzle Reading</h3>
@@ -1736,36 +1736,70 @@ export function NozzleReadingPanel({ embedded = false }) {
               {/* Form fields - same as before but compact */}
               {(recordMode === 'both' || recordMode === 'opening_only') && (
                 <form onSubmit={handleSubmit}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <select value={form.attendant_id} onChange={e => setForm({ ...form, attendant_id: e.target.value })} required style={inputStyle}>
-                      <option value="">Attendant *</option>
-                      {attendants.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
-                    <select value={form.nozzle_id} onChange={e => setForm({ ...form, nozzle_id: e.target.value })} required style={inputStyle}>
-                      <option value="">Nozzle *</option>
-                      {nozzles.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
-                    </select>
-                    <DatePicker selected={form.reading_date} onChange={d => setForm({ ...form, reading_date: d })} dateFormat="dd-MM-yy" className="pp-input" style={inputStyle} placeholderText="Date" />
-                    <input type="number" step="0.01" placeholder="Opening Reading *" value={form.opening_reading} onChange={e => setForm({ ...form, opening_reading: e.target.value })} style={inputStyle} />
-                    <DatePicker selected={form.opening_at} onChange={d => setForm({ ...form, opening_at: d })} showTimeSelect timeFormat="HH:mm" timeIntervals={15} dateFormat="dd-MM-yy HH:mm" className="pp-input" style={inputStyle} placeholderText="Opening Time" />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Attendant *</label>
+                      <select value={form.attendant_id} onChange={e => setForm({ ...form, attendant_id: e.target.value })} required style={inputStyle}>
+                        <option value="">— Select Attendant —</option>
+                        {attendants.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Nozzle *</label>
+                      <select value={form.nozzle_id} onChange={e => setForm({ ...form, nozzle_id: e.target.value })} required style={inputStyle}>
+                        <option value="">— Select Nozzle —</option>
+                        {nozzles.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Reading Date *</label>
+                      <DatePicker selected={form.reading_date} onChange={d => setForm({ ...form, reading_date: d })} dateFormat="dd-MM-yy" className="pp-input" style={inputStyle} placeholderText="Select date" />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Opening Reading *</label>
+                      <input type="number" step="0.01" placeholder="e.g. 60000.00" value={form.opening_reading} onChange={e => setForm({ ...form, opening_reading: e.target.value })} style={inputStyle} />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Opening Time *</label>
+                      <DatePicker selected={form.opening_at} onChange={d => setForm({ ...form, opening_at: d })} showTimeSelect timeFormat="HH:mm" timeIntervals={15} dateFormat="dd-MM-yy HH:mm" className="pp-input" style={inputStyle} placeholderText="Opening date & time" />
+                    </div>
+
                     {recordMode === 'both' && (
                       <>
-                        <input type="number" step="0.01" placeholder="Closing Reading *" value={form.closing_reading} onChange={e => setForm({ ...form, closing_reading: e.target.value })} style={inputStyle} />
-                        <DatePicker selected={form.closing_at} onChange={d => setForm({ ...form, closing_at: d })} showTimeSelect timeFormat="HH:mm" timeIntervals={15} dateFormat="dd-MM-yy HH:mm" className="pp-input" style={inputStyle} placeholderText="Closing Time" />
+                        <div>
+                          <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Closing Reading *</label>
+                          <input type="number" step="0.01" placeholder="e.g. 60500.00" value={form.closing_reading} onChange={e => setForm({ ...form, closing_reading: e.target.value })} style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>Closing Time *</label>
+                          <DatePicker selected={form.closing_at} onChange={d => setForm({ ...form, closing_at: d })} showTimeSelect timeFormat="HH:mm" timeIntervals={15} dateFormat="dd-MM-yy HH:mm" className="pp-input" style={inputStyle} placeholderText="Closing date & time" />
+                        </div>
                       </>
                     )}
+
                   </div>
-                  <button type="submit" disabled={submitting} style={{ ...btnStyle, marginTop: '12px', width: '100%' }}>{submitting ? 'Saving...' : (recordMode === 'both' ? 'Save Reading' : 'Save Opening')}</button>
+                  <button type="submit" disabled={submitting} style={{ ...btnStyle, marginTop: '14px', width: '100%', padding: '8px', fontSize: '12px' }}>{submitting ? 'Saving...' : (recordMode === 'both' ? 'Save Reading' : 'Save Opening')}</button>
                 </form>
               )}
 
               {/* Add Closing Mode */}
               {recordMode === 'add_closing' && (
                 <div>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    <DatePicker selected={filters.from} onChange={d => setFilters({ ...filters, from: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ flex: 1 }} />
-                    <DatePicker selected={filters.to} onChange={d => setFilters({ ...filters, to: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ flex: 1 }} />
-                    <button onClick={fetchPendingReadings} style={{ padding: '4px 12px', background: '#3b82f6', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>Refresh</button>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>From Date</label>
+                      <DatePicker selected={filters.from} onChange={d => setFilters({ ...filters, from: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>To Date</label>
+                      <DatePicker selected={filters.to} onChange={d => setFilters({ ...filters, to: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%' }} />
+                    </div>
+                    <button onClick={fetchPendingReadings} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#fff', whiteSpace: 'nowrap' }}>🔄 Refresh</button>
                   </div>
                   {loadingPending ? (
                     <div style={{ textAlign: 'center', padding: '20px' }}><PetrolNozzleLoader size="small" /></div>
