@@ -1591,103 +1591,107 @@ const SellItem = () => {
                     </div>
                   </div>
                   <div style={{
-                    padding: '15px',
-                    background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
+                    padding: '14px',
+                    background: 'rgba(255,255,255,0.04)',
                     borderRadius: '10px',
-                    border: '1px solid #e9ecef'
+                    border: '1px solid #2a3340'
                   }}>
                     <div style={{ 
-                      fontSize: '12px', 
-                      color: '#6c757d', 
-                      marginBottom: '8px',
-                      fontWeight: '600',
+                      fontSize: '11px', 
+                      color: '#6c7f8f', 
+                      marginBottom: '6px',
+                      fontWeight: '700',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
+                      letterSpacing: '0.06em'
                     }}>
                       Invoice Amount
                     </div>
                     <div style={{ 
                       fontSize: '18px', 
                       fontWeight: '700', 
-                      color: '#2c3e50'
+                      color: '#eef2f8',
+                      fontFamily: 'var(--pp-font-mono, monospace)'
                     }}>
                       ₹{(previewData.total || 0).toFixed(2)}
                     </div>
                   </div>
                   {(previewData.previousBalancePaid || 0) > 0 && (
                     <div style={{
-                      padding: '15px',
-                      background: 'linear-gradient(135deg, #fff3cd 0%, #ffffff 100%)',
+                      padding: '14px',
+                      background: 'rgba(245,159,0,0.08)',
                       borderRadius: '10px',
-                      border: '1px solid #ffeaa7'
+                      border: '1px solid rgba(245,159,0,0.25)'
                     }}>
                       <div style={{ 
-                        fontSize: '12px', 
-                        color: '#856404', 
-                        marginBottom: '8px',
-                        fontWeight: '600',
+                        fontSize: '11px', 
+                        color: '#f59f00', 
+                        marginBottom: '6px',
+                        fontWeight: '700',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
+                        letterSpacing: '0.06em'
                       }}>
                         Previous Balance Paid
                       </div>
                       <div style={{ 
                         fontSize: '18px', 
                         fontWeight: '700', 
-                        color: '#e65100'
+                        color: '#f59f00',
+                        fontFamily: 'var(--pp-font-mono, monospace)'
                       }}>
                         +₹{(previewData.previousBalancePaid || 0).toFixed(2)}
                       </div>
                     </div>
                   )}
                   <div style={{
-                    padding: '15px',
-                    background: 'linear-gradient(135deg, #d4edda 0%, #ffffff 100%)',
+                    padding: '14px',
+                    background: 'rgba(29,158,117,0.08)',
                     borderRadius: '10px',
-                    border: '1px solid #c3e6cb'
+                    border: '1px solid rgba(29,158,117,0.25)'
                   }}>
                     <div style={{ 
-                      fontSize: '12px', 
-                      color: '#155724', 
-                      marginBottom: '8px',
-                      fontWeight: '600',
+                      fontSize: '11px', 
+                      color: '#2bc48f', 
+                      marginBottom: '6px',
+                      fontWeight: '700',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
+                      letterSpacing: '0.06em'
                     }}>
                       Amount Paid
                     </div>
                     <div style={{ 
                       fontSize: '18px', 
                       fontWeight: '700', 
-                      color: '#28a745'
+                      color: '#2bc48f',
+                      fontFamily: 'var(--pp-font-mono, monospace)'
                     }}>
                       ₹{(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0)).toFixed(2)}
                     </div>
                   </div>
                   <div style={{
-                    padding: '15px',
+                    padding: '14px',
                     background: ((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))) > 0 
-                      ? 'linear-gradient(135deg, #fff5f5 0%, #ffffff 100%)'
-                      : 'linear-gradient(135deg, #d4edda 0%, #ffffff 100%)',
+                      ? 'rgba(232,89,60,0.08)'
+                      : 'rgba(29,158,117,0.08)',
                     borderRadius: '10px',
                     border: ((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))) > 0 
-                      ? '1px solid #fecaca'
-                      : '1px solid #c3e6cb'
+                      ? '1px solid rgba(232,89,60,0.25)'
+                      : '1px solid rgba(29,158,117,0.25)'
                   }}>
                     <div style={{ 
-                      fontSize: '12px', 
-                      color: ((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))) > 0 ? '#721c24' : '#155724', 
-                      marginBottom: '8px',
-                      fontWeight: '600',
+                      fontSize: '11px', 
+                      color: ((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))) > 0 ? '#e8593c' : '#2bc48f', 
+                      marginBottom: '6px',
+                      fontWeight: '700',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
+                      letterSpacing: '0.06em'
                     }}>
                       Balance Due
                     </div>
                     <div style={{ 
                       fontSize: '18px', 
                       fontWeight: '700', 
-                      color: ((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))) > 0 ? '#dc3545' : '#28a745'
+                      color: ((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))) > 0 ? '#e8593c' : '#2bc48f',
+                      fontFamily: 'var(--pp-font-mono, monospace)'
                     }}>
                       ₹{((previewData.grandTotal || previewData.total || 0) - (paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || 0))).toFixed(2)}
                     </div>
@@ -1859,7 +1863,7 @@ const SellItem = () => {
               <select
                 value={selectedAttendantId || ''}
                 onChange={(e) => dispatch(setSelectedAttendant(e.target.value ? parseInt(e.target.value, 10) : null))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #2a3340', borderRadius: '8px' }}
               >
                 <option value="">— Select Attendant —</option>
                 {(attendants || []).filter(a => !a.is_archived).map(a => (
@@ -1872,7 +1876,7 @@ const SellItem = () => {
               <select
                 value={selectedNozzleId || ''}
                 onChange={(e) => dispatch(setSelectedNozzle(e.target.value ? parseInt(e.target.value, 10) : null))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #2a3340', borderRadius: '8px' }}
               >
                 <option value="">— Select Nozzle —</option>
                 {(nozzles || []).filter(n => !n.is_archived).map(n => (
@@ -1886,7 +1890,7 @@ const SellItem = () => {
               <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Select Seller Party *</span>
                 {sellerInfo && (
-                  <span style={{ fontSize: '13px', color: '#e65100', fontWeight: 'bold' }}>
+                  <span style={{ fontSize: '13px', color: '#f59f00', fontWeight: '700' }}>
                     Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}
                   </span>
                 )}
@@ -1936,7 +1940,7 @@ const SellItem = () => {
                     border: 'none',
                     cursor: 'pointer',
                     fontSize: '20px',
-                    color: '#999',
+                    color: '#6c7f8f',
                     padding: '5px 10px',
                     zIndex: 10,
                     lineHeight: '1'
@@ -1968,7 +1972,7 @@ const SellItem = () => {
                     >
                       <span style={{ fontWeight: '600' }}>{party.party_name}</span>
                       {party.mobile_number && (
-                        <span style={{ fontSize: '12px', color: '#6c757d', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '12px', color: '#6c7f8f', whiteSpace: 'nowrap' }}>
                           📱 {party.mobile_number}
                         </span>
                       )}
@@ -1983,7 +1987,7 @@ const SellItem = () => {
               )}
             </div>
             {loading.sellerParties ? (
-              <p style={{ color: '#666', fontSize: '14px', marginTop: '5px' }}>
+              <p style={{ color: '#6c7f8f', fontSize: '13px', marginTop: '5px' }}>
                 Fetching seller parties...
               </p>
             ) : errors.sellerParties ? (
@@ -2000,38 +2004,26 @@ const SellItem = () => {
 
           {/* Seller Info Display Compact */}
           {sellerInfo && (
-            <div className="seller-info-compact" style={{ 
-              display: 'flex', 
-              flexWrap: 'wrap', 
-              gap: '12px',
-              marginTop: '5px',
-              padding: '6px 12px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '6px',
-              border: '1px solid #e2e8f0',
-              fontSize: '13px',
-              alignItems: 'center',
-              color: '#4a5568'
-            }}>
+            <div className="seller-info-compact">
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <strong style={{ color: '#2d3748', fontSize: '14px' }}>{sellerInfo.party_name}</strong>
+                <strong style={{ color: '#eef2f8', fontSize: '14px' }}>{sellerInfo.party_name}</strong>
               </div>
               {sellerInfo.mobile_number && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid #cbd5e0', paddingLeft: '12px' }}>
-                  <span style={{ color: '#718096' }}>📱</span> {sellerInfo.mobile_number}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid #2a3340', paddingLeft: '12px' }}>
+                  <span>📱</span> {sellerInfo.mobile_number}
                 </div>
               )}
               {sellerInfo.gst_number && (
-                <div style={{ borderLeft: '1px solid #cbd5e0', paddingLeft: '12px' }}>
-                  <span style={{ color: '#718096', fontSize: '12px', marginRight: '4px' }}>GST:</span>
-                  <span style={{ fontFamily: 'monospace' }}>{sellerInfo.gst_number}</span>
+                <div style={{ borderLeft: '1px solid #2a3340', paddingLeft: '12px' }}>
+                  <span style={{ fontSize: '12px', marginRight: '4px', color: '#6c7f8f' }}>GST:</span>
+                  <span style={{ fontFamily: 'monospace', color: '#eef2f8' }}>{sellerInfo.gst_number}</span>
                 </div>
               )}
-              <div style={{ borderLeft: '1px solid #cbd5e0', paddingLeft: '12px', color: parseFloat(sellerInfo.balance_amount || 0) >= 0 ? '#e65100' : '#38a169', fontWeight: 'bold' }}>
+              <div style={{ borderLeft: '1px solid #2a3340', paddingLeft: '12px', color: parseFloat(sellerInfo.balance_amount || 0) > 0 ? '#f59f00' : '#2bc48f', fontWeight: '700' }}>
                 Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}
               </div>
               {sellerInfo.due_date && (
-                <div style={{ borderLeft: '1px solid #cbd5e0', paddingLeft: '12px', color: '#e53e3e' }}>
+                <div style={{ borderLeft: '1px solid #2a3340', paddingLeft: '12px', color: '#e8593c' }}>
                   <span style={{ fontSize: '12px', marginRight: '4px' }}>Due:</span>
                   {new Date(sellerInfo.due_date).toLocaleDateString('en-IN')}
                 </div>
@@ -2049,11 +2041,11 @@ const SellItem = () => {
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center', 
-                  marginBottom: '20px',
-                  paddingBottom: '15px',
-                  borderBottom: '1px solid #e1e8ed'
+                  marginBottom: '16px',
+                  paddingBottom: '12px',
+                  borderBottom: '1px solid #2a3340'
                 }}>
-                  <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#333' }}>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#eef2f8' }}>
                     Selected Items ({selectedItems.length})
                   </h3>
                   {selectedItems.length > 0 && (
@@ -2077,15 +2069,15 @@ const SellItem = () => {
                 
                 <div className="table-responsive-container">
                   <table className="table">
-                    <thead style={{ backgroundColor: '#34495e', color: '#ffffff' }}>
+                    <thead>
                       <tr>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', textAlign: 'center', padding: '14px 18px', fontWeight: '600', fontSize: '13px', width: '60px' }}>S.No</th>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', padding: '14px 18px', fontWeight: '600', fontSize: '13px' }}>Product Name</th>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', textAlign: 'right', padding: '14px 18px', fontWeight: '600', fontSize: '13px' }}>Sale Rate</th>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', textAlign: 'center', padding: '14px 18px', fontWeight: '600', fontSize: '13px' }}>Quantity</th>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', textAlign: 'center', padding: '14px 18px', fontWeight: '600', fontSize: '13px', width: '120px' }}>Discount (₹/qty)</th>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', textAlign: 'right', padding: '14px 18px', fontWeight: '600', fontSize: '13px' }}>Total</th>
-                        <th style={{ backgroundColor: '#34495e', color: '#ffffff', textAlign: 'center', padding: '14px 18px', fontWeight: '600', fontSize: '13px' }}>Action</th>
+                        <th style={{ textAlign: 'center', width: '52px' }}>S.No</th>
+                        <th>Product Name</th>
+                        <th style={{ textAlign: 'right' }}>Sale Rate</th>
+                        <th style={{ textAlign: 'center' }}>Quantity</th>
+                        <th style={{ textAlign: 'center', width: '130px' }}>Discount (₹/qty)</th>
+                        <th style={{ textAlign: 'right' }}>Total</th>
+                        <th style={{ textAlign: 'center' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2101,12 +2093,12 @@ const SellItem = () => {
                         
                         return (
                           <tr key={item.item_id} className={isOverStock ? 'over-stock-row' : ''}>
-                            <td style={{ textAlign: 'center', fontWeight: '600', color: '#2c3e50', verticalAlign: 'middle' }}>
+                            <td style={{ textAlign: 'center', fontWeight: '600', color: '#9aaebf', verticalAlign: 'middle' }}>
                               {index + 1}
                             </td>
                             <td>
-                              <div style={{ fontWeight: '600', color: '#2c3e50' }}>{item.product_name}</div>
-                              {item.brand && <div style={{ fontSize: '12px', color: '#6c757d' }}>{item.brand}</div>}
+                              <div style={{ fontWeight: '600', color: '#eef2f8' }}>{item.product_name}</div>
+                              {item.brand && <div style={{ fontSize: '12px', color: '#6c7f8f' }}>{item.brand}</div>}
                             </td>
                             <td style={{ textAlign: 'right' }}>
                               <input
@@ -2127,11 +2119,12 @@ const SellItem = () => {
                                 style={{ 
                                   width: '90px', 
                                   textAlign: 'right', 
-                                  padding: '4px 8px', 
+                                  padding: '6px 8px', 
                                   fontWeight: '600',
-                                  border: isUnderMinRate ? '2px solid #dc3545' : '1px solid #ced4da',
-                                  backgroundColor: isUnderMinRate ? '#fff5f5' : 'white',
-                                  borderRadius: '4px'
+                                  border: isUnderMinRate ? '2px solid #e8593c' : '1px solid #2a3340',
+                                  backgroundColor: isUnderMinRate ? 'rgba(232,89,60,0.1)' : '#0f151f',
+                                  borderRadius: '6px',
+                                  color: '#eef2f8'
                                 }}
                               />
                             </td>
@@ -2171,9 +2164,10 @@ const SellItem = () => {
                                 }}
                                 className="discount-input"
                                 style={{ 
-                                  border: isUnderMinRate ? '2px solid #dc3545' : '1px solid #ced4da',
-                                  backgroundColor: isUnderMinRate ? '#fff5f5' : 'white',
-                                  borderRadius: '4px'
+                                  border: isUnderMinRate ? '2px solid #e8593c' : '1px solid #2a3340',
+                                  backgroundColor: isUnderMinRate ? 'rgba(232,89,60,0.1)' : '#0f151f',
+                                  borderRadius: '6px',
+                                  color: '#eef2f8'
                                 }}
                                 title="Discount per quantity"
                               />
@@ -2181,14 +2175,14 @@ const SellItem = () => {
                                 <div style={{ 
                                   marginTop: '4px', 
                                   fontSize: '11px', 
-                                  color: isUnderMinRate ? '#dc3545' : '#6c757d',
-                                  fontWeight: isUnderMinRate ? 'bold' : 'normal'
+                                  color: isUnderMinRate ? '#e8593c' : '#6c7f8f',
+                                  fontWeight: isUnderMinRate ? '700' : '400'
                                 }} title="Minimum sale rate for this product">
                                   Min sale rate: ₹{parseFloat(item.min_sale_rate).toFixed(2)}
                                 </div>
                               )}
                             </td>
-                            <td style={{ textAlign: 'right', fontWeight: '700', color: '#2c3e50', fontSize: '15px' }}>
+                            <td style={{ textAlign: 'right', fontWeight: '700', color: '#f59a30', fontSize: '14px', fontFamily: 'var(--pp-font-mono, monospace)' }}>
                               ₹{(() => {
                                 const rate = parseFloat(item.sale_rate || 0);
                                 const qty = parseInt(item.quantity || 0);
@@ -2219,7 +2213,7 @@ const SellItem = () => {
                       
                       {/* Search Row */}
                       <tr className="table-search-row">
-                        <td style={{ textAlign: 'center', fontWeight: '600', color: '#95a5a6' }}>
+                        <td style={{ textAlign: 'center', fontWeight: '600', color: '#6c7f8f' }}>
                           {selectedItems.length + 1}
                         </td>
                         <td colSpan="2" style={{ position: 'relative', zIndex: 10005 }}>
@@ -2340,7 +2334,7 @@ const SellItem = () => {
                           </div>
                         </td>
                         <td colSpan="4">
-                          <div style={{ color: '#95a5a6', fontSize: '13px', fontStyle: 'italic', paddingLeft: '10px' }}>
+                          <div style={{ color: '#6c7f8f', fontSize: '12px', fontStyle: 'italic', paddingLeft: '10px' }}>
                             Start typing to add more items...
                           </div>
                         </td>
@@ -2348,10 +2342,10 @@ const SellItem = () => {
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan="5" style={{ textAlign: 'right', fontSize: '16px', paddingRight: '20px' }}>
-                          <strong>Cart Total:</strong>
+                        <td colSpan="5" style={{ textAlign: 'right', fontSize: '13px', paddingRight: '16px', color: '#9aaebf', fontWeight: '600' }}>
+                          Cart Total:
                         </td>
-                        <td style={{ fontWeight: '700', fontSize: '18px', color: '#2c3e50', textAlign: 'right' }}>
+                        <td style={{ fontWeight: '700', fontSize: '16px', color: '#f59a30', textAlign: 'right', fontFamily: 'var(--pp-font-mono, monospace)' }}>
                           ₹{calculateTotal().toFixed(2)}
                         </td>
                         <td></td>

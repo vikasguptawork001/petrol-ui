@@ -26,7 +26,7 @@ const Layout = ({ children }) => {
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard' },
-    { path: '/add-item', label: 'Add Item', roles: ['admin', 'super_admin'] },
+    { path: '/add-item', label: 'Add Item', roles: ['admin', 'super_admin', 'sales'] },
     { path: '/sell-item', label: 'Sell Item' },
     // { path: '/return-item', label: 'Return Item' },
     { path: '/parties', label: 'Creditors' },
