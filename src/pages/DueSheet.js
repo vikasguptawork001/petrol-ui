@@ -407,6 +407,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import { getLocalDateString } from '../utils/dateUtils';
+import * as XLSX from 'xlsx';
 import './DueSheet.css';
 import '../styles/petrolpump-theme.css';
 
@@ -448,6 +449,8 @@ export function DueSheetPanel({ embedded = false }) {
   const [editingDueDateId, setEditingDueDateId] = useState(null);
   const [editingDueDateValue, setEditingDueDateValue] = useState(null);
   const [dueDateSaving, setDueDateSaving] = useState(false);
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const abortControllerRef = useRef(null);
 
@@ -475,7 +478,7 @@ export function DueSheetPanel({ embedded = false }) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromDueDate, toDueDate, debouncedSearchQuery, page, limit, user]);
+  }, [fromDueDate, toDueDate, debouncedSearchQuery, page, limit, overdueOnly, user]);
 
   const fetchDueSheet = async () => {
     if (!user || user.role !== 'super_admin') {
@@ -498,6 +501,7 @@ export function DueSheetPanel({ embedded = false }) {
       if (fromDueDate) params.from_due_date = getLocalDateString(fromDueDate);
       if (toDueDate) params.to_due_date = getLocalDateString(toDueDate);
       if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+      if (overdueOnly) params.overdue_only = true;
 
       const response = await apiClient.get(config.api.dueSheet, {
         params,
@@ -524,6 +528,38 @@ export function DueSheetPanel({ embedded = false }) {
     setSearchQuery('');
     setPage(1);
     setLimit(50);
+    setOverdueOnly(false);
+  };
+
+  const exportToExcel = () => {
+    if (exporting || parties.length === 0) return;
+    setExporting(true);
+    try {
+      const rows = parties.map((p, idx) => {
+        const daysOverdue = computeDaysOverdue(p.due_date);
+        return {
+          'S.No': (page - 1) * limit + idx + 1,
+          'Creditor Name': p.party_name || '-',
+          Mobile: p.mobile_number || '-',
+          Vehicle: p.vehicle_number || '-',
+          Address: p.address || '-',
+          'Opening (INR)': Number(p.opening_balance || 0),
+          'Closing (INR)': Number(p.closing_balance || 0),
+          'Outstanding (INR)': Number(p.balance_amount || 0),
+          'Due Date': formatDate(p.due_date),
+          'Days Overdue': daysOverdue === '-' ? 0 : Number(daysOverdue)
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Due Sheet');
+      XLSX.writeFile(wb, `due_sheet_${getLocalDateString(new Date())}.xlsx`);
+      toast.success('Due sheet exported');
+    } catch (error) {
+      toast.error('Failed to export due sheet');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const startEditDueDate = (p) => {
@@ -626,6 +662,28 @@ export function DueSheetPanel({ embedded = false }) {
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button onClick={handleResetFilters} style={{ ...btnStyle, background: '#2a3340', width: '100%' }}>Reset</button>
           </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              onClick={() => { setOverdueOnly((prev) => !prev); setPage(1); }}
+              style={{
+                ...btnStyle,
+                width: '100%',
+                background: overdueOnly ? '#e8593c' : '#2a3340',
+                color: overdueOnly ? '#ffffff' : '#9aaebf'
+              }}
+            >
+              Overdue Only
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              onClick={exportToExcel}
+              disabled={exporting || parties.length === 0}
+              style={{ ...btnStyle, width: '100%', background: '#1d9e75', color: '#ffffff', opacity: exporting || parties.length === 0 ? 0.6 : 1 }}
+            >
+              {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -637,7 +695,7 @@ export function DueSheetPanel({ embedded = false }) {
             <div style={{ fontSize: '20px', fontWeight: 700 }}>{summary.total_creditors || 0}</div>
           </div>
           <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #f59a30' }}>
-            <div style={{ fontSize: '9px', color: '#94a3b8' }}>Total Outstanding</div>
+            <div style={{ fontSize: '9px', color: '#94a3b8' }}>Total Due Amount</div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: '#f59a30' }}>₹{formatCurrency(summary.total_balance)}</div>
           </div>
           <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #e8593c' }}>

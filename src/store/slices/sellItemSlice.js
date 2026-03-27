@@ -531,6 +531,19 @@ const sellItemSlice = createSlice({
       };
       state.selectedItems = updatedItems;
     },
+    updatePreviewItemUnit: (state, action) => {
+      const { itemId, unit } = action.payload;
+      if (!state.previewData) return;
+      const updatedItems = state.previewData.items.map((item) =>
+        item.item_id === itemId ? { ...item, unit } : item
+      );
+      state.previewData = {
+        ...state.previewData,
+        items: updatedItems
+      };
+      state.selectedItems = updatedItems;
+      state.previewDirty = true;
+    },
     removePreviewItem: (state, action) => {
       if (!state.previewData) return;
       
@@ -938,6 +951,7 @@ export const {
   updateDiscountInput,
   clearPreview,
   updatePreviewItemQuantity,
+  updatePreviewItemUnit,
   removePreviewItem,
   updatePreviewItemSaleRate,
   updatePreviewItemDiscount,

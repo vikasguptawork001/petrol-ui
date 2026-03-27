@@ -530,7 +530,7 @@ const AddItem = () => {
         </div>
 
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: selectedItems.length > 0 ? '12px' : '0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: selectedItems.length > 0 ? '12px' : '0' }}>
             {selectedItems.length > 0 
               ? <h3 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--pp-text-primary, #eef2f8)' }}>Your list ({selectedItems.length} items)</h3>
               : <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Search below to add existing items to your list</span>
@@ -540,7 +540,7 @@ const AddItem = () => {
                 <button
                   onClick={() => { if (window.confirm('Clear all items from list?')) { setSelectedItems([]); toast.info('List cleared'); } }}
                   className="btn btn-danger"
-                  style={{ padding: '5px 10px', fontSize: '12px' }}
+                  style={{ minWidth: '120px' }}
                 >
                   🗑️ Clear All
                 </button>
@@ -549,7 +549,7 @@ const AddItem = () => {
                 type="button"
                 onClick={() => setShowAddItemForm(true)}
                 className="btn btn-primary"
-                style={{ padding: '6px 14px', fontSize: '12px' }}
+                style={{ minWidth: '120px' }}
               >
                 + New Item
               </button>

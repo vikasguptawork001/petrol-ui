@@ -3648,6 +3648,8 @@ const Dashboard = () => {
   const [dueDateEditingValue, setDueDateEditingValue] = useState('');
   const [dueDateSaving, setDueDateSaving] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [totalDueAmount, setTotalDueAmount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -3666,16 +3668,20 @@ const Dashboard = () => {
     if (allItems.length === 0) return;
     setPaginationLoading(true);
     const timer = setTimeout(() => {
+      const sourceItems = lowStockOnly
+        ? allItems.filter((item) => Number(item.quantity || 0) <= Number(item.alert_quantity || 0))
+        : allItems;
+
       if (!debouncedSearch) {
-        if (limit >= allItems.length) {
-          setItems(allItems);
+        if (limit >= sourceItems.length) {
+          setItems(sourceItems);
           setTotalPages(1);
         } else {
-          setItems(allItems.slice((page - 1) * limit, page * limit));
-          setTotalPages(Math.ceil(allItems.length / limit));
+          setItems(sourceItems.slice((page - 1) * limit, page * limit));
+          setTotalPages(Math.ceil(sourceItems.length / limit));
         }
       } else {
-        const filtered = allItems.filter(item => String(item[searchField] || '').toLowerCase().includes(debouncedSearch.toLowerCase()));
+        const filtered = sourceItems.filter(item => String(item[searchField] || '').toLowerCase().includes(debouncedSearch.toLowerCase()));
         if (page !== 1) setPage(1);
         else {
           if (limit >= filtered.length) {
@@ -3690,7 +3696,7 @@ const Dashboard = () => {
       setPaginationLoading(false);
     }, 100);
     return () => clearTimeout(timer);
-  }, [debouncedSearch, searchField, allItems, page, limit]);
+  }, [debouncedSearch, searchField, allItems, page, limit, lowStockOnly]);
 
   const fetchItems = async () => {
     try {
@@ -3735,6 +3741,22 @@ const Dashboard = () => {
       } catch (err) {}
     };
     loadDueAlerts();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchDueSummary = async () => {
+      if (user?.role !== 'super_admin') {
+        setTotalDueAmount(0);
+        return;
+      }
+      try {
+        const res = await apiClient.get(config.api.dueSheet, { params: { page: 1, limit: 1 } });
+        setTotalDueAmount(Number(res?.data?.summary?.total_balance || 0));
+      } catch {
+        setTotalDueAmount(0);
+      }
+    };
+    fetchDueSummary();
   }, [user]);
 
   const sortedItems = useMemo(() => {
@@ -3783,7 +3805,7 @@ const Dashboard = () => {
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Stock Items');
-      XLSX.writeFile(wb, 'stock_items.xlsx');
+      XLSX.writeFile(wb, lowStockOnly ? 'stock_items_low_stock.xlsx' : 'stock_items.xlsx');
       toast.success('Export successful');
     } catch (err) {
       toast.error('Export failed');
@@ -3965,15 +3987,28 @@ const Dashboard = () => {
       </div>
 
       {/* Quick Stats - Only stock info, not the duplicate */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '8px', marginBottom: '12px' }}>
         <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #f59a30' }}>
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Items</div>
           <div style={{ fontSize: '18px', fontWeight: 700 }}>{allItems.length}</div>
         </div>
-        <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #e8593c' }}>
+        <button
+          type="button"
+          onClick={() => { setLowStockOnly((prev) => !prev); setPage(1); }}
+          style={{
+            padding: '8px',
+            background: lowStockOnly ? '#e8593c22' : '#0f151f',
+            borderRadius: '6px',
+            borderLeft: '2px solid #e8593c',
+            border: lowStockOnly ? '1px solid #e8593c' : '1px solid #2a3340',
+            cursor: 'pointer',
+            textAlign: 'left'
+          }}
+          title="Toggle low stock filter"
+        >
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Low Stock</div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#e8593c' }}>{allItems.filter(i => i.quantity <= (i.alert_quantity || 0)).length}</div>
-        </div>
+        </button>
         <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #22c55e' }}>
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Stock Value</div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#22c55e' }}>₹{totalStockAmount?.toFixed(2) || '0'}</div>
@@ -3982,6 +4017,12 @@ const Dashboard = () => {
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Qty</div>
           <div style={{ fontSize: '18px', fontWeight: 700 }}>{allItems.reduce((sum, i) => sum + (i.quantity || 0), 0)}</div>
         </div>
+        {user?.role === 'super_admin' && (
+          <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #a855f7' }}>
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Due Amount</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#c084fc' }}>₹{totalDueAmount.toFixed(2)}</div>
+          </div>
+        )}
       </div>
 
       {/* Search & Filters */}
