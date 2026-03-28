@@ -66,6 +66,7 @@ const SellItem = () => {
   const [attendants, setAttendants] = useState([]);
   const [nozzles, setNozzles] = useState([]);
   const [dueDateForPartial, setDueDateForPartial] = useState('');
+  const [isSellerInputFocused, setIsSellerInputFocused] = useState(false);
   const minFutureDueDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -100,6 +101,25 @@ const SellItem = () => {
   useEffect(() => {
     dispatch(setWithGst(false));
   }, [dispatch]);
+
+  // Ensure seller/creditor suggestions show correctly even if data loads after focus.
+  useEffect(() => {
+    if (!isSellerInputFocused) return;
+    if (!sellerParties || sellerParties.length === 0) return;
+
+    const q = (sellerSearchQuery || '').trim();
+    if (!q) {
+      dispatch(setShowSellerSuggestions(true));
+      return;
+    }
+    dispatch(setShowSellerSuggestions((filteredSellerParties || []).length > 0));
+  }, [
+    isSellerInputFocused,
+    sellerParties,
+    sellerSearchQuery,
+    filteredSellerParties,
+    dispatch
+  ]);
 
   useEffect(() => {
     dispatch(fetchSellerParties()).catch((error) => {
@@ -920,8 +940,10 @@ const SellItem = () => {
                                         style={{ width: '40px' }}
                                         min="1"
                                       />
-                                      {isOverStock && <div className="bp-avail-warning">⚠️ {availableQty}</div>}
-                                      {!isOverStock && availableQty > 0 && <div className="bp-avail-info">{availableQty}</div>}
+                                      {isOverStock && <div className="bp-avail-warning">Available: {availableQty}</div>}
+                                      {!isOverStock && (
+                                        <div className="bp-avail-info">Available: {availableQty}</div>
+                                      )}
                                     </>
                                   )}
                                 </td>
@@ -1431,7 +1453,13 @@ const SellItem = () => {
                         dispatch(setSellerSearchQuery(e.target.value));
                         if (!e.target.value.trim()) dispatch(setSelectedSeller(''));
                       }}
-                      onFocus={() => { if (sellerParties.length > 0) dispatch(setShowSellerSuggestions(true)); }}
+                      onFocus={() => {
+                        setIsSellerInputFocused(true);
+                        dispatch(setShowSellerSuggestions(true));
+                      }}
+                      onBlur={() => {
+                        setIsSellerInputFocused(false);
+                      }}
                       required
                     />
                     {selectedSeller && sellerInfo && (

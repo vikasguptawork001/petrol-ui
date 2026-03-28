@@ -652,30 +652,70 @@ const Parties = () => {
 
       {/* Edit Modal - Compact */}
       {showEditModal && editingParty && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '520px', border: '1px solid #2a3340' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>Edit Creditor</h3>
-              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icons.Close /></button>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Creditor</h3>
+              <button className="modal-close" type="button" onClick={() => setShowEditModal(false)} aria-label="Close">
+                <Icons.Close />
+              </button>
             </div>
-            <div style={{ padding: '16px' }}>
-              <div style={{ marginBottom: '10px' }}>
-                <input type="text" placeholder="Party Name *" value={editFormData.party_name} onChange={(e) => setEditFormData({ ...editFormData, party_name: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                <input type="text" placeholder="Mobile" value={editFormData.mobile_number} onChange={(e) => setEditFormData({ ...editFormData, mobile_number: e.target.value })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
-                <input type="email" placeholder="Email" value={editFormData.email} onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
-              </div>
-              <div style={{ marginBottom: '10px' }}>
-                <textarea placeholder="Address" value={editFormData.address} onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })} rows="2" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem', resize: 'vertical' }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                <input type="text" placeholder="GST Number" value={editFormData.gst_number} onChange={(e) => setEditFormData({ ...editFormData, gst_number: e.target.value })} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.85rem' }} />
+            <div className="modal-body">
+              <div className="form-row">
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Party Name *</label>
+                  <input
+                    type="text"
+                    value={editFormData.party_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, party_name: e.target.value })}
+                    placeholder="Enter party name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mobile</label>
+                  <input
+                    type="text"
+                    value={editFormData.mobile_number}
+                    onChange={(e) => setEditFormData({ ...editFormData, mobile_number: e.target.value })}
+                    placeholder="Enter mobile number"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    placeholder="Enter email"
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Address</label>
+                  <textarea
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    rows={3}
+                    placeholder="Enter address"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>GST Number</label>
+                  <input
+                    type="text"
+                    value={editFormData.gst_number}
+                    onChange={(e) => setEditFormData({ ...editFormData, gst_number: e.target.value })}
+                    placeholder="Enter GST number"
+                  />
+                </div>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 16px', borderTop: '1px solid #2a3340' }}>
-              <button onClick={() => setShowEditModal(false)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={updating}>Cancel</button>
-              <button onClick={handleUpdate} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={updating}>{updating ? 'Updating...' : 'Update'}</button>
+            <div className="modal-footer">
+              <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-secondary" disabled={updating}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleUpdate} className="btn btn-primary" disabled={updating}>
+                {updating ? 'Updating...' : 'Update'}
+              </button>
             </div>
           </div>
         </div>

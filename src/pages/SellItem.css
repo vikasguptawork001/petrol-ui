@@ -145,6 +145,20 @@
   transition: border-color 0.2s;
 }
 
+/* Make the native calendar icon visible */
+.sell-item-right-panel input[type="date"] {
+  -webkit-appearance: auto !important;
+  appearance: auto !important;
+  color-scheme: dark;
+  padding-right: 34px; /* Reserve space for picker icon */
+}
+
+.sell-item-right-panel input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 1 !important;
+  display: block !important;
+  cursor: pointer !important;
+}
+
 .sell-item-right-panel .right-panel-input:focus {
   outline: none;
   border-color: var(--pp-orange, #f59a30);
@@ -1252,6 +1266,7 @@
 .bill-preview .bp-avail-info {
   font-size: 10px;
   color: #6c7f8f;
+  font-weight: 600;
   margin-top: 2px;
   line-height: 1.2;
   position: absolute;
@@ -1614,11 +1629,11 @@
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   z-index: 10010;
-  max-height: 460px;
-  overflow-y: auto;
+  max-height: min(460px, 60vh);
+  overflow-y: auto; /* single scroll only (no nested scroll) */
+  overflow-x: hidden;
   margin-top: 10px;
-  display: flex;
-  flex-direction: column;
+  display: block;
   animation: si-slideDown 0.18s cubic-bezier(0, 0, 0.2, 1);
 }
 
@@ -1685,7 +1700,12 @@
   display: flex; justify-content: space-between; align-items: center;
 }
 
-.table-suggestions-body { flex: 1; overflow-y: auto; min-height: 80px; display: flex; flex-direction: column; }
+.table-suggestions-body {
+  overflow: visible; /* prevent nested scroll */
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+}
 
 .search-loader-container,
 .no-results-container {
