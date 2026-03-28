@@ -659,10 +659,12 @@ export function DueSheetPanel({ embedded = false }) {
             <label style={{ fontSize: '9px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Search</label>
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Name, mobile, address..." style={inputStyle} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <label style={{ fontSize: '9px', color: 'transparent', display: 'block', marginBottom: '2px' }}>&nbsp;</label>
             <button onClick={handleResetFilters} style={{ ...btnStyle, background: '#2a3340', width: '100%' }}>Reset</button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <label style={{ fontSize: '9px', color: 'transparent', display: 'block', marginBottom: '2px' }}>&nbsp;</label>
             <button
               onClick={() => { setOverdueOnly((prev) => !prev); setPage(1); }}
               style={{
@@ -675,7 +677,8 @@ export function DueSheetPanel({ embedded = false }) {
               Overdue Only
             </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <label style={{ fontSize: '9px', color: 'transparent', display: 'block', marginBottom: '2px' }}>&nbsp;</label>
             <button
               onClick={exportToExcel}
               disabled={exporting || parties.length === 0}

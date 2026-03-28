@@ -204,6 +204,10 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { getLocalDateString, formatInIndiaTime } from '../utils/dateUtils';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 import './PetrolPump.css';
 import '../styles/petrolpump-theme.css';
@@ -234,6 +238,15 @@ const Nozzles = () => {
   const [formData, setFormData] = useState({ name: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Report states
+  const [showReport, setShowReport] = useState(false);
+  const [reportNozzle, setReportNozzle] = useState(null);
+  const [reportFromDate, setReportFromDate] = useState(new Date());
+  const [reportToDate, setReportToDate] = useState(new Date());
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportTransactions, setReportTransactions] = useState([]);
+  const [reportSummary, setReportSummary] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -311,6 +324,31 @@ const Nozzles = () => {
     }
   };
 
+  const openReport = (n) => {
+    setReportNozzle(n);
+    setShowReport(true);
+    fetchReport(n.id, reportFromDate, reportToDate);
+  };
+
+  const fetchReport = async (nozzleId, from, to) => {
+    try {
+      setReportLoading(true);
+      const params = {
+        from_date: getLocalDateString(from),
+        to_date: getLocalDateString(to),
+        nozzle_id: nozzleId,
+        limit: 1000
+      };
+      const res = await apiClient.get(config.api.salesReport, { params });
+      setReportTransactions(res.data.transactions || []);
+      setReportSummary(res.data.summary || null);
+    } catch (err) {
+      toast.error('Failed to load report');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (user && user.role !== 'admin' && user.role !== 'super_admin') {
@@ -376,6 +414,9 @@ const Nozzles = () => {
                     <td style={{ padding: '8px 10px', fontWeight: 500 }}>{n.name}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button onClick={() => openReport(n)} style={{ padding: '4px 8px', background: '#1d9e75', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', color: '#fff' }}>
+                          📊 Report
+                        </button>
                         <button onClick={() => openEdit(n)} style={{ padding: '4px 8px', background: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           ✏️ Edit
                         </button>
@@ -421,6 +462,124 @@ const Nozzles = () => {
         </div>
       )}
 
+      {/* Report Modal */}
+      {showReport && reportNozzle && (
+        <div style={modalOverlay} onClick={() => setShowReport(false)}>
+          <div style={{ ...modalContent, maxWidth: '1000px', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+            <div style={modalHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: '#1d9e75', padding: '6px', borderRadius: '6px' }}><Icon name="nozzle" size={16} /></div>
+                <div>
+                  <h3 style={{ fontSize: '15px', margin: 0 }}>Sales Report: {reportNozzle.name}</h3>
+                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>Nozzle Performance & Sales History</div>
+                </div>
+              </div>
+              <button onClick={() => setShowReport(false)} style={closeBtn}>×</button>
+            </div>
+            
+            <div style={{ ...modalBody, overflowY: 'auto' }}>
+              {/* Report Filters */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'flex-end', background: '#0f151f', padding: '10px', borderRadius: '8px', border: '1px solid #2a3340' }}>
+                <div>
+                  <label style={{ fontSize: '9px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>From Date</label>
+                  <DatePicker 
+                    selected={reportFromDate} 
+                    onChange={d => { setReportFromDate(d); fetchReport(reportNozzle.id, d, reportToDate); }} 
+                    dateFormat="dd/MM/yy" 
+                    className="pp-input" 
+                    style={{ ...inputStyle, width: '100px' }} 
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '9px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>To Date</label>
+                  <DatePicker 
+                    selected={reportToDate} 
+                    onChange={d => { setReportToDate(d); fetchReport(reportNozzle.id, reportFromDate, d); }} 
+                    dateFormat="dd/MM/yy" 
+                    className="pp-input" 
+                    style={{ ...inputStyle, width: '100px' }} 
+                  />
+                </div>
+                <button 
+                  onClick={() => fetchReport(reportNozzle.id, reportFromDate, reportToDate)} 
+                  disabled={reportLoading}
+                  style={{ ...primaryBtn, background: '#3b82f6' }}
+                >
+                  {reportLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+
+              {/* Summary Pills */}
+              {reportSummary && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+                  <div style={{ flex: 1, padding: '10px', background: '#141b26', borderRadius: '8px', border: '1px solid #2a3340', borderLeft: '3px solid #f59a30' }}>
+                    <div style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase' }}>Total Sales</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#f59a30' }}>₹{(reportSummary.totalSales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                  </div>
+                  <div style={{ flex: 1, padding: '10px', background: '#141b26', borderRadius: '8px', border: '1px solid #2a3340', borderLeft: '3px solid #22c55e' }}>
+                    <div style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase' }}>Total Paid</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#22c55e' }}>₹{(reportSummary.totalPaid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                  </div>
+                  <div style={{ flex: 1, padding: '10px', background: '#141b26', borderRadius: '8px', border: '1px solid #2a3340', borderLeft: '3px solid #e8593c' }}>
+                    <div style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase' }}>Total Balance</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#e8593c' }}>₹{(reportSummary.totalBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                  </div>
+                  <div style={{ flex: 1, padding: '10px', background: '#141b26', borderRadius: '8px', border: '1px solid #2a3340', borderLeft: '3px solid #3b82f6' }}>
+                    <div style={{ fontSize: '9px', color: '#94a3b8', textTransform: 'uppercase' }}>Txns</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#3b82f6' }}>{reportSummary.totalTransactions || 0}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Transactions Table */}
+              <div style={{ borderRadius: '6px', border: '1px solid #2a3340', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                  <thead style={{ background: '#0f151f', color: '#94a3b8' }}>
+                    <tr>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>Time</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>Bill No</th>
+                      <th style={{ padding: '8px', textAlign: 'left' }}>Party</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
+                      <th style={{ padding: '8px', textAlign: 'right' }}>Paid</th>
+                      <th style={{ padding: '8px', textAlign: 'center' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportLoading ? (
+                      <tr><td colSpan="6" style={{ padding: '20px', textAlign: 'center' }}><TransactionLoader message="Fetching..." /></td></tr>
+                    ) : reportTransactions.length === 0 ? (
+                      <tr><td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#6c7f8f' }}>No sales for this nozzle</td></tr>
+                    ) : (
+                      reportTransactions.map(t => (
+                        <tr key={t.id} style={{ borderBottom: '1px solid #1a2330' }}>
+                          <td style={{ padding: '6px 8px', color: '#9aaebf' }}>{formatInIndiaTime(t.created_at)}</td>
+                          <td style={{ padding: '6px 8px', fontFamily: 'monospace' }}>{t.bill_number}</td>
+                          <td style={{ padding: '6px 8px', fontWeight: 500 }}>{t.party_name || '—'}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#f59a30', fontWeight: 600 }}>₹{parseFloat(t.total_amount).toFixed(2)}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#22c55e' }}>₹{parseFloat(t.paid_amount).toFixed(2)}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                            <span style={{ 
+                              background: t.payment_status === 'paid' ? '#22c55e20' : t.payment_status === 'partial' ? '#f59a3020' : '#e8593c20',
+                              color: t.payment_status === 'paid' ? '#22c55e' : t.payment_status === 'partial' ? '#f59a30' : '#e8593c',
+                              padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600
+                            }}>
+                              {(t.payment_status || '').toUpperCase()}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div style={modalFooter}>
+              <button onClick={() => setShowReport(false)} style={secondaryBtn}>Close Report</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Scroll to Top */}
       {showScrollTop && (
         <button onClick={scrollToTop} style={scrollBtnStyle}>↑</button>
@@ -429,27 +588,19 @@ const Nozzles = () => {
   );
 };
 
-// Styles
-const inputStyle = {
-  padding: '6px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #2a3340',
-  background: '#0f151f', color: '#fff', width: '100%', boxSizing: 'border-box'
-};
-
+// Report Modal Styling Helpers (Shared with Attendants)
 const modalOverlay = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex',
   alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px'
 };
-
 const modalContent = {
   background: '#141b26', borderRadius: '8px', width: '100%', display: 'flex',
   flexDirection: 'column', border: '1px solid #2a3340'
 };
-
 const modalHeader = {
   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   padding: '10px 12px', borderBottom: '1px solid #2a3340'
 };
-
 const modalBody = { padding: '12px' };
 const modalFooter = { padding: '10px 12px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', gap: '8px' };
 const closeBtn = { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px' };
@@ -460,6 +611,12 @@ const scrollBtnStyle = {
   borderRadius: '50%', background: '#f59a30', border: 'none', cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   boxShadow: '0 2px 8px rgba(0,0,0,0.3)', zIndex: 999
+};
+
+// Styles
+const inputStyle = {
+  padding: '6px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #2a3340',
+  background: '#0f151f', color: '#fff', width: '100%', boxSizing: 'border-box'
 };
 
 export default Nozzles;

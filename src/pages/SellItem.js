@@ -915,7 +915,7 @@ const SellItem = () => {
                                   <td style={{ textAlign: 'center' }}>{item.product_code || '-'}</td>
                                 )}
                                 {/* Qty cell */}
-                                <td style={{ textAlign: 'center' }}>
+                                <td style={{ textAlign: 'center', position: 'relative' }}>
                                   {previewData.transactionId ? (
                                     <span style={{ fontWeight: '600', color: '#eef2f8' }}>{quantity}</span>
                                   ) : (
@@ -1058,7 +1058,7 @@ const SellItem = () => {
                                 )}
                                 <td className="bp-amount-col">₹{parseFloat(item.itemTotalAfterDiscount || itemTotal || 0).toFixed(2)}</td>
                                 {!previewData.transactionId && (
-                                  <td style={{ textAlign: 'center' }}>
+                                  <td style={{ textAlign: 'center', position: 'relative' }}>
                                     <button
                                       type="button"
                                       className="bp-remove-x-btn"
@@ -1478,7 +1478,7 @@ const SellItem = () => {
                       >×</button>
                     )}
                     {showSellerSuggestions && filteredSellerParties.length > 0 && (
-                      <div className="suggestions seller-suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}>
+                      <div className="suggestions seller-suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10005, maxHeight: '200px', overflowY: 'auto' }}>
                         {filteredSellerParties.map(party => (
                           <div
                             key={party.id}
@@ -1493,7 +1493,7 @@ const SellItem = () => {
                       </div>
                     )}
                     {sellerSearchQuery.trim() && filteredSellerParties.length === 0 && sellerParties.length > 0 && (
-                      <div className="suggestions seller-suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000 }}>
+                      <div className="suggestions seller-suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10005 }}>
                         <div className="suggestion-item">No seller party found</div>
                       </div>
                     )}
@@ -1600,7 +1600,7 @@ const SellItem = () => {
                                 </div>
                               </td>
                               {/* PRICE (was SALE RATE) */}
-                              <td style={{ textAlign: 'right' }}>
+                              <td style={{ textAlign: 'right', position: 'relative' }}>
                                 <input
                                   type="number"
                                   step="0.01"
@@ -1619,7 +1619,7 @@ const SellItem = () => {
                                 />
                               </td>
                               {/* QTY */}
-                              <td style={{ textAlign: 'center' }}>
+                              <td style={{ textAlign: 'center', position: 'relative' }}>
                                 <input
                                   type="number"
                                   min="0"
@@ -1641,7 +1641,7 @@ const SellItem = () => {
                                 {!isOverStock && availableQty > 0 && <div className="stock-info">{availableQty} left</div>}
                               </td>
                               {/* DISCOUNT */}
-                              <td style={{ textAlign: 'center' }}>
+                              <td style={{ textAlign: 'center', position: 'relative' }}>
                                 <input
                                   type="number"
                                   placeholder="0"
@@ -1663,7 +1663,7 @@ const SellItem = () => {
                                 )}
                               </td>
                               {/* TOTAL */}
-                              <td style={{ textAlign: 'right', fontWeight: '700', color: '#f59a30', fontSize: '14px', fontFamily: 'var(--pp-font-mono, monospace)' }}>
+                              <td style={{ textAlign: 'right', fontWeight: '700', color: '#f59a30', fontSize: '14px', fontFamily: 'var(--pp-font-mono, monospace)', position: 'relative' }}>
                                 ₹{(() => {
                                   const rate = parseFloat(item.sale_rate || 0);
                                   const qty = parseInt(item.quantity || 0);
@@ -1780,7 +1780,7 @@ const SellItem = () => {
                           <td colSpan="5" style={{ textAlign: 'right', fontSize: '12px', paddingRight: '12px', color: '#9aaebf', fontWeight: '800', border: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                             Cart balance:
                           </td>
-                          <td style={{ fontWeight: '800', fontSize: '16px', color: 'var(--pp-orange, #f59a30)', textAlign: 'right', fontFamily: 'var(--pp-font-mono, monospace)', border: 'none' }}>
+                          <td style={{ fontWeight: '800', fontSize: '16px', color: 'var(--pp-orange, #f59a30)', textAlign: 'right', fontFamily: 'var(--pp-font-mono, monospace)', border: 'none', whiteSpace: 'nowrap' }}>
                             ₹{calculateTotal().toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td style={{ border: 'none' }}></td>

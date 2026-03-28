@@ -319,6 +319,7 @@
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #1f2937 !important;
+  overflow: visible !important;
 }
 
 .sticky-search-section label {
@@ -411,6 +412,20 @@
 .sticky-search-section .suggestions::-webkit-scrollbar { width: 6px; }
 .sticky-search-section .suggestions::-webkit-scrollbar-track { background: #0f151f; border-radius: 3px; }
 .sticky-search-section .suggestions::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
+
+/* Bill preview stock indicators */
+.bp-avail-info, .bp-avail-warning {
+  font-size: 8px;
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+}
+.bp-avail-info { color: #6c7f8f; }
+.bp-avail-warning { color: #e8593c; font-weight: 700; }
 
 /* ============================================
    SELECTED ITEMS (CART) TABLE - FIXED LAYOUT
