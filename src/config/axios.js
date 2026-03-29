@@ -36,7 +36,8 @@ apiClient.interceptors.response.use(
     const isLoginRequest = requestUrl.includes('/auth/login');
 
     // Handle authentication errors - redirect to login (except when login itself failed)
-    const errorMessage = error.response?.data?.error || '';
+    const errorMessage =
+      (error.response?.data && (error.response.data.error || error.response.data.message)) || '';
     const isAuthError =
       error.response?.status === 401 ||
       errorMessage.toLowerCase().includes('invalid or expired token') ||

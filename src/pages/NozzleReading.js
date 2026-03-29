@@ -1219,7 +1219,7 @@
 
 
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
@@ -1229,6 +1229,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { getLocalDateString, getLocalISOString } from '../utils/dateUtils';
 import Pagination from '../components/Pagination';
 import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
+import * as XLSX from 'xlsx';
 import './Report.css';
 import './PetrolPump.css';
 import './Party.css';
@@ -1261,6 +1262,14 @@ const formatDateTime = (s) => {
   return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 };
 
+const daysInclusive = (from, to) => {
+  if (!from || !to) return 1;
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  const ms = b - a;
+  return Math.max(1, Math.floor(ms / 86400000) + 1);
+};
+
 const RECORD_MODES = [
   { id: 'both', title: 'Full Shift', desc: 'Opening + closing', color: '#22c55e' },
   { id: 'opening_only', title: 'Opening Only', desc: 'Start shift', color: '#f59a30' },
@@ -1284,6 +1293,8 @@ export function NozzleReadingPanel({ embedded = false }) {
   const [filters, setFilters] = useState({ from: new Date(), to: new Date(), nozzle: '', attendant: '' });
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [periodSummary, setPeriodSummary] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const [pendingReadings, setPendingReadings] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [addingClosing, setAddingClosing] = useState(null);
@@ -1291,16 +1302,48 @@ export function NozzleReadingPanel({ embedded = false }) {
   const [submittingClosing, setSubmittingClosing] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
 
+  const rangeDayCount = useMemo(() => daysInclusive(filters.from, filters.to), [filters.from, filters.to]);
+
   useEffect(() => {
     fetchMeta();
-    fetchReadings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const fetchReadingsAndSummary = useCallback(async () => {
+    setLoading(true);
+    try {
+      const listParams = {
+        from_date: getLocalDateString(filters.from),
+        to_date: getLocalDateString(filters.to),
+        page,
+        limit: 50
+      };
+      if (filters.nozzle) listParams.nozzle_id = filters.nozzle;
+      if (filters.attendant) listParams.attendant_id = filters.attendant;
+      const sumParams = {
+        from_date: getLocalDateString(filters.from),
+        to_date: getLocalDateString(filters.to)
+      };
+      if (filters.nozzle) sumParams.nozzle_id = filters.nozzle;
+      if (filters.attendant) sumParams.attendant_id = filters.attendant;
+      const [resList, resSum] = await Promise.all([
+        apiClient.get(config.api.nozzleReadings, { params: listParams }),
+        apiClient.get(`${config.api.nozzleReadings}/summary`, { params: sumParams })
+      ]);
+      setReadings(resList.data.readings || []);
+      setPagination(resList.data.pagination);
+      setPeriodSummary(resSum.data);
+    } catch (e) {
+      setPeriodSummary(null);
+      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to load readings');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, page, toast]);
+
   useEffect(() => {
-    fetchReadings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, page]);
+    fetchReadingsAndSummary();
+  }, [fetchReadingsAndSummary]);
 
   useEffect(() => {
     if (showModal && recordMode === 'add_closing') fetchPendingReadings();
@@ -1333,23 +1376,61 @@ export function NozzleReadingPanel({ embedded = false }) {
     }
   };
 
-  const fetchReadings = async () => {
-    setLoading(true);
+  const applyDatePreset = (preset) => {
+    const today = new Date();
+    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let start = new Date(end);
+    if (preset === 'today') {
+      start = end;
+    } else if (preset === '7d') {
+      start.setDate(start.getDate() - 6);
+    } else if (preset === '30d') {
+      start.setDate(start.getDate() - 29);
+    } else if (preset === 'month') {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+    setFilters((f) => ({ ...f, from: start, to: end }));
+    setPage(1);
+  };
+
+  const exportReadingsToExcel = async () => {
+    setExporting(true);
     try {
       const params = {
         from_date: getLocalDateString(filters.from),
         to_date: getLocalDateString(filters.to),
-        page, limit: 50
+        page: 1,
+        limit: 5000
       };
       if (filters.nozzle) params.nozzle_id = filters.nozzle;
       if (filters.attendant) params.attendant_id = filters.attendant;
       const res = await apiClient.get(config.api.nozzleReadings, { params });
-      setReadings(res.data.readings || []);
-      setPagination(res.data.pagination);
+      const rows = res.data.readings || [];
+      if (rows.length === 0) {
+        toast.error('No rows to export for this range');
+        return;
+      }
+      const sheetRows = rows.map((r) => ({
+        Date: r.reading_date?.substring(0, 10) ?? '',
+        Attendant: r.attendant_name ?? '',
+        Nozzle: r.nozzle_name ?? '',
+        Opening: r.opening_reading != null ? Number(r.opening_reading) : '',
+        Open_time: r.opening_at ?? '',
+        Closing: r.closing_reading != null ? Number(r.closing_reading) : '',
+        Close_time: r.closing_at ?? '',
+        Sale_Ltrs: r.sale_quantity != null ? Number(r.sale_quantity) : '',
+        Status: r.closing_reading != null ? 'Closed' : 'Active'
+      }));
+      const ws = XLSX.utils.json_to_sheet(sheetRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Nozzle readings');
+      const fname = `nozzle-readings_${getLocalDateString(filters.from)}_${getLocalDateString(filters.to)}.xlsx`;
+      XLSX.writeFile(wb, fname);
+      toast.success(`Exported ${rows.length} row(s)`);
     } catch (e) {
-      toast.error('Failed to load readings');
+      toast.error(e.response?.data?.error || e.response?.data?.message || 'Export failed');
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
@@ -1366,7 +1447,7 @@ export function NozzleReadingPanel({ embedded = false }) {
       });
       setPendingReadings(res.data.readings || []);
     } catch (e) {
-      toast.error('Failed to load pending');
+      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to load pending');
     } finally {
       setLoadingPending(false);
     }
@@ -1398,6 +1479,29 @@ export function NozzleReadingPanel({ embedded = false }) {
       attendant: Array.from(attendantMap.entries()).map(([name, total]) => ({ name, total: typeof total === 'number' ? total : 0 })).sort((a, b) => b.total - a.total)
     };
   }, [readings]);
+
+  const displayTotals = useMemo(() => {
+    if (periodSummary) {
+      return {
+        totalSales: periodSummary.total_sale_liters ?? 0,
+        nozzle: periodSummary.by_nozzle || [],
+        attendant: periodSummary.by_attendant || [],
+        completedShifts: periodSummary.completed_shifts ?? 0,
+        pendingShifts: periodSummary.pending_shifts ?? 0,
+        totalShifts: periodSummary.total_shifts ?? 0
+      };
+    }
+    return {
+      totalSales: summaries.totalSales,
+      nozzle: summaries.nozzle,
+      attendant: summaries.attendant,
+      completedShifts: readings.filter((r) => r.closing_reading != null).length,
+      pendingShifts: readings.filter((r) => r.closing_reading == null).length,
+      totalShifts: readings.length
+    };
+  }, [periodSummary, summaries, readings]);
+
+  const avgDailyLiters = displayTotals.totalSales / rangeDayCount;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1441,10 +1545,10 @@ export function NozzleReadingPanel({ embedded = false }) {
       await apiClient.post(config.api.nozzleReadings, payload);
       toast.success(recordMode === 'both' ? 'Reading saved' : 'Opening saved');
       setForm({ ...form, opening_reading: '', closing_reading: '' });
-      fetchReadings();
+      fetchReadingsAndSummary();
       setShowModal(false);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to save');
+      toast.error(err.response?.data?.error || err.response?.data?.message || 'Failed to save');
     } finally {
       setSubmitting(false);
     }
@@ -1475,10 +1579,10 @@ export function NozzleReadingPanel({ embedded = false }) {
       setAddingClosing(null);
       setClosingForm({ reading: '', time: new Date() });
       fetchPendingReadings();
-      fetchReadings();
+      fetchReadingsAndSummary();
       setShowModal(false);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to save');
+      toast.error(err.response?.data?.error || err.response?.data?.message || 'Failed to save');
     } finally {
       setSubmittingClosing(false);
     }
@@ -1508,8 +1612,11 @@ export function NozzleReadingPanel({ embedded = false }) {
             <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Sales</span>
             <Icon name="fuel" size={16} style={{ color: '#22c55e' }} />
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>{summaries.totalSales.toFixed(2)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>Ltrs</span></div>
-          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px' }}>Period: {getLocalDateString(filters.from)} - {getLocalDateString(filters.to)}</div>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>{displayTotals.totalSales.toFixed(2)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>Ltrs</span></div>
+          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px' }}>
+            Avg {avgDailyLiters.toFixed(2)} L/day · {rangeDayCount} day(s) · {displayTotals.completedShifts} closed / {displayTotals.totalShifts} shifts
+          </div>
+          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '2px' }}>Period: {getLocalDateString(filters.from)} — {getLocalDateString(filters.to)}</div>
         </div>
 
         {/* Top Nozzle Card */}
@@ -1519,10 +1626,10 @@ export function NozzleReadingPanel({ embedded = false }) {
             <Icon name="nozzle" size={16} style={{ color: '#f59a30' }} />
           </div>
           <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
-            {summaries.nozzle[0] ? summaries.nozzle[0].name : '—'}
+            {displayTotals.nozzle[0] ? displayTotals.nozzle[0].name : '—'}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 700, color: '#f59a30', marginTop: '4px' }}>
-            {summaries.nozzle[0] ? `${summaries.nozzle[0].total.toFixed(2)} Ltrs` : '0 Ltrs'}
+            {displayTotals.nozzle[0] ? `${displayTotals.nozzle[0].total.toFixed(2)} Ltrs` : '0 Ltrs'}
           </div>
         </div>
 
@@ -1533,10 +1640,10 @@ export function NozzleReadingPanel({ embedded = false }) {
             <Icon name="attendant" size={16} style={{ color: '#3b82f6' }} />
           </div>
           <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
-            {summaries.attendant[0] ? summaries.attendant[0].name : '—'}
+            {displayTotals.attendant[0] ? displayTotals.attendant[0].name : '—'}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 700, color: '#3b82f6', marginTop: '4px' }}>
-            {summaries.attendant[0] ? `${summaries.attendant[0].total.toFixed(2)} Ltrs` : '0 Ltrs'}
+            {displayTotals.attendant[0] ? `${displayTotals.attendant[0].total.toFixed(2)} Ltrs` : '0 Ltrs'}
           </div>
         </div>
 
@@ -1547,21 +1654,21 @@ export function NozzleReadingPanel({ embedded = false }) {
             <Icon name="refresh" size={16} style={{ color: '#e8593c' }} />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#e8593c' }}>
-            {readings.filter(r => !r.closing_reading).length}
+            {displayTotals.pendingShifts}
           </div>
-          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px' }}>Need closing readings</div>
+          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px' }}>Shifts without closing (period total)</div>
         </div>
       </div>
 
       {/* Nozzle-wise Sales Summary - Compact Cards */}
-      {summaries.nozzle.length > 0 && (
+      {displayTotals.nozzle.length > 0 && (
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
             <Icon name="nozzle" size={12} />
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Nozzle-wise Sales</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Nozzle-wise Sales (full period)</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px' }}>
-            {summaries.nozzle.slice(0, 6).map((item, idx) => (
+            {displayTotals.nozzle.slice(0, 8).map((item, idx) => (
               <div key={idx} style={{ background: '#0f151f', borderRadius: '6px', padding: '6px 10px', border: '1px solid #2a3340', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: 500, color: '#fff' }}>{item.name}</span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#f59a30' }}>{item.total.toFixed(2)}</span>
@@ -1572,14 +1679,14 @@ export function NozzleReadingPanel({ embedded = false }) {
       )}
 
       {/* Filters - Compact */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', marginBottom: '12px', background: '#0f151f', padding: '8px', borderRadius: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', marginBottom: '8px', background: '#0f151f', padding: '8px', borderRadius: '8px' }}>
         <div>
           <label style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>From</label>
-          <DatePicker selected={filters.from} onChange={d => setFilters({ ...filters, from: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%', padding: '4px 6px', fontSize: '11px' }} />
+          <DatePicker selected={filters.from} onChange={d => { if (d) { setFilters({ ...filters, from: d }); setPage(1); } }} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%', padding: '4px 6px', fontSize: '11px' }} />
         </div>
         <div>
           <label style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>To</label>
-          <DatePicker selected={filters.to} onChange={d => setFilters({ ...filters, to: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%', padding: '4px 6px', fontSize: '11px' }} />
+          <DatePicker selected={filters.to} onChange={d => { if (d) { setFilters({ ...filters, to: d }); setPage(1); } }} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%', padding: '4px 6px', fontSize: '11px' }} />
         </div>
         <div>
           <label style={{ fontSize: '10px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Nozzle</label>
@@ -1595,6 +1702,26 @@ export function NozzleReadingPanel({ embedded = false }) {
             {attendants.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+        <span style={{ fontSize: '10px', color: '#64748b', marginRight: '4px' }}>Quick range:</span>
+        {[
+          { id: 'today', label: 'Today' },
+          { id: '7d', label: '7 days' },
+          { id: '30d', label: '30 days' },
+          { id: 'month', label: 'This month' }
+        ].map((p) => (
+          <button key={p.id} type="button" onClick={() => applyDatePreset(p.id)} style={{ padding: '4px 10px', fontSize: '10px', borderRadius: '4px', border: '1px solid #2a3340', background: '#141b26', color: '#94a3b8', cursor: 'pointer' }}>
+            {p.label}
+          </button>
+        ))}
+        <span style={{ width: '1px', height: '16px', background: '#2a3340', margin: '0 4px' }} aria-hidden />
+        <button type="button" onClick={() => fetchReadingsAndSummary()} disabled={loading} style={{ padding: '4px 12px', fontSize: '10px', borderRadius: '4px', border: '1px solid #2a3340', background: '#141b26', color: '#e2e8f0', cursor: loading ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <Icon name="refresh" size={12} /> Refresh
+        </button>
+        <button type="button" onClick={exportReadingsToExcel} disabled={exporting || loading} style={{ padding: '4px 12px', fontSize: '10px', borderRadius: '4px', border: '1px solid #22c55e55', background: '#14532d33', color: '#86efac', cursor: exporting ? 'wait' : 'pointer' }}>
+          {exporting ? 'Exporting…' : 'Export Excel'}
+        </button>
       </div>
 
       {/* Tabs */}
@@ -1671,10 +1798,10 @@ export function NozzleReadingPanel({ embedded = false }) {
                   <tr style={{ background: '#0f151f' }}><th style={{ padding: '8px 10px' }}>Nozzle</th><th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Sale (Ltrs)</th></tr>
                 </thead>
                 <tbody>
-                  {summaries.nozzle.length === 0 ? (
+                  {displayTotals.nozzle.length === 0 ? (
                     <tr><td colSpan={2} style={{ textAlign: 'center', padding: '30px', color: '#6c7f8f' }}>No sales data</td></tr>
                   ) : (
-                    summaries.nozzle.map((item, idx) => (
+                    displayTotals.nozzle.map((item, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #2a3340' }}>
                         <td style={{ padding: '6px 10px', fontWeight: 500 }}>{item.name}</td>
                         <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#3b82f6' }}>{item.total.toFixed(2)}</td>
@@ -1693,10 +1820,10 @@ export function NozzleReadingPanel({ embedded = false }) {
                   <tr style={{ background: '#0f151f' }}><th style={{ padding: '8px 10px' }}>Attendant</th><th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Sale (Ltrs)</th></tr>
                 </thead>
                 <tbody>
-                  {summaries.attendant.length === 0 ? (
+                  {displayTotals.attendant.length === 0 ? (
                     <tr><td colSpan={2} style={{ textAlign: 'center', padding: '30px', color: '#6c7f8f' }}>No sales data</td></tr>
                   ) : (
-                    summaries.attendant.map((item, idx) => (
+                    displayTotals.attendant.map((item, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #2a3340' }}>
                         <td style={{ padding: '6px 10px', fontWeight: 500 }}>{item.name}</td>
                         <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#22c55e' }}>{item.total.toFixed(2)}</td>

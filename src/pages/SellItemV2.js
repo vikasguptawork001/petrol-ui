@@ -280,6 +280,7 @@ const SellItemV2 = () => {
           available_quantity: availableStock, // Store stock as available_quantity
           sale_rate: parseFloat(item.sale_rate) || 0,
           quantity: 1, // Always start with quantity 1 for new items
+          unit: (item.unit != null && String(item.unit).trim() !== '' ? String(item.unit).trim() : null) || 'PCS',
           discount_type: 'percentage',
           discount_percentage: null,
           discount: 0
@@ -381,7 +382,8 @@ const SellItemV2 = () => {
           discount_type: it.discount_type || 'amount',
           discount_percentage: it.discount_type === 'percentage'
             ? (it.discount_percentage === '' ? null : (it.discount_percentage ?? null))
-            : null
+            : null,
+          unit: it.unit != null && String(it.unit).trim() !== '' ? String(it.unit).trim() : undefined
         })),
         payment_status: paymentStatus,
         paid_amount: effectivePaidAmount,
@@ -701,6 +703,7 @@ const SellItemV2 = () => {
                           <th style={{ width: 60 }}>#</th>
                           <th>Item</th>
                           <th style={{ width: 110 }}>HSN</th>
+                          <th style={{ width: 88 }}>Unit</th>
                           <th style={{ width: 130 }}>Qty</th>
                           <th style={{ width: 140 }}>Rate</th>
                           <th style={{ width: 180 }}>Discount</th>
@@ -726,6 +729,19 @@ const SellItemV2 = () => {
                                 </div>
                               </td>
                               <td>{it.hsn_number || '-'}</td>
+                              <td>
+                                <input
+                                  className="sell2-mini-input"
+                                  style={{ width: 76 }}
+                                  value={it.unit ?? 'PCS'}
+                                  onChange={(e) => {
+                                    const u = e.target.value;
+                                    updateCartItem(it.item_id, { unit: u.trim() === '' ? 'PCS' : u });
+                                  }}
+                                  placeholder="PCS"
+                                  title="Unit for bill / PDF"
+                                />
+                              </td>
                               <td>
                                 <input
                                   className="sell2-mini-input"

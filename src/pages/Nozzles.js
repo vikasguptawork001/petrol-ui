@@ -198,12 +198,13 @@
 
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getLocalDateString } from '../utils/dateUtils';
 import './Party.css';
 import './PetrolPump.css';
 import '../styles/petrolpump-theme.css';
@@ -215,7 +216,8 @@ const Icon = ({ name, size = 14 }) => {
     edit: <><path d="M17 3l4 4-7 7H10v-4l7-7z" /><path d="M4 20h16" /></>,
     delete: <><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13" /><path d="M9 3h6" /></>,
     plus: <><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>,
-    close: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>
+    close: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
+    chart: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></>
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
@@ -234,6 +236,45 @@ const Nozzles = () => {
   const [formData, setFormData] = useState({ name: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  /** Default: show sales report; list opens on demand */
+  const [showManageList, setShowManageList] = useState(false);
+  const [reportFrom, setReportFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return getLocalDateString(d);
+  });
+  const [reportTo, setReportTo] = useState(() => getLocalDateString());
+  const [gstFilter, setGstFilter] = useState('all');
+  const [reportRows, setReportRows] = useState([]);
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const formatInr = (n) => {
+    const num = Number(n || 0);
+    if (Number.isNaN(num)) return '0.00';
+    return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const fetchSalesByNozzle = useCallback(async () => {
+    if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) return;
+    setReportLoading(true);
+    try {
+      const params = { from_date: reportFrom, to_date: reportTo };
+      if (gstFilter === 'with_gst') params.gst_filter = 'with_gst';
+      if (gstFilter === 'without_gst') params.gst_filter = 'without_gst';
+      const res = await apiClient.get(config.api.salesByNozzle, { params });
+      setReportRows(Array.isArray(res.data?.rows) ? res.data.rows : []);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to load nozzle-wise sales');
+      setReportRows([]);
+    } finally {
+      setReportLoading(false);
+    }
+  }, [user, reportFrom, reportTo, gstFilter, toast]);
+
+  useEffect(() => {
+    fetchSalesByNozzle();
+  }, [fetchSalesByNozzle]);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -327,17 +368,16 @@ const Nozzles = () => {
     <Layout>
       <div style={{ padding: '8px 12px', maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon name="nozzle" size={18} />
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Nozzles</h1>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Nozzle sales &amp; setup</h1>
             </div>
-            <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Manage pump nozzles. Delete archives the nozzle.</p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', maxWidth: '520px', lineHeight: 1.45 }}>
+              Sales by nozzle (default view). Open the list only when you need to add, rename, or archive nozzles.
+            </p>
           </div>
-          <button onClick={openAdd} style={{ padding: '6px 12px', background: '#f59a30', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Icon name="plus" size={12} /> Add Nozzle
-          </button>
         </div>
 
         {/* Stats Card */}
@@ -352,42 +392,165 @@ const Nozzles = () => {
           </div>
         </div>
 
-        {/* Table */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading...</div>
-        ) : nozzles.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6c7f8f', background: '#0f151f', borderRadius: '6px' }}>
-            No nozzles yet. Click "Add Nozzle" to get started.
+        {/* Nozzle-wise sales report */}
+        <div style={{
+          marginBottom: '14px',
+          padding: '14px 16px',
+          background: '#0f151f',
+          borderRadius: '10px',
+          border: '1px solid #2a3340',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon name="chart" size={16} />
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f3f4f6' }}>Nozzle-wise sales</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Totals from sale bills linked to each nozzle in the selected period (includes unassigned).</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={fetchSalesByNozzle}
+              disabled={reportLoading}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                background: '#1a2330',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#9aaebf',
+                cursor: reportLoading ? 'wait' : 'pointer'
+              }}
+            >
+              {reportLoading ? 'Refreshing…' : 'Refresh'}
+            </button>
           </div>
-        ) : (
-          <div style={{ overflowX: 'auto', borderRadius: '6px', border: '1px solid #2a3340' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-              <thead>
-                <tr style={{ background: '#0f151f' }}>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', width: '50px' }}>#</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left' }}>Nozzle Name</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', width: '80px' }}>Actions</th>
-                 </tr>
-              </thead>
-              <tbody>
-                {nozzles.map((n, idx) => (
-                  <tr key={n.id} style={{ borderBottom: '1px solid #2a3340' }}>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: 500 }}>{n.name}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                        <button onClick={() => openEdit(n)} style={{ padding: '4px 8px', background: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          ✏️ Edit
-                        </button>
-                        <button onClick={() => handleDelete(n.id, n.name)} style={{ padding: '4px 8px', background: '#e8593c', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          🗑️ Delete
-                        </button>
-                      </div>
-                    </td>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '10px 12px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '140px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: '#6c7f8f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>From</label>
+              <input type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2a3340', background: '#0a0f16', color: '#eef2f8', fontSize: '12px' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '140px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: '#6c7f8f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>To</label>
+              <input type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2a3340', background: '#0a0f16', color: '#eef2f8', fontSize: '12px' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 700, color: '#6c7f8f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>GST</label>
+              <select value={gstFilter} onChange={(e) => setGstFilter(e.target.value)} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2a3340', background: '#0a0f16', color: '#eef2f8', fontSize: '12px' }}>
+                <option value="all">All bills</option>
+                <option value="with_gst">With GST only</option>
+                <option value="without_gst">Without GST only</option>
+              </select>
+            </div>
+          </div>
+          {reportLoading && reportRows.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>Loading sales…</div>
+          ) : reportRows.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#6c7f8f', fontSize: '12px', border: '1px dashed #2a3340', borderRadius: '8px' }}>No sale transactions in this period for the selected filters.</div>
+          ) : (
+            <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#111827' }}>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: '#9aaebf', fontWeight: 700 }}>Nozzle</th>
+                    <th style={{ textAlign: 'right', padding: '10px 12px', color: '#9aaebf', fontWeight: 700 }}>Bills</th>
+                    <th style={{ textAlign: 'right', padding: '10px 12px', color: '#9aaebf', fontWeight: 700 }}>Total sales (₹)</th>
+                    <th style={{ textAlign: 'right', padding: '10px 12px', color: '#9aaebf', fontWeight: 700 }}>Paid (₹)</th>
+                    <th style={{ textAlign: 'right', padding: '10px 12px', color: '#9aaebf', fontWeight: 700 }}>Balance (₹)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {reportRows.map((row, i) => (
+                    <tr key={`${row.nozzle_id ?? 'x'}-${i}`} style={{ borderBottom: '1px solid #1f2937' }}>
+                      <td style={{ padding: '10px 12px', fontWeight: 600, color: '#eef2f8' }}>{row.nozzle_name}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{row.bill_count}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#f59a30', fontWeight: 700 }}>{formatInr(row.total_sales)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#9aaebf' }}>{formatInr(row.total_paid)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#e8593c' }}>{formatInr(row.total_balance)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '14px' }}>
+          <button
+            type="button"
+            onClick={() => setShowManageList((v) => !v)}
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              padding: '12px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              background: showManageList ? '#1a2330' : 'linear-gradient(180deg, #2a3340 0%, #1a2330 100%)',
+              border: '1px solid #3d4a5c',
+              borderRadius: '10px',
+              color: '#e2e8f0',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
+            }}
+          >
+            <Icon name="nozzle" size={16} />
+            {showManageList ? 'Hide nozzle list' : 'Manage nozzles — list, add & archive'}
+            <span style={{ fontSize: '11px', opacity: 0.85 }}>{showManageList ? '▲' : '▼'}</span>
+          </button>
+        </div>
+
+        {/* Nozzle list (optional) */}
+        {showManageList && (
+          <div style={{ marginBottom: '16px', padding: '14px 16px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9' }}>Nozzle directory</div>
+              <button onClick={openAdd} type="button" style={{ padding: '8px 14px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Icon name="plus" size={14} /> Add nozzle
+              </button>
+            </div>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading list…</div>
+            ) : nozzles.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '28px', color: '#6c7f8f', background: '#0f151f', borderRadius: '8px', fontSize: '13px' }}>
+                No nozzles yet. Use <strong style={{ color: '#e2e8f0' }}>Add nozzle</strong> above.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ background: '#0f151f' }}>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>#</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nozzle name</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', width: '140px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {nozzles.map((n, idx) => (
+                      <tr key={n.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 500 }}>{n.name}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button type="button" onClick={() => openEdit(n)} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fff' }}>
+                              Edit
+                            </button>
+                            <button type="button" onClick={() => handleDelete(n.id, n.name)} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fecaca' }}>
+                              Archive
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -451,10 +614,10 @@ const modalHeader = {
 };
 
 const modalBody = { padding: '12px' };
-const modalFooter = { padding: '10px 12px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', gap: '8px' };
-const closeBtn = { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px' };
-const primaryBtn = { padding: '5px 12px', fontSize: '11px', background: '#f59a30', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: 500 };
-const secondaryBtn = { padding: '5px 12px', fontSize: '11px', background: 'transparent', border: '1px solid #2a3340', borderRadius: '3px', cursor: 'pointer', color: '#94a3b8' };
+const modalFooter = { padding: '14px 16px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' };
+const closeBtn = { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' };
+const primaryBtn = { padding: '10px 20px', fontSize: '13px', background: '#f59a30', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#0f172a', minWidth: '120px' };
+const secondaryBtn = { padding: '10px 20px', fontSize: '13px', background: 'transparent', border: '1px solid #475569', borderRadius: '8px', cursor: 'pointer', color: '#e2e8f0', minWidth: '100px' };
 const scrollBtnStyle = {
   position: 'fixed', bottom: '16px', right: '16px', width: '32px', height: '32px',
   borderRadius: '50%', background: '#f59a30', border: 'none', cursor: 'pointer',

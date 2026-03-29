@@ -431,6 +431,16 @@ const Icon = ({ name, size = 14 }) => {
   );
 };
 
+const dueDatePickerInputStyle = {
+  padding: '6px 8px',
+  fontSize: '11px',
+  borderRadius: '4px',
+  border: '1px solid #2a3340',
+  background: '#0f151f',
+  color: '#fff',
+  boxSizing: 'border-box'
+};
+
 /** Full Due Sheet UI — use on `/due-sheet` or embedded on the home dashboard (`embedded`). */
 export function DueSheetPanel({ embedded = false }) {
   const { user } = useAuth();
@@ -644,44 +654,65 @@ export function DueSheetPanel({ embedded = false }) {
         </div>
       )}
 
-      {/* Filters - Compact */}
-      <div style={{ background: '#0f151f', padding: '10px', borderRadius: '8px', marginBottom: '12px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px', marginBottom: '8px' }}>
-          <div>
-            <label style={{ fontSize: '9px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>From Due Date</label>
-            <DatePicker selected={fromDueDate} onChange={setFromDueDate} dateFormat="dd/MM/yy" className="pp-input" style={inputStyle} placeholderText="From" isClearable />
+      {/* Filters — aligned toolbar */}
+      <div className="ds-filters-bar">
+        <div className="ds-filters-bar__row">
+          <div className="ds-field">
+            <label htmlFor="ds-from">From Due Date</label>
+            <DatePicker
+              id="ds-from"
+              selected={fromDueDate}
+              onChange={setFromDueDate}
+              dateFormat="dd/MM/yyyy"
+              className="pp-input"
+              placeholderText="From"
+              isClearable
+              wrapperClassName="react-datepicker-wrapper"
+            />
           </div>
-          <div>
-            <label style={{ fontSize: '9px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>To Due Date</label>
-            <DatePicker selected={toDueDate} onChange={setToDueDate} dateFormat="dd/MM/yy" className="pp-input" style={inputStyle} placeholderText="To" isClearable />
+          <div className="ds-field">
+            <label htmlFor="ds-to">To Due Date</label>
+            <DatePicker
+              id="ds-to"
+              selected={toDueDate}
+              onChange={setToDueDate}
+              dateFormat="dd/MM/yyyy"
+              className="pp-input"
+              placeholderText="To"
+              isClearable
+              wrapperClassName="react-datepicker-wrapper"
+            />
           </div>
-          <div>
-            <label style={{ fontSize: '9px', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Search</label>
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Name, mobile, address..." style={inputStyle} />
+          <div className="ds-field ds-field--search">
+            <label htmlFor="ds-search">Search</label>
+            <input
+              id="ds-search"
+              type="text"
+              className="ds-input-like"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Name, mobile, address..."
+              autoComplete="off"
+            />
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button onClick={handleResetFilters} style={{ ...btnStyle, background: '#2a3340', width: '100%' }}>Reset</button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button
-              onClick={() => { setOverdueOnly((prev) => !prev); setPage(1); }}
-              style={{
-                ...btnStyle,
-                width: '100%',
-                background: overdueOnly ? '#e8593c' : '#2a3340',
-                color: overdueOnly ? '#ffffff' : '#9aaebf'
-              }}
-            >
-              Overdue Only
+          <div className="ds-filters-bar__actions">
+            <button type="button" className="ds-btn ds-btn-neutral" onClick={handleResetFilters}>
+              Reset
             </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button
+              type="button"
+              className={`ds-btn ds-btn-danger-soft ${overdueOnly ? 'is-active' : ''}`}
+              onClick={() => { setOverdueOnly((prev) => !prev); setPage(1); }}
+            >
+              Overdue only
+            </button>
+            <button
+              type="button"
+              className="ds-btn ds-btn-success"
               onClick={exportToExcel}
               disabled={exporting || parties.length === 0}
-              style={{ ...btnStyle, width: '100%', background: '#1d9e75', color: '#ffffff', opacity: exporting || parties.length === 0 ? 0.6 : 1 }}
             >
-              {exporting ? 'Exporting...' : 'Export Excel'}
+              {exporting ? 'Exporting…' : 'Export Excel'}
             </button>
           </div>
         </div>
@@ -721,7 +752,7 @@ export function DueSheetPanel({ embedded = false }) {
                 <th style={{ padding: '8px 6px', textAlign: 'left' }}>Address</th>
                 <th style={{ padding: '8px 6px', textAlign: 'right' }}>Opening</th>
                 <th style={{ padding: '8px 6px', textAlign: 'right' }}>Outstanding</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Due Date</th>
+                <th style={{ padding: '8px 6px', textAlign: 'left', minWidth: '200px' }}>Due date</th>
                 <th style={{ padding: '8px 6px', textAlign: 'right', width: '70px' }}>Days</th>
                 <th style={{ padding: '8px 6px', textAlign: 'center', width: '80px' }}>Actions</th>
                </tr>
@@ -739,15 +770,72 @@ export function DueSheetPanel({ embedded = false }) {
                     <td style={{ padding: '8px 6px', color: '#9aaebf', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.address || '—'}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', color: '#9aaebf' }}>₹{formatCurrency(p.opening_balance)}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 700, color: '#f59a30' }}>₹{formatCurrency(p.balance_amount)}</td>
-                    <td style={{ padding: '8px 6px' }}>
+                    <td style={{ padding: '8px 6px', verticalAlign: 'top', minWidth: '200px' }}>
                       {isEditing ? (
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                          <DatePicker selected={editingDueDateValue} onChange={setEditingDueDateValue} dateFormat="dd/MM/yy" className="pp-input" style={{ ...inputStyle, width: '100px', padding: '2px 4px' }} />
-                          <button onClick={() => handleSaveDueDate(p.id)} disabled={dueDateSaving} style={{ padding: '2px 6px', fontSize: '9px', background: '#22c55e', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Save</button>
-                          <button onClick={() => { setEditingDueDateId(null); setEditingDueDateValue(null); }} style={{ padding: '2px 6px', fontSize: '9px', background: '#2a3340', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancel</button>
+                        <div
+                          className="ds-due-date-editor"
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px',
+                            padding: '10px 12px',
+                            background: '#0a0e14',
+                            borderRadius: '8px',
+                            border: '1px solid #334155'
+                          }}
+                        >
+                          <div>
+                            <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                              New credit due date
+                            </label>
+                            <DatePicker
+                              selected={editingDueDateValue}
+                              onChange={setEditingDueDateValue}
+                              dateFormat="dd/MM/yyyy"
+                              className="pp-input"
+                              style={{ ...dueDatePickerInputStyle, width: '100%', maxWidth: '220px', padding: '8px 10px', fontSize: '13px', display: 'block' }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              type="button"
+                              onClick={() => { setEditingDueDateId(null); setEditingDueDateValue(null); }}
+                              disabled={dueDateSaving}
+                              style={{
+                                padding: '8px 16px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                background: 'transparent',
+                                border: '1px solid #475569',
+                                borderRadius: '8px',
+                                color: '#e2e8f0',
+                                cursor: dueDateSaving ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveDueDate(p.id)}
+                              disabled={dueDateSaving}
+                              style={{
+                                padding: '8px 18px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                background: '#22c55e',
+                                border: 'none',
+                                borderRadius: '8px',
+                                color: '#0f172a',
+                                cursor: dueDateSaving ? 'wait' : 'pointer',
+                                minWidth: '100px'
+                              }}
+                            >
+                              {dueDateSaving ? 'Saving…' : 'Save date'}
+                            </button>
+                          </div>
                         </div>
                       ) : (
-                        <span style={{ color: isOverdue ? '#e8593c' : '#9aaebf' }}>{formatDate(p.due_date)}</span>
+                        <span style={{ color: isOverdue ? '#e8593c' : '#9aaebf', fontSize: '12px' }}>{formatDate(p.due_date)}</span>
                       )}
                     </td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600, color: isOverdue ? '#e8593c' : '#9aaebf' }}>{daysOverdue}</td>
@@ -791,14 +879,3 @@ const DueSheet = () => (
 );
 
 export default DueSheet;
-
-// Styles
-const inputStyle = {
-  padding: '6px 8px', fontSize: '11px', borderRadius: '4px', border: '1px solid #2a3340',
-  background: '#0f151f', color: '#fff', width: '100%', boxSizing: 'border-box'
-};
-
-const btnStyle = {
-  padding: '6px 12px', fontSize: '11px', fontWeight: 500, background: '#f59a30',
-  border: 'none', borderRadius: '4px', cursor: 'pointer'
-};

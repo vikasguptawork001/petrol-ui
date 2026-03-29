@@ -1,7 +1,6 @@
 /* ============================================
-   SELL ITEM PAGE — DARK THEME
-   ============================================ */
-
+SELL ITEM PAGE — DARK THEME
+============================================ */
 .sell-item {
   max-width: 100%;
   margin: 0;
@@ -35,9 +34,8 @@
 }
 
 /* ============================================
-   RIGHT PANEL — FIXED SIDEBAR
-   ============================================ */
-
+RIGHT PANEL — FIXED SIDEBAR
+============================================ */
 .sell-item-right-panel {
   position: fixed;
   top: var(--header-height, 52px);
@@ -262,7 +260,6 @@
     padding-right: 0;
     flex-direction: column;
   }
-
   .sell-item-right-panel {
     position: relative;
     top: auto;
@@ -279,9 +276,8 @@
 }
 
 /* ============================================
-   PAGE HEADER
-   ============================================ */
-
+PAGE HEADER
+============================================ */
 .sell-item > h2,
 .sell-item-main > h2 {
   font-size: 16px;
@@ -293,9 +289,8 @@
 }
 
 /* ============================================
-   CARD
-   ============================================ */
-
+CARD
+============================================ */
 .sell-item .card {
   background: #111827;
   border: 1px solid #1f2937;
@@ -307,9 +302,8 @@
 }
 
 /* ============================================
-   STICKY SEARCH SECTION
-   ============================================ */
-
+STICKY SEARCH SECTION
+============================================ */
 .sticky-search-section {
   position: sticky;
   top: 50px;
@@ -319,6 +313,8 @@
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #1f2937 !important;
+  /* FIX 1: Ensure section doesn't clip dropdown */
+  overflow: visible !important;
 }
 
 .sticky-search-section label {
@@ -331,7 +327,12 @@
   letter-spacing: 0.1em;
 }
 
-.sticky-search-section .search-wrapper { position: relative; }
+/* FIX 1: Ensure search wrapper allows dropdown to escape */
+.sticky-search-section .search-wrapper { 
+  position: relative; 
+  overflow: visible !important; 
+  z-index: 10000;
+}
 
 .sticky-search-section .search-wrapper input {
   width: 100%;
@@ -346,7 +347,6 @@
 }
 
 .sticky-search-section .search-wrapper input::placeholder { color: var(--pp-text-muted, #6c7f8f); }
-
 .sticky-search-section .search-wrapper input:focus {
   outline: none;
   border-color: var(--pp-orange, #f59a30);
@@ -369,9 +369,8 @@
 }
 
 /* ============================================
-   SUGGESTIONS DROPDOWN
-   ============================================ */
-
+SUGGESTIONS DROPDOWN
+============================================ */
 .sticky-search-section .suggestions {
   position: absolute;
   top: calc(100% + 4px);
@@ -389,8 +388,17 @@
   scrollbar-color: #2a3340 #0f151f;
 }
 
-.seller-suggestions { z-index: 10003 !important; }
+/* Seller / item dropdowns must sit above table rows and right panel */
+.sticky-search-section .seller-suggestions { z-index: 10020 !important; }
+.seller-suggestions { z-index: 10020 !important; }
 .item-suggestions { z-index: 10002 !important; }
+.sticky-search-section .search-wrapper { isolation: isolate; }
+
+/* Rendered via createPortal(document.body) — fixed position, above header/sidebar/footer */
+.seller-suggestions-portal,
+.item-suggestions-portal {
+  z-index: 20000 !important;
+}
 
 .sticky-search-section .suggestion-item {
   padding: 8px 14px;
@@ -405,17 +413,20 @@
 }
 
 .sticky-search-section .suggestion-item:last-child { border-bottom: none; }
-.sticky-search-section .suggestion-item:hover { background: rgba(245, 154, 48, 0.07); transform: translateX(2px); }
+.sticky-search-section .suggestion-item:hover,
+.sticky-search-section .suggestion-item.active { 
+  background: rgba(245, 154, 48, 0.07); 
+  transform: translateX(2px);
+  border-left: 2px solid var(--pp-orange, #f59a30);
+}
 .sticky-search-section .suggestion-item.out-of-stock { opacity: 0.5; cursor: not-allowed; }
-
 .sticky-search-section .suggestions::-webkit-scrollbar { width: 6px; }
 .sticky-search-section .suggestions::-webkit-scrollbar-track { background: #0f151f; border-radius: 3px; }
 .sticky-search-section .suggestions::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
 
 /* ============================================
-   SELECTED ITEMS (CART) TABLE - FIXED LAYOUT
-   ============================================ */
-
+SELECTED ITEMS (CART) TABLE - FIXED LAYOUT
+============================================ */
 .selected-items h3 {
   font-size: 17px;
   font-weight: 700;
@@ -478,10 +489,10 @@
 
 .sell-item .table th:nth-child(4), /* QTY column */
 .sell-item .table td:nth-child(4) {
-  width: 85px;
+  width: 92px;
   text-align: center;
-  position: relative;
-  padding-bottom: 16px; /* Space for stock indicators */
+  vertical-align: middle;
+  padding: 8px 6px;
 }
 
 .sell-item .table th:nth-child(5), /* DISCOUNT column */
@@ -490,13 +501,17 @@
   text-align: center;
 }
 
-.sell-item .table th:nth-child(6), /* TOTAL column */
+.sell-item .table th:nth-child(6), /* TOTAL column — wide enough for ₹ + Indian grouping, no ellipsis */
 .sell-item .table td:nth-child(6) {
-  width: 100px;
+  width: 148px;
+  min-width: 148px;
+  max-width: none;
   text-align: right;
   white-space: nowrap;
   font-family: monospace;
   font-weight: 700;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .sell-item .table th:nth-child(7), /* DEL column */
@@ -543,16 +558,23 @@
   vertical-align: middle;
 }
 
-/* For rows with stock warnings, allow slight height increase */
-.sell-item .table tbody tr:has(.stock-warning, .stock-info) {
+.sell-item .table td.si-qty-cell .si-qty-cell-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 44px;
+}
+
+/* For rows with stock hints, allow natural row height */
+.sell-item .table tbody tr:has(.si-qty-cell-inner) {
   height: auto;
   min-height: 52px;
 }
 
-.sell-item .table tbody tr:has(.stock-warning, .stock-info) td {
+.sell-item .table tbody tr:has(.si-qty-cell-inner) td {
   height: auto;
-  padding-top: 8px;
-  padding-bottom: 8px;
 }
 
 .sell-item .table tbody tr:hover {
@@ -576,12 +598,14 @@
   background: #0d1523;
 }
 
+/* FIX 2: Prevent wrapping in cart table footer */
 .sell-item .table tfoot td {
   padding: 14px 16px;
   font-size: 14px;
   color: var(--pp-text-primary, #eef2f8);
   border-top: 1px solid var(--pp-border, #2a3340);
   font-weight: 700;
+  white-space: nowrap !important;
 }
 
 /* Input fields with consistent sizing */
@@ -677,34 +701,55 @@
   background-color: rgba(232, 89, 60, 0.12) !important;
 }
 
-/* Stock indicators */
-.stock-warning {
+/* Stock indicators — flow below qty input (cart table) */
+.sell-item .table td.si-qty-cell .stock-warning {
   color: var(--pp-danger, #e8593c);
   font-weight: 600;
   font-size: 10px;
-  margin-top: 2px;
   line-height: 1.2;
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
   white-space: nowrap;
 }
 
-.stock-info {
+.sell-item .table td.si-qty-cell .stock-info {
   color: var(--pp-text-muted, #6c7f8f);
   font-size: 10px;
-  margin-top: 2px;
   line-height: 1.2;
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
   white-space: nowrap;
 }
 
-.sell-item .table td:nth-child(4) input[type="number"] {
-  margin-bottom: 2px;
+.si-cart-total-row td {
+  border-top: 1px solid var(--pp-border, #2a3340) !important;
+  padding-top: 12px !important;
+  vertical-align: middle !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.si-cart-total-label {
+  text-align: right !important;
+  font-size: 12px !important;
+  padding-right: 12px !important;
+  color: #9aaebf !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  border: none !important;
+}
+
+.si-cart-total-amount {
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  color: var(--pp-orange, #f59a30) !important;
+  text-align: right !important;
+  font-family: var(--pp-font-mono, monospace) !important;
+  border: none !important;
+  white-space: nowrap !important;
+  min-width: 160px !important;
+  width: auto !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 /* Remove button styling */
@@ -743,9 +788,8 @@
 }
 
 /* ============================================
-   BUTTONS
-   ============================================ */
-
+BUTTONS
+============================================ */
 .btn {
   padding: 7px 14px;
   border: none;
@@ -764,16 +808,12 @@
 .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
 .btn:active:not(:disabled) { transform: translateY(0); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
 .btn-primary { background: var(--pp-info, #3b82f6); color: white; }
 .btn-primary:hover:not(:disabled) { background: #2563eb; }
-
 .btn-success { background: var(--pp-success, #1d9e75); color: white; }
 .btn-success:hover:not(:disabled) { background: #177a5b; }
-
 .btn-danger { background: var(--pp-danger, #e8593c); color: white; }
 .btn-danger:hover:not(:disabled) { background: #c94528; }
-
 .btn-secondary {
   background: var(--pp-bg-elevated, #1a2330);
   color: var(--pp-text-secondary, #9aaebf);
@@ -783,9 +823,8 @@
 .btn-secondary:hover:not(:disabled) { border-color: var(--pp-orange, #f59a30); color: var(--pp-orange, #f59a30); }
 
 /* ============================================
-   PREVIEW HEADER
-   ============================================ */
-
+PREVIEW HEADER
+============================================ */
 .preview-header {
   display: flex;
   justify-content: space-between;
@@ -807,9 +846,8 @@
 .preview-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* ============================================
-   BILL PREVIEW — OUTER WRAPPER
-   ============================================ */
-
+BILL PREVIEW — OUTER WRAPPER
+============================================ */
 .bill-preview {
   background: #111827 !important;
   padding: 16px !important;
@@ -827,9 +865,8 @@
 .bill-preview:focus { outline: 2px solid var(--pp-orange, #f59a30); outline-offset: 2px; }
 
 /* ============================================
-   BILL TABLE SCROLL CONTAINER
-   ============================================ */
-
+BILL TABLE SCROLL CONTAINER
+============================================ */
 .bp-table-scroll {
   width: 100%;
   max-width: 100%;
@@ -849,9 +886,8 @@
 .bp-table-scroll::-webkit-scrollbar-thumb:hover { background: var(--pp-orange, #f59a30); }
 
 /* ============================================
-   SELLER INFO CARD (inside bill preview)
-   ============================================ */
-
+SELLER INFO CARD (inside bill preview)
+============================================ */
 .bp-seller-card {
   background: #1a2330 !important;
   border: 1px solid #2a3340 !important;
@@ -865,7 +901,6 @@
 }
 
 .bp-seller-name { font-size: 16px; font-weight: 700; color: #eef2f8; }
-
 .bp-seller-meta {
   display: flex;
   flex-wrap: wrap;
@@ -875,7 +910,6 @@
 }
 
 .bp-seller-meta-divider { border-left: 1px solid #2a3340; padding-left: 12px; }
-
 .bp-invoice-row {
   display: flex;
   justify-content: space-between;
@@ -895,9 +929,8 @@
 .bp-invoice-info strong { color: #eef2f8; }
 
 /* ============================================
-   BILL PREVIEW TABLE — STABLE COLUMNS
-   ============================================ */
-
+BILL PREVIEW TABLE — STABLE COLUMNS
+============================================ */
 .bill-preview .bill-preview-table {
   width: 100% !important;
   table-layout: fixed !important; /* CRITICAL for preview table */
@@ -1004,7 +1037,6 @@
 }
 
 .bill-preview .bill-preview-table thead tr { background: #1f2937 !important; }
-
 .bill-preview .bill-preview-table thead th {
   padding: 8px 6px !important;
   text-align: left !important;
@@ -1022,7 +1054,6 @@
 }
 
 .bill-preview .bill-preview-table thead th:last-child { border-right: none !important; }
-
 .bill-preview .bill-preview-table tbody tr {
   border-bottom: 1px solid #1f2937 !important;
   transition: background 0.15s;
@@ -1036,13 +1067,12 @@
 }
 
 /* For rows with additional info */
-.bill-preview .bill-preview-table tbody tr:has(.bp-avail-warning, .bp-avail-info) {
+.bill-preview .bill-preview-table tbody tr:has(.bp-qty-cell-inner) {
   height: auto;
-  min-height: 44px;
+  min-height: 48px;
 }
 
 .bill-preview .bill-preview-table tbody tr:hover { background: rgba(245, 154, 48, 0.06) !important; }
-
 .bill-preview .bill-preview-table tbody td {
   padding: 7px 6px !important;
   color: #d1d5db !important;
@@ -1249,42 +1279,40 @@
   text-transform: capitalize;
 }
 
-/* Availability info under qty input */
-.bill-preview .bp-avail-warning {
+/* Bill preview qty: stack input + available line (works with or without GST column) */
+.bill-preview .bill-preview-table tbody td.bp-qty-cell {
+  overflow: visible !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+  white-space: normal !important;
+}
+
+.bp-qty-cell-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 0 4px;
+  min-width: 0;
+}
+
+.bp-avail-line {
   font-size: 10px;
+  font-weight: 600;
+  color: #6c7f8f;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.bp-avail-line--warn {
   color: var(--pp-danger, #e8593c);
   font-weight: 700;
-  margin-top: 2px;
-  line-height: 1.2;
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
-
-.bill-preview .bp-avail-info {
-  font-size: 10px;
-  color: #6c7f8f;
-  font-weight: 600;
-  margin-top: 2px;
-  line-height: 1.2;
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
-
-.bill-preview .bill-preview-table td:nth-child(4) {
-  position: relative;
-  padding-bottom: 18px !important;
 }
 
 /* ============================================
-   PAYMENT SECTION (transaction complete card)
-   ============================================ */
-
+PAYMENT SECTION (transaction complete card)
+============================================ */
 .payment-section {
   margin-top: 16px;
   padding: 12px 16px;
@@ -1294,7 +1322,6 @@
 }
 
 .payment-section h3 { font-size: 15px; font-weight: 700; color: var(--pp-text-primary, #eef2f8); margin: 0 0 16px 0; }
-
 .payment-section label {
   display: flex;
   align-items: center;
@@ -1310,7 +1337,6 @@
 }
 
 .payment-section label:hover { background-color: rgba(245, 154, 48, 0.06); }
-
 .payment-section input[type="radio"],
 .payment-section input[type="checkbox"] {
   width: 16px; height: 16px; cursor: pointer; accent-color: var(--pp-orange, #f59a30);
@@ -1336,9 +1362,8 @@
 }
 
 /* ============================================
-   SUMMARY BOX
-   ============================================ */
-
+SUMMARY BOX
+============================================ */
 .summary-box {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1365,9 +1390,8 @@
 }
 
 /* ============================================
-   UTILITY
-   ============================================ */
-
+UTILITY
+============================================ */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -1399,12 +1423,10 @@
 }
 
 /* ============================================
-   RESPONSIVE
-   ============================================ */
-
+RESPONSIVE
+============================================ */
 @media screen and (min-width: 1280px) and (max-width: 1366px) {
   .sell-item-wrapper { padding-right: 300px; }
-
   .sell-item-right-panel {
     width: 270px;
     min-width: 270px;
@@ -1413,7 +1435,6 @@
     bottom: calc(var(--footer-height, 50px) + 8px);
     max-height: calc(100vh - var(--header-height, 52px) - var(--footer-height, 50px) - 18px);
   }
-
   .sell-item-right-panel .right-panel-section { margin-bottom: 12px; }
   .sell-item-right-panel .right-panel-btn { padding: 8px 12px; font-size: 12px; margin-bottom: 6px; }
   .sell-item-right-panel .right-panel-input { padding: 6px 9px; font-size: 12px; }
@@ -1426,18 +1447,15 @@
   .sell-item .table td:nth-child(2) {
     min-width: 140px;
   }
-  
   .sell-item .table td input[type="number"] {
     max-width: 70px;
     min-width: 55px;
   }
-  
   .bill-preview .bill-preview-table th:nth-child(2),
   .bill-preview .bill-preview-table td:nth-child(2) {
     width: 75px !important;
     min-width: 75px !important;
   }
-  
   .sell-item { padding: 0 14px 24px; }
   .summary-box { grid-template-columns: 1fr; }
 }
@@ -1448,15 +1466,12 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
   .sell-item .table {
     min-width: 750px;
   }
-  
   .bill-preview .bp-table-scroll {
     overflow-x: auto;
   }
-  
   .bill-preview .bill-preview-table {
     min-width: 750px;
   }
@@ -1480,13 +1495,11 @@
 }
 
 /* ============================================
-   PRINT STYLES
-   ============================================ */
-
+PRINT STYLES
+============================================ */
 @media print {
   body * { visibility: hidden; }
   #bill-print-content, #bill-print-content * { visibility: visible; }
-
   #bill-print-content {
     position: absolute; left: 0; top: 0; width: 100%;
     padding: 20px; margin: 0;
@@ -1494,34 +1507,28 @@
     page-break-inside: avoid;
     background: white !important; color: black !important;
   }
-
   .preview-header, .preview-actions, .payment-section button { display: none !important; visibility: hidden !important; }
-
   .bill-preview {
     box-shadow: none; padding: 20px; border: none;
     max-height: none !important; overflow: visible !important;
     page-break-inside: avoid;
     background: white !important; color: black !important;
   }
-
   .bill-preview-table { page-break-inside: auto; }
   .bill-preview-table tr { page-break-inside: avoid; page-break-after: auto; }
   .bill-preview-table thead { display: table-header-group; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .bill-preview-table tfoot { display: table-footer-group; }
-
   .bill-preview input[type="number"], .bill-preview input[type="text"], .bill-preview select {
     border: none; background: transparent; padding: 0;
     -webkit-appearance: none; appearance: none; color: black !important;
   }
-
   .sell-item { padding: 0; }
   @page { margin: 1cm; size: A4; }
 }
 
 /* ============================================
-   SUCCESS MODAL
-   ============================================ */
-
+SUCCESS MODAL
+============================================ */
 .modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
@@ -1553,7 +1560,6 @@
 }
 
 .modal-header h3 { margin: 0; color: var(--pp-text-primary, #eef2f8); font-size: 18px; font-weight: 700; }
-
 .modal-close {
   background: none; border: none; font-size: 24px; cursor: pointer;
   color: var(--pp-text-muted, #6c7f8f); padding: 0;
@@ -1562,9 +1568,7 @@
 }
 
 .modal-close:hover { background-color: rgba(245, 154, 48, 0.12); color: var(--pp-orange, #f59a30); }
-
 .modal-body { padding: 14px 18px; overflow-y: auto; flex: 1; }
-
 .modal-footer {
   display: flex; justify-content: flex-end; gap: 10px;
   padding: 10px 18px;
@@ -1575,9 +1579,8 @@
 }
 
 /* ============================================
-   TABLE INLINE SEARCH
-   ============================================ */
-
+TABLE INLINE SEARCH
+============================================ */
 .table-search-row td {
   background-color: rgba(245, 154, 48, 0.02);
   padding: 12px 14px !important;
@@ -1599,7 +1602,6 @@
 }
 
 .table-search-input::placeholder { color: var(--pp-text-muted, #6c7f8f); }
-
 .table-search-input:focus {
   border-color: var(--pp-orange, #f59a30);
   box-shadow: 0 0 0 2px rgba(245, 154, 48, 0.15);
@@ -1665,23 +1667,18 @@
 }
 
 .table-suggestion-item:last-child { border-bottom: none; }
-
 .table-suggestion-item:hover:not(.out-of-stock) { background-color: rgba(245, 154, 48, 0.07); padding-left: 20px; }
 .table-suggestion-item.active { background-color: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--pp-info, #3b82f6); padding-left: 20px; }
 .table-suggestion-item.out-of-stock { opacity: 0.45; cursor: not-allowed; }
 .table-suggestion-item.already-selected { background-color: rgba(29, 158, 117, 0.08); border-left: 3px solid var(--pp-success, #1d9e75); }
-
 .table-suggestion-info { display: flex; flex-direction: column; flex: 1; gap: 3px; }
-
 .table-suggestion-name {
   font-weight: 700; font-size: 15px; color: var(--pp-text-primary, #eef2f8);
   display: flex; align-items: center; gap: 8px;
 }
 
 .table-suggestion-meta { font-size: 12px; color: var(--pp-text-muted, #6c7f8f); display: flex; align-items: center; gap: 10px; }
-
 .table-suggestion-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 90px; }
-
 .table-suggestion-rate { font-weight: 800; color: var(--pp-success, #1d9e75); font-size: 17px; font-family: var(--pp-font-mono, monospace); }
 
 /* Stock pills */
@@ -1726,46 +1723,33 @@
 .no-results-icon { font-size: 28px; margin-bottom: 8px; }
 
 /* ============================================
-   NUCLEAR DARK OVERRIDE
-   Prevents any global CSS from leaking white
-   backgrounds into the bill preview section.
-   ============================================ */
-
+NUCLEAR DARK OVERRIDE
+Prevents any global CSS from leaking white
+backgrounds into the bill preview section.
+============================================ */
 #bill-print-content,
 .bill-preview { background: #111827 !important; color: #eef2f8 !important; }
-
 .bill-preview *, #bill-print-content * { box-sizing: border-box; }
-
 .bill-preview .bill-preview-table tr,
 #bill-print-content .bill-preview-table tr { background: #111827 !important; }
-
 .bill-preview .bill-preview-table tfoot tr,
 #bill-print-content .bill-preview-table tfoot tr { background: #141b26 !important; }
-
 .bill-preview .bp-grand-total-row td,
 #bill-print-content .bp-grand-total-row td { background: #1f2937 !important; color: #eef2f8 !important; }
-
 .bill-preview .bp-paid-row td,
 #bill-print-content .bp-paid-row td { background: rgba(29,158,117,0.10) !important; color: #2bc48f !important; }
-
 .bill-preview .bp-balance-row-green td,
 #bill-print-content .bp-balance-row-green td { background: rgba(29,158,117,0.10) !important; color: #2bc48f !important; }
-
 .bill-preview .bp-balance-row-red td,
 #bill-print-content .bp-balance-row-red td { background: rgba(232,89,60,0.10) !important; color: #e8593c !important; }
-
 .bill-preview .bp-words-row td,
 #bill-print-content .bp-words-row td { background: #141b26 !important; color: #9aaebf !important; white-space: normal !important; }
-
 .bill-preview td,
 #bill-print-content td { color: #d1d5db !important; }
-
 .bill-preview .bp-amount-col,
 #bill-print-content .bp-amount-col { color: #eef2f8 !important; font-weight: 700 !important; }
-
 .bill-preview .bp-name-col,
 #bill-print-content .bp-name-col { color: #eef2f8 !important; }
-
 .bill-preview input[type="number"],
 .bill-preview input[type="text"],
 #bill-print-content input[type="number"],
@@ -1774,14 +1758,12 @@
   color: #eef2f8 !important;
   border: 1px solid #374151 !important;
 }
-
 .bill-preview .bp-overstock-row,
 .bill-preview .bp-overstock-row td { background: rgba(232,89,60,0.08) !important; }
 
 /* ============================================
-   ACTION MENU STYLES
-   ============================================ */
-
+ACTION MENU STYLES
+============================================ */
 .action-menu-trigger {
   display: inline-flex;
   align-items: center;

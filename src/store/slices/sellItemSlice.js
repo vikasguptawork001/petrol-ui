@@ -87,6 +87,7 @@ export const calculatePreview = createAsyncThunk(
             sale_rate: (item.sale_rate !== undefined && item.sale_rate !== null && item.sale_rate !== '') ? parseFloat(item.sale_rate) : (itemDetails.sale_rate || item.sale_rate || 0),
             purchase_rate: itemDetails.purchase_rate || item.purchase_rate || 0,
             min_sale_rate: itemDetails.min_sale_rate != null ? itemDetails.min_sale_rate : item.min_sale_rate,
+            unit: itemDetails.unit != null && itemDetails.unit !== '' ? itemDetails.unit : (item.unit || 'PCS'),
             // Stock quantity from API (quantity field in response)
             available_quantity: itemDetails.quantity || item.available_quantity || 0
           };
@@ -199,11 +200,12 @@ export const submitSale = createAsyncThunk(
           sale_rate: parseFloat(item.sale_rate) || 0,
           discount: parseFloat(item.itemDiscount) || 0,
           discount_type: 'amount',
-          discount_percentage: null
+          discount_percentage: null,
+          unit: item.unit != null && String(item.unit).trim() !== '' ? String(item.unit).trim() : undefined
         })),
         payment_status: previewData.paymentStatus,
         paid_amount: Math.round(previewData.paidAmount || 0), // Ensure rounded whole number
-        with_gst: false,
+        with_gst: Boolean(previewData && previewData.withGst),
         previous_balance_paid: previewData.previousBalancePaid || 0
       };
       if (previewData.paymentStatus === 'partially_paid' && dueDate) {

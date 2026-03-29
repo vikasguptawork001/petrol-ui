@@ -34,9 +34,14 @@ const config = {
     // Transactions endpoints
     sale: '/api/transactions/sale',
     return: '/api/transactions/return',
+
+    /** Unified ledger per party (seller/creditor or buyer) */
+    unifiedTransactionsParty: (partyType, partyId) => `/api/unified-transactions/party/${partyType}/${partyId}`,
     
     // Reports endpoints
     salesReport: '/api/reports/sales',
+    salesByAttendant: '/api/reports/sales/by-attendant',
+    salesByNozzle: '/api/reports/sales/by-nozzle',
     salesReportExport: '/api/reports/sales/export',
     salesBillDetails: (billNumber) => `/api/reports/sales/bill/${billNumber}`,
     itemWiseSalesReport: '/api/reports/sales/items',
@@ -66,6 +71,7 @@ const config = {
   app: {
     name: 'Steepray Info Solutions',
     version: '1.0.0',
+    /** Batch size for some list fetches; paginated reports typically use 50 and match server defaults */
     defaultPageSize: 200,
     /** 'petrol_pump' = use nozzle-to-tank loader for all loading/processing states */
     theme: 'petrol_pump'

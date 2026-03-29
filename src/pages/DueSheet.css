@@ -77,6 +77,127 @@
   gap: 20px;
 }
 
+/* Toolbar: one aligned row — dates, search, actions share baseline */
+.ds-filters-bar {
+  background: var(--pp-bg-card, #0f151f);
+  border: 1px solid var(--pp-border, #2a3340);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+
+.ds-filters-bar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 14px;
+}
+
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1 1 150px;
+  max-width: 220px;
+}
+
+.ds-field--search {
+  flex: 1 1 200px;
+  max-width: 340px;
+}
+
+.ds-field label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pp-text-muted, #6c7f8f);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.ds-field .pp-input,
+.ds-field .react-datepicker-wrapper,
+.ds-field .react-datepicker-wrapper input,
+.ds-field input.ds-input-like {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.ds-field input.ds-input-like {
+  padding: 9px 12px;
+  border: 1px solid var(--pp-border, #2a3340);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--pp-text-primary, #eef2f8);
+  background: var(--pp-bg-input, #0f151f);
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
+}
+
+.ds-field input.ds-input-like:focus {
+  outline: none;
+  border-color: var(--pp-orange, #f59a30);
+  box-shadow: 0 0 0 3px rgba(245, 154, 48, 0.15);
+}
+
+.ds-filters-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.ds-filters-bar__actions .ds-btn {
+  min-height: 38px;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.ds-btn-neutral {
+  background: var(--pp-bg-elevated, #1a2330);
+  color: var(--pp-text-secondary, #9aaebf);
+  border: 1px solid var(--pp-border, #2a3340) !important;
+}
+
+.ds-btn-neutral:hover {
+  border-color: var(--pp-orange, #f59a30) !important;
+  color: var(--pp-orange, #f59a30);
+}
+
+.ds-btn-danger-soft {
+  background: #2a3340;
+  color: #9aaebf;
+}
+
+.ds-btn-danger-soft.is-active {
+  background: var(--pp-danger, #e8593c);
+  color: #fff;
+}
+
+.ds-btn-success {
+  background: var(--pp-success, #1d9e75);
+  color: #fff;
+}
+
+.ds-btn-success:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .ds-filter-group {
   display: flex;
   flex-direction: column;
@@ -311,6 +432,18 @@
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #e2e8f0;
+}
+
+/* Inline due date editor — align picker with label */
+.ds-due-date-editor .react-datepicker-wrapper {
+  width: 100%;
+  max-width: 220px;
+  display: block;
+}
+
+.ds-due-date-editor .react-datepicker__input-container input {
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
