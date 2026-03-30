@@ -286,7 +286,6 @@ const Attendants = () => {
   const [formData, setFormData] = useState({ attendance_id: '', name: '', mobile_number: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [showManageList, setShowManageList] = useState(false);
   const [reportFrom, setReportFrom] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
@@ -447,15 +446,14 @@ const Attendants = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon name="attendant" size={18} />
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Attendant sales &amp; roster</h1>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Attendants</h1>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', maxWidth: '520px', lineHeight: 1.45 }}>
-              Sales by attendant (default view). Open the roster when you need to add staff or update details.
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', maxWidth: '560px', lineHeight: 1.45 }}>
+              Maintain staff who can be linked to each sale. Attendant-wise sales for a date range are below.
             </p>
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '12px' }}>
           <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #f59a30' }}>
             <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Attendants</div>
@@ -463,11 +461,63 @@ const Attendants = () => {
           </div>
           <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #3b82f6' }}>
             <div style={{ fontSize: '10px', color: '#94a3b8' }}>With Mobile</div>
-            <div style={{ fontSize:  '20px', fontWeight: 700, color: '#3b82f6' }}>{withMobile}</div>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: '#3b82f6' }}>{withMobile}</div>
           </div>
         </div>
 
-        {/* Attendant-wise sales report */}
+        <div style={{ marginBottom: '16px', padding: '16px 18px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>Attendant roster</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Shown on the sell screen when choosing who served the sale.</div>
+            </div>
+            <button onClick={openAdd} type="button" style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Icon name="plus" size={14} /> Add attendant
+            </button>
+          </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading roster…</div>
+          ) : attendants.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '28px', color: '#6c7f8f', background: '#0f151f', borderRadius: '8px', fontSize: '13px' }}>
+              No attendants yet. Use <strong style={{ color: '#e2e8f0' }}>Add attendant</strong>.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#0f151f' }}>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '45px' }}>#</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'left' }}>Attendance ID</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'left' }}>Name</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'left' }}>Mobile</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '160px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendants.map((a, idx) => (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
+                      <td style={{ padding: '10px 12px', color: '#9aaebf' }}>{a.attendance_id || '—'}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{a.name}</td>
+                      <td style={{ padding: '10px 12px', color: '#9aaebf' }}>{a.mobile_number || '—'}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button type="button" onClick={() => openEdit(a)} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fff' }}>
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => handleDelete(a.id, a.name)} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fecaca' }}>
+                            Archive
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         <div style={{
           marginBottom: '14px',
           padding: '14px 16px',
@@ -480,8 +530,8 @@ const Attendants = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon name="chart" size={16} />
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f3f4f6' }}>Attendant-wise sales</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Totals from sale bills in the selected period (includes unassigned if attendant was not set).</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f3f4f6' }}>Sales by attendant</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Aggregates for the selected range (includes unassigned where no attendant was stored).</div>
               </div>
             </div>
             <button
@@ -551,86 +601,6 @@ const Attendants = () => {
             </div>
           )}
         </div>
-
-        <div style={{ marginBottom: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setShowManageList((v) => !v)}
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              padding: '12px 16px',
-              fontSize: '13px',
-              fontWeight: 600,
-              background: showManageList ? '#1a2330' : 'linear-gradient(180deg, #2a3340 0%, #1a2330 100%)',
-              border: '1px solid #3d4a5c',
-              borderRadius: '10px',
-              color: '#e2e8f0',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
-            }}
-          >
-            <Icon name="attendant" size={16} />
-            {showManageList ? 'Hide attendant list' : 'Manage attendants — roster, add & archive'}
-            <span style={{ fontSize: '11px', opacity: 0.85 }}>{showManageList ? '▲' : '▼'}</span>
-          </button>
-        </div>
-
-        {showManageList && (
-          <div style={{ marginBottom: '16px', padding: '14px 16px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9' }}>Attendant roster</div>
-              <button onClick={openAdd} type="button" style={{ padding: '8px 14px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="plus" size={14} /> Add attendant
-              </button>
-            </div>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading roster…</div>
-            ) : attendants.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '28px', color: '#6c7f8f', background: '#0f151f', borderRadius: '8px', fontSize: '13px' }}>
-                No attendants yet. Use <strong style={{ color: '#e2e8f0' }}>Add attendant</strong> above.
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#0f151f' }}>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', width: '45px' }}>#</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'left' }}>Attendance ID</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'left' }}>Mobile</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', width: '140px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendants.map((a, idx) => (
-                      <tr key={a.id} style={{ borderBottom: '1px solid #2a3340' }}>
-                        <td style={{ padding: '10px 12px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
-                        <td style={{ padding: '10px 12px', color: '#9aaebf' }}>{a.attendance_id || '—'}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 500 }}>{a.name}</td>
-                        <td style={{ padding: '10px 12px', color: '#9aaebf' }}>{a.mobile_number || '—'}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button type="button" onClick={() => openEdit(a)} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fff' }}>
-                              Edit
-                            </button>
-                            <button type="button" onClick={() => handleDelete(a.id, a.name)} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fecaca' }}>
-                              Archive
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Add/Edit Modal */}

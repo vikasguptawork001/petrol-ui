@@ -191,7 +191,7 @@ export const submitSale = createAsyncThunk(
       const aid = attendantId != null ? attendantId : state.selectedAttendantId;
       const nid = nozzleId != null ? nozzleId : state.selectedNozzleId;
       const payload = {
-        seller_party_id: previewData.selectedSeller || selectedSeller,
+        seller_party_id: Number(previewData.selectedSeller || selectedSeller),
         attendant_id: aid || null,
         nozzle_id: nid || null,
         items: previewData.items.map(item => ({
@@ -294,12 +294,14 @@ const sellItemSlice = createSlice({
   reducers: {
     // Seller party actions
     setSelectedSeller: (state, action) => {
-      const newSellerId = action.payload;
-      // Only clear sellerInfo if we're selecting a different seller
-      if (state.selectedSeller !== newSellerId) {
+      const raw = action.payload;
+      const newSellerId =
+        raw === '' || raw === null || raw === undefined ? '' : Number(raw);
+      const prev = state.selectedSeller === '' ? '' : Number(state.selectedSeller);
+      if (prev !== newSellerId) {
         state.sellerInfo = null;
       }
-      state.selectedSeller = newSellerId;
+      state.selectedSeller = newSellerId === '' || Number.isNaN(newSellerId) ? '' : newSellerId;
       state.previewDirty = true;
     },
     setSellerSearchQuery: (state, action) => {
@@ -334,12 +336,13 @@ const sellItemSlice = createSlice({
     },
     selectSellerParty: (state, action) => {
       const party = action.payload;
-      // Only clear sellerInfo if we're selecting a different seller
-      if (state.selectedSeller !== party.id) {
+      const pid = party?.id != null ? Number(party.id) : '';
+      const prev = state.selectedSeller === '' ? '' : Number(state.selectedSeller);
+      if (pid !== '' && !Number.isNaN(pid) && prev !== pid) {
         state.sellerInfo = null;
       }
-      state.selectedSeller = party.id;
-      state.sellerSearchQuery = party.party_name;
+      state.selectedSeller = pid === '' || Number.isNaN(pid) ? '' : pid;
+      state.sellerSearchQuery = party.party_name || '';
       state.showSellerSuggestions = false;
       state.previewDirty = true;
     },
@@ -853,7 +856,9 @@ const sellItemSlice = createSlice({
       })
       .addCase(fetchSellerInfo.fulfilled, (state, action) => {
         state.loading.sellerInfo = false;
-        state.sellerInfo = action.payload;
+        const p = action.payload ? { ...action.payload } : null;
+        if (p && p.id != null) p.id = Number(p.id);
+        state.sellerInfo = p;
       })
       .addCase(fetchSellerInfo.rejected, (state, action) => {
         state.loading.sellerInfo = false;

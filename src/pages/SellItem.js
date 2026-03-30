@@ -211,8 +211,10 @@ const SellItem = () => {
   }, [sellerInfo?.id, sellerInfo?.due_date]);
 
   useEffect(() => {
-    if (selectedSeller && (!sellerInfo || sellerInfo.id !== selectedSeller)) {
-      dispatch(fetchSellerInfo(selectedSeller)).catch((error) => {
+    if (!selectedSeller) return;
+    const sid = Number(selectedSeller);
+    if (!sellerInfo || Number(sellerInfo.id) !== sid) {
+      dispatch(fetchSellerInfo(sid)).catch((error) => {
         console.error('Error fetching seller info:', error);
         toast.error('Failed to load seller information');
       });
@@ -257,7 +259,11 @@ const SellItem = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showSellerSuggestions && !event.target.closest('.search-wrapper')) {
+      if (
+        showSellerSuggestions &&
+        !event.target.closest('.search-wrapper') &&
+        !event.target.closest('.seller-suggestions-portal')
+      ) {
         dispatch(setShowSellerSuggestions(false));
       }
     };
@@ -324,12 +330,29 @@ const SellItem = () => {
     return !!previewDirty;
   };
 
+  const requirePumpStaff = () => {
+    const hasAtt =
+      selectedAttendantId !== null &&
+      selectedAttendantId !== undefined &&
+      String(selectedAttendantId).trim() !== '';
+    const hasNz =
+      selectedNozzleId !== null &&
+      selectedNozzleId !== undefined &&
+      String(selectedNozzleId).trim() !== '';
+    if (!hasAtt || !hasNz) {
+      toast.error('Please select both Attendant and Nozzle before billing.');
+      return false;
+    }
+    return true;
+  };
+
   const handlePreview = async (overrideWithGst = null, overrides = {}, options = {}) => {
     const { silent = false } = options;
     if (!selectedSeller) {
       toast.warning('⚠️ Please select a seller party first');
       return;
     }
+    if (!requirePumpStaff()) return;
     if (selectedItems.length === 0) {
       toast.warning('⚠️ Please add at least one item to the cart');
       return;
@@ -478,6 +501,7 @@ const SellItem = () => {
       return;
     }
     try {
+      if (!requirePumpStaff()) return;
       if (!currentPreviewData.items || currentPreviewData.items.length === 0) {
         toast.error('❌ Please add at least one item to the sale');
         return;
@@ -822,10 +846,11 @@ const SellItem = () => {
     const isTransactionComplete = !!previewData.transactionId;
     const isProcessing = loading.submit || actionInProgress || previewLoading;
     const previewStale = isPreviewStale();
+    const effectivePayStatus = previewData?.paymentStatus || paymentStatus;
     const billDueDateRaw =
       previewData?.due_date ||
       previewData?.dueDate ||
-      (previewData?.paymentStatus === 'partially_paid' ? dueDateForPartial : '');
+      (effectivePayStatus === 'partially_paid' ? dueDateForPartial : '');
     const billDueDateDisplay = billDueDateRaw
       ? formatDateInIndia(`${billDueDateRaw}T00:00:00`)
       : '';

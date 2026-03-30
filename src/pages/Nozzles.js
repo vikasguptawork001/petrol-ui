@@ -236,8 +236,6 @@ const Nozzles = () => {
   const [formData, setFormData] = useState({ name: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  /** Default: show sales report; list opens on demand */
-  const [showManageList, setShowManageList] = useState(false);
   const [reportFrom, setReportFrom] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
@@ -372,15 +370,14 @@ const Nozzles = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon name="nozzle" size={18} />
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Nozzle sales &amp; setup</h1>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Nozzles</h1>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', maxWidth: '520px', lineHeight: 1.45 }}>
-              Sales by nozzle (default view). Open the list only when you need to add, rename, or archive nozzles.
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', maxWidth: '560px', lineHeight: 1.45 }}>
+              Add, rename, or archive pump nozzles. Sales-by-nozzle analytics are below for the period you choose.
             </p>
           </div>
         </div>
 
-        {/* Stats Card */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '12px' }}>
           <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #f59a30' }}>
             <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Nozzles</div>
@@ -392,7 +389,55 @@ const Nozzles = () => {
           </div>
         </div>
 
-        {/* Nozzle-wise sales report */}
+        <div style={{ marginBottom: '16px', padding: '16px 18px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>Nozzle directory</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>These names appear when recording a sale.</div>
+            </div>
+            <button onClick={openAdd} type="button" style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Icon name="plus" size={14} /> Add nozzle
+            </button>
+          </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading list…</div>
+          ) : nozzles.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '28px', color: '#6c7f8f', background: '#0f151f', borderRadius: '8px', fontSize: '13px' }}>
+              No nozzles yet. Use <strong style={{ color: '#e2e8f0' }}>Add nozzle</strong>.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#0f151f' }}>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>#</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nozzle name</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '160px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {nozzles.map((n, idx) => (
+                    <tr key={n.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{n.name}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button type="button" onClick={() => openEdit(n)} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fff' }}>
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => handleDelete(n.id, n.name)} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fecaca' }}>
+                            Archive
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         <div style={{
           marginBottom: '14px',
           padding: '14px 16px',
@@ -405,8 +450,8 @@ const Nozzles = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon name="chart" size={16} />
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f3f4f6' }}>Nozzle-wise sales</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Totals from sale bills linked to each nozzle in the selected period (includes unassigned).</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f3f4f6' }}>Sales by nozzle</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Aggregates from bills in the selected range (includes unassigned where applicable).</div>
               </div>
             </div>
             <button
@@ -476,83 +521,6 @@ const Nozzles = () => {
             </div>
           )}
         </div>
-
-        <div style={{ marginBottom: '14px' }}>
-          <button
-            type="button"
-            onClick={() => setShowManageList((v) => !v)}
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              padding: '12px 16px',
-              fontSize: '13px',
-              fontWeight: 600,
-              background: showManageList ? '#1a2330' : 'linear-gradient(180deg, #2a3340 0%, #1a2330 100%)',
-              border: '1px solid #3d4a5c',
-              borderRadius: '10px',
-              color: '#e2e8f0',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
-            }}
-          >
-            <Icon name="nozzle" size={16} />
-            {showManageList ? 'Hide nozzle list' : 'Manage nozzles — list, add & archive'}
-            <span style={{ fontSize: '11px', opacity: 0.85 }}>{showManageList ? '▲' : '▼'}</span>
-          </button>
-        </div>
-
-        {/* Nozzle list (optional) */}
-        {showManageList && (
-          <div style={{ marginBottom: '16px', padding: '14px 16px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9' }}>Nozzle directory</div>
-              <button onClick={openAdd} type="button" style={{ padding: '8px 14px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <Icon name="plus" size={14} /> Add nozzle
-              </button>
-            </div>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading list…</div>
-            ) : nozzles.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '28px', color: '#6c7f8f', background: '#0f151f', borderRadius: '8px', fontSize: '13px' }}>
-                No nozzles yet. Use <strong style={{ color: '#e2e8f0' }}>Add nozzle</strong> above.
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#0f151f' }}>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>#</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nozzle name</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', width: '140px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {nozzles.map((n, idx) => (
-                      <tr key={n.id} style={{ borderBottom: '1px solid #2a3340' }}>
-                        <td style={{ padding: '10px 12px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 500 }}>{n.name}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button type="button" onClick={() => openEdit(n)} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fff' }}>
-                              Edit
-                            </button>
-                            <button type="button" onClick={() => handleDelete(n.id, n.name)} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fecaca' }}>
-                              Archive
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Add/Edit Modal */}

@@ -456,7 +456,7 @@ export function DueSheetPanel({ embedded = false }) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [pagination, setPagination] = useState(null);
-  const [editingDueDateId, setEditingDueDateId] = useState(null);
+  const [dueDateModalParty, setDueDateModalParty] = useState(null);
   const [editingDueDateValue, setEditingDueDateValue] = useState(null);
   const [dueDateSaving, setDueDateSaving] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -572,9 +572,14 @@ export function DueSheetPanel({ embedded = false }) {
     }
   };
 
-  const startEditDueDate = (p) => {
-    setEditingDueDateId(p.id);
+  const openDueDateModal = (p) => {
+    setDueDateModalParty(p);
     setEditingDueDateValue(p.due_date ? new Date(p.due_date) : new Date());
+  };
+
+  const closeDueDateModal = () => {
+    setDueDateModalParty(null);
+    setEditingDueDateValue(null);
   };
 
   const handleSaveDueDate = async (partyId) => {
@@ -584,8 +589,7 @@ export function DueSheetPanel({ embedded = false }) {
       await apiClient.patch(`${config.api.sellers}/${partyId}`, {
         due_date: getLocalDateString(editingDueDateValue)
       });
-      setEditingDueDateId(null);
-      setEditingDueDateValue(null);
+      closeDueDateModal();
       toast.success('Due date updated');
       fetchDueSheet();
     } catch (e) {
@@ -594,6 +598,15 @@ export function DueSheetPanel({ embedded = false }) {
       setDueDateSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!dueDateModalParty) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape' && !dueDateSaving) closeDueDateModal();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [dueDateModalParty, dueDateSaving]);
 
   const formatDate = (value) => {
     if (!value) return '-';
@@ -641,6 +654,7 @@ export function DueSheetPanel({ embedded = false }) {
   }
 
   const inner = (
+    <>
     <div style={{ padding: embedded ? '0' : '8px 12px', maxWidth: '1600px', margin: '0 auto' }}>
       {!embedded && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -743,108 +757,40 @@ export function DueSheetPanel({ embedded = false }) {
         ) : parties.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', fontSize: '12px' }}>No creditors found</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ background: '#0f151f' }}>
-                <th style={{ padding: '8px 6px', textAlign: 'center', width: '40px' }}>#</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Creditor</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Mobile</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Address</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Opening</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Outstanding</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left', minWidth: '200px' }}>Due date</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right', width: '70px' }}>Days</th>
-                <th style={{ padding: '8px 6px', textAlign: 'center', width: '80px' }}>Actions</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', width: '36px' }}>#</th>
+                <th style={{ padding: '8px 6px', textAlign: 'left', width: '18%' }}>Creditor</th>
+                <th style={{ padding: '8px 6px', textAlign: 'left', width: '12%' }}>Mobile</th>
+                <th style={{ padding: '8px 6px', textAlign: 'left', width: '20%' }}>Address</th>
+                <th style={{ padding: '8px 6px', textAlign: 'right', width: '10%' }}>Opening</th>
+                <th style={{ padding: '8px 6px', textAlign: 'right', width: '11%' }}>Outstanding</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', width: '14%' }}>Due date</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', width: '56px' }}>Days</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', width: '128px' }}>Actions</th>
                </tr>
             </thead>
             <tbody>
               {parties.map((p, idx) => {
                 const daysOverdue = computeDaysOverdue(p.due_date);
                 const isOverdue = daysOverdue !== '-' && parseInt(daysOverdue, 10) > 0;
-                const isEditing = editingDueDateId === p.id;
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #2a3340' }}>
                     <td style={{ padding: '8px 6px', textAlign: 'center', color: '#6c7f8f' }}>{(page - 1) * limit + idx + 1} </td>
-                    <td style={{ padding: '8px 6px', fontWeight: 500 }}>{p.party_name}</td>
-                    <td style={{ padding: '8px 6px', color: '#9aaebf' }}>{p.mobile_number || '—'}</td>
-                    <td style={{ padding: '8px 6px', color: '#9aaebf', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.address || '—'}</td>
+                    <td style={{ padding: '8px 6px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.party_name}</td>
+                    <td style={{ padding: '8px 6px', color: '#9aaebf', whiteSpace: 'nowrap' }}>{p.mobile_number || '—'}</td>
+                    <td style={{ padding: '8px 6px', color: '#9aaebf', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.address || '—'}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', color: '#9aaebf' }}>₹{formatCurrency(p.opening_balance)}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 700, color: '#f59a30' }}>₹{formatCurrency(p.balance_amount)}</td>
-                    <td style={{ padding: '8px 6px', verticalAlign: 'top', minWidth: '200px' }}>
-                      {isEditing ? (
-                        <div
-                          className="ds-due-date-editor"
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '10px',
-                            padding: '10px 12px',
-                            background: '#0a0e14',
-                            borderRadius: '8px',
-                            border: '1px solid #334155'
-                          }}
-                        >
-                          <div>
-                            <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                              New credit due date
-                            </label>
-                            <DatePicker
-                              selected={editingDueDateValue}
-                              onChange={setEditingDueDateValue}
-                              dateFormat="dd/MM/yyyy"
-                              className="pp-input"
-                              style={{ ...dueDatePickerInputStyle, width: '100%', maxWidth: '220px', padding: '8px 10px', fontSize: '13px', display: 'block' }}
-                            />
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-end' }}>
-                            <button
-                              type="button"
-                              onClick={() => { setEditingDueDateId(null); setEditingDueDateValue(null); }}
-                              disabled={dueDateSaving}
-                              style={{
-                                padding: '8px 16px',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                background: 'transparent',
-                                border: '1px solid #475569',
-                                borderRadius: '8px',
-                                color: '#e2e8f0',
-                                cursor: dueDateSaving ? 'not-allowed' : 'pointer'
-                              }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSaveDueDate(p.id)}
-                              disabled={dueDateSaving}
-                              style={{
-                                padding: '8px 18px',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                background: '#22c55e',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: '#0f172a',
-                                cursor: dueDateSaving ? 'wait' : 'pointer',
-                                minWidth: '100px'
-                              }}
-                            >
-                              {dueDateSaving ? 'Saving…' : 'Save date'}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <span style={{ color: isOverdue ? '#e8593c' : '#9aaebf', fontSize: '12px' }}>{formatDate(p.due_date)}</span>
-                      )}
+                    <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <span style={{ color: isOverdue ? '#e8593c' : '#9aaebf', fontSize: '12px', display: 'block' }}>{formatDate(p.due_date)}</span>
                     </td>
-                    <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 600, color: isOverdue ? '#e8593c' : '#9aaebf' }}>{daysOverdue}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 600, color: isOverdue ? '#e8593c' : '#9aaebf' }}>{daysOverdue}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'center' }}>
-                      {!isEditing && (
-                        <button onClick={() => startEditDueDate(p)} style={{ padding: '2px 6px', fontSize: '9px', background: '#3b82f6', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
-                          Change
-                        </button>
-                      )}
+                      <button type="button" onClick={() => openDueDateModal(p)} style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 600, background: '#1d4ed8', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#fff' }}>
+                        Edit due date
+                      </button>
                     </td>
                   </tr>
                 );
@@ -867,6 +813,123 @@ export function DueSheetPanel({ embedded = false }) {
         </div>
       )}
     </div>
+
+    {dueDateModalParty && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ds-due-modal-title"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 10040,
+          background: 'rgba(2, 6, 23, 0.72)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          backdropFilter: 'blur(4px)'
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !dueDateSaving) closeDueDateModal();
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '400px',
+            background: '#111827',
+            borderRadius: '12px',
+            border: '1px solid #334155',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.45)',
+            overflow: 'hidden'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 18px', borderBottom: '1px solid #1f2937' }}>
+            <div>
+              <h2 id="ds-due-modal-title" style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#f8fafc' }}>
+                Credit due date
+              </h2>
+              <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
+                {dueDateModalParty.party_name}
+                <span style={{ display: 'block', marginTop: '2px', color: '#64748b' }}>
+                  Current: {formatDate(dueDateModalParty.due_date)}
+                </span>
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close"
+              disabled={dueDateSaving}
+              onClick={closeDueDateModal}
+              style={{
+                padding: '6px',
+                border: 'none',
+                borderRadius: '8px',
+                background: 'transparent',
+                color: '#94a3b8',
+                cursor: dueDateSaving ? 'not-allowed' : 'pointer',
+                lineHeight: 0
+              }}
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+          <div style={{ padding: '18px' }}>
+            <label htmlFor="ds-modal-due-picker" style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+              New due date
+            </label>
+            <DatePicker
+              id="ds-modal-due-picker"
+              selected={editingDueDateValue}
+              onChange={setEditingDueDateValue}
+              dateFormat="dd/MM/yyyy"
+              className="pp-input"
+              wrapperClassName="react-datepicker-wrapper"
+              style={{ ...dueDatePickerInputStyle, width: '100%', padding: '10px 12px', fontSize: '14px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={closeDueDateModal}
+                disabled={dueDateSaving}
+                style={{
+                  padding: '10px 18px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  background: 'transparent',
+                  border: '1px solid #475569',
+                  borderRadius: '8px',
+                  color: '#e2e8f0',
+                  cursor: dueDateSaving ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveDueDate(dueDateModalParty.id)}
+                disabled={dueDateSaving || editingDueDateValue == null}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  background: '#22c55e',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#0f172a',
+                  cursor: dueDateSaving ? 'wait' : 'pointer'
+                }}
+              >
+                {dueDateSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 
   return inner;

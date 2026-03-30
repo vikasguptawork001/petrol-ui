@@ -14,7 +14,9 @@ const AddBuyerParty = () => {
     address: '',
     opening_balance: 0,
     closing_balance: 0,
-    gst_number: ''
+    gst_number: '',
+    cheque_number: '',
+    bank_name: ''
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -171,7 +173,9 @@ const AddBuyerParty = () => {
         address: '',
         opening_balance: 0,
         closing_balance: 0,
-        gst_number: ''
+        gst_number: '',
+        cheque_number: '',
+        bank_name: ''
       });
       setErrors({});
       setTouched({});
@@ -469,6 +473,30 @@ const AddBuyerParty = () => {
                     {formData.gst_number.length}/20 characters
                   </small>
                 )}
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Cheque number</label>
+                <input
+                  type="text"
+                  name="cheque_number"
+                  value={formData.cheque_number}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                  maxLength={64}
+                />
+              </div>
+              <div className="form-group">
+                <label>Bank name</label>
+                <input
+                  type="text"
+                  name="bank_name"
+                  value={formData.bank_name}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                  maxLength={191}
+                />
               </div>
             </div>
             <div className="form-group">

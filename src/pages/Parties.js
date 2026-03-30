@@ -46,6 +46,7 @@ const Parties = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPagination, setHistoryPagination] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentNewDueDate, setPaymentNewDueDate] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
@@ -139,6 +140,7 @@ const Parties = () => {
 
   const handleMakePayment = async (party) => {
     setPaymentAmount('');
+    setPaymentNewDueDate('');
     setPaymentMethod('Cash');
     setPaymentNotes('');
     try {
@@ -245,7 +247,19 @@ const Parties = () => {
       const currentBalance = parseFloat(partyRes.data.party.balance_amount || 0);
       const paymentAmt = parseFloat(paymentAmount);
 
-      const response = await apiClient.post('/api/unified-transactions', {
+      const balanceAfterPay = Math.max(0, currentBalance - paymentAmt);
+      const prevDue = partyRes.data.party.due_date
+        ? String(partyRes.data.party.due_date).slice(0, 10)
+        : null;
+      if (balanceAfterPay > 0.009) {
+        const validDue = (paymentNewDueDate || '').trim();
+        if (!validDue) {
+          toast.error('Please choose the new credit due date — an outstanding balance will remain.');
+          setProcessingPayment(false);
+          return;
+        }
+      }
+      const paymentBody = {
         party_type: 'seller',
         party_id: selectedParty.id,
         transaction_type: 'payment',
@@ -253,10 +267,15 @@ const Parties = () => {
         previous_balance: currentBalance,
         transaction_amount: 0,
         paid_amount: paymentAmt,
-        balance_after: Math.max(0, currentBalance - paymentAmt),
+        balance_after: balanceAfterPay,
         payment_method: paymentMethod,
-        notes: paymentNotes
-      });
+        notes: paymentNotes,
+        previous_due_date: prevDue
+      };
+      if (balanceAfterPay > 0.009) {
+        paymentBody.new_due_date = String(paymentNewDueDate).trim().slice(0, 10);
+      }
+      const response = await apiClient.post('/api/unified-transactions', paymentBody);
 
       toast.success(`Payment of ₹${paymentAmt.toFixed(2)} recorded successfully`);
 
@@ -439,7 +458,12 @@ const Parties = () => {
               </thead>
               <tbody>
                 {filteredParties.map((party, idx) => (
-                  <tr key={party.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                  <tr
+                    key={party.id}
+                    style={{ borderBottom: '1px solid #2a3340', cursor: 'pointer' }}
+                    onClick={() => handleViewDetails(party)}
+                    title="Click row for details"
+                  >
                     <td style={{ padding: '8px 10px', textAlign: 'center', color: '#94a3b8' }}>{idx + 1}</td>
                     <td style={{ padding: '8px 10px', fontWeight: 500, whiteSpace: 'nowrap' }}>{party.party_name}</td>
                     <td style={{ padding: '8px 10px', color: '#9aaebf' }}>{party.mobile_number || '-'}</td>
@@ -449,7 +473,7 @@ const Parties = () => {
                         ₹{parseFloat(party.balance_amount || 0).toFixed(2)}
                       </td>
                     )}
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
                         itemId={party.id}
                         itemName={party.party_name}
@@ -738,6 +762,30 @@ const Parties = () => {
                   <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#e2e8f0', fontVariantNumeric: 'tabular-nums' }}>
                     ₹{Math.max(0, parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)).toFixed(2)}
                   </div>
+                </div>
+              )}
+              {paymentAmount && parseFloat(paymentAmount) > 0 && Math.max(0, parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)) > 0.009 && (
+                <div>
+                  <label htmlFor="party-pay-new-due" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+                    New credit due date <span style={{ color: '#f87171' }}>*</span>
+                  </label>
+                  <input
+                    id="party-pay-new-due"
+                    type="date"
+                    value={paymentNewDueDate}
+                    onChange={(e) => setPaymentNewDueDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      border: '1px solid #475569',
+                      background: '#0f172a',
+                      color: '#f8fafc',
+                      fontSize: '0.95rem'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>Required when an amount remains after this payment — shown in transaction history.</div>
                 </div>
               )}
               <div>

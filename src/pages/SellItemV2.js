@@ -7,7 +7,7 @@ import TransactionLoader from '../components/TransactionLoader';
 import ActionMenu from '../components/ActionMenu';
 import { useToast } from '../context/ToastContext';
 import { numberToWords } from '../utils/numberToWords';
-import { formatDateInIndia } from '../utils/dateUtils';
+import { formatDateInIndia, getLocalDateString } from '../utils/dateUtils';
 import './SellItemV2.css';
 import '../styles/petrolpump-theme.css';
 
@@ -123,6 +123,18 @@ const SellItemV2 = () => {
   // Payment
   const [paymentStatus, setPaymentStatus] = useState('fully_paid');
   const [paidAmount, setPaidAmount] = useState(0);
+  const [dueDateForPartial, setDueDateForPartial] = useState('');
+
+  const [attendants, setAttendants] = useState([]);
+  const [nozzles, setNozzles] = useState([]);
+  const [selectedAttendantId, setSelectedAttendantId] = useState('');
+  const [selectedNozzleId, setSelectedNozzleId] = useState('');
+
+  const minFutureDueDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return getLocalDateString(d);
+  })();
 
   // Submit result
   const [lastTransactionId, setLastTransactionId] = useState(null);
@@ -143,6 +155,27 @@ const SellItemV2 = () => {
         toast.error(e.response?.data?.error || 'Failed to load seller parties');
       } finally {
         if (mounted) setLoading((p) => ({ ...p, sellers: false }));
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [aRes, nRes] = await Promise.all([
+          apiClient.get(config.api.attendants),
+          apiClient.get(config.api.nozzles)
+        ]);
+        if (!mounted) return;
+        setAttendants(aRes.data.attendants || []);
+        setNozzles(nRes.data.nozzles || []);
+      } catch (e) {
+        console.error(e);
+        toast.error(e.response?.data?.error || 'Failed to load attendants or nozzles');
       }
     })();
     return () => {
@@ -336,7 +369,13 @@ const SellItemV2 = () => {
     return Math.max(0, bill.grandTotal - effectivePaidAmount);
   }, [bill.grandTotal, effectivePaidAmount]);
 
-  const canSubmit = selectedSellerId && cartItems.length > 0 && bill.grandTotal > 0;
+  const canSubmit =
+    selectedSellerId &&
+    selectedAttendantId &&
+    selectedNozzleId &&
+    cartItems.length > 0 &&
+    bill.grandTotal > 0 &&
+    (paymentStatus !== 'partially_paid' || (dueDateForPartial && dueDateForPartial.trim() >= minFutureDueDate));
 
   const resetForm = () => {
     setSellerSearch('');
@@ -353,6 +392,9 @@ const SellItemV2 = () => {
     setPreviousBalancePaid(0);
     setPaymentStatus('fully_paid');
     setPaidAmount(0);
+    setDueDateForPartial('');
+    setSelectedAttendantId('');
+    setSelectedNozzleId('');
     setLastTransactionId(null);
     setLastBillNumber(null);
     setTimeout(() => sellerSearchRef.current?.focus?.({ preventScroll: true }), 0);
@@ -360,8 +402,16 @@ const SellItemV2 = () => {
 
   const submitSale = async () => {
     if (!selectedSellerId) return toast.warning('Select a seller party first');
+    if (!selectedAttendantId || !selectedNozzleId) {
+      return toast.warning('Select both nozzle and attendant for this sale');
+    }
     if (cartItems.length === 0) return toast.warning('Add at least one item');
     if (effectivePaidAmount > bill.grandTotal + 0.0001) return toast.error('Paid amount cannot exceed total');
+    if (paymentStatus === 'partially_paid') {
+      const d = (dueDateForPartial || '').trim();
+      if (!d) return toast.error('Choose a credit due date for partial payment');
+      if (d < minFutureDueDate) return toast.error('Due date must be from tomorrow onward');
+    }
 
     // Basic validation: quantity must be > 0 and not exceed available
     for (const it of cartItems) {
@@ -374,7 +424,9 @@ const SellItemV2 = () => {
     setLoading((p) => ({ ...p, submit: true }));
     try {
       const payload = {
-        seller_party_id: selectedSellerId,
+        seller_party_id: Number(selectedSellerId),
+        attendant_id: Number(selectedAttendantId),
+        nozzle_id: Number(selectedNozzleId),
         items: cartItems.map((it) => ({
           item_id: it.item_id,
           quantity: parseFloat(it.quantity) || 0,
@@ -389,7 +441,10 @@ const SellItemV2 = () => {
         payment_status: paymentStatus,
         paid_amount: effectivePaidAmount,
         with_gst: withGst,
-        previous_balance_paid: effectivePreviousBalancePaid
+        previous_balance_paid: effectivePreviousBalancePaid,
+        ...(paymentStatus === 'partially_paid' && dueDateForPartial.trim()
+          ? { due_date: dueDateForPartial.trim() }
+          : {})
       };
 
       const res = await apiClient.post(config.api.sale, payload);
@@ -578,6 +633,45 @@ const SellItemV2 = () => {
                     {sellerInfo.gst_number ? ` • GST: ${sellerInfo.gst_number}` : ''}
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="sell2-card">
+              <div className="sell2-card-hd">
+                <h3>Nozzle & attendant</h3>
+                <span className="sell2-muted">Required on every sale</span>
+              </div>
+              <div className="sell2-card-bd">
+                <div className="sell2-row">
+                  <div className="sell2-field">
+                    <label>Nozzle</label>
+                    <select
+                      className="sell2-select"
+                      value={selectedNozzleId}
+                      onChange={(e) => setSelectedNozzleId(e.target.value)}
+                    >
+                      <option value="">Select nozzle…</option>
+                      {(nozzles || []).filter((n) => !n.is_archived).map((n) => (
+                        <option key={n.id} value={String(n.id)}>{n.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sell2-field">
+                    <label>Attendant</label>
+                    <select
+                      className="sell2-select"
+                      value={selectedAttendantId}
+                      onChange={(e) => setSelectedAttendantId(e.target.value)}
+                    >
+                      <option value="">Select attendant…</option>
+                      {(attendants || []).filter((a) => !a.is_archived).map((a) => (
+                        <option key={a.id} value={String(a.id)}>
+                          {a.name}{a.attendance_id ? ` (${a.attendance_id})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -873,7 +967,15 @@ const SellItemV2 = () => {
                 <div className="sell2-row">
                   <div className="sell2-field">
                     <label>Payment status</label>
-                    <select className="sell2-select" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
+                    <select
+                      className="sell2-select"
+                      value={paymentStatus}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPaymentStatus(v);
+                        if (v === 'fully_paid') setDueDateForPartial('');
+                      }}
+                    >
                       <option value="fully_paid">Fully Paid</option>
                       <option value="partially_paid">Partially Paid</option>
                     </select>
@@ -889,6 +991,21 @@ const SellItemV2 = () => {
                       placeholder="Enter paid amount"
                     />
                   </div>
+                  {paymentStatus === 'partially_paid' ? (
+                    <div className="sell2-field">
+                      <label>Credit due date</label>
+                      <input
+                        className="sell2-input"
+                        type="date"
+                        min={minFutureDueDate}
+                        value={dueDateForPartial}
+                        onChange={(e) => setDueDateForPartial(e.target.value)}
+                      />
+                      <div className="sell2-muted" style={{ marginTop: 6, fontSize: 12 }}>
+                        Balance must be cleared by this date (tomorrow onward).
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="sell2-muted" style={{ marginTop: 10 }}>
                   Paid now: <strong style={{ color: '#111827' }}>{formatMoney(effectivePaidAmount)}</strong> • Balance due:{' '}
@@ -938,6 +1055,12 @@ const SellItemV2 = () => {
                     <p>Payment: <strong>{paymentStatus === 'fully_paid' ? 'Fully Paid' : 'Partially Paid'}</strong></p>
                     <p>Paid Now: <strong>{formatMoney(effectivePaidAmount)}</strong></p>
                     <p>Balance Due: <strong>{formatMoney(balanceDue)}</strong></p>
+                    {paymentStatus === 'partially_paid' && dueDateForPartial ? (
+                      <p>
+                        Credit due date:{' '}
+                        <strong>{formatDateInIndia(new Date(dueDateForPartial + 'T12:00:00'))}</strong>
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
