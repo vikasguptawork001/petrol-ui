@@ -12,7 +12,8 @@ const AddSellerParty = () => {
   const [formData, setFormData] = useState({
     party_name: '',
     mobile_number: '',
-    email: '',
+    cheque_number: '',
+    bank_name: '',
     address: '',
     opening_balance: 0,
     closing_balance: 0,
@@ -23,13 +24,6 @@ const AddSellerParty = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Validation functions
-  const validateEmail = (email) => {
-    if (!email) return true; // Optional field
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
 
   const validateMobile = (mobile) => {
     if (!mobile || mobile.trim().length === 0) {
@@ -52,11 +46,6 @@ const AddSellerParty = () => {
           error = 'Party name is required';
         } else if (value.length > 255) {
           error = 'Party name must be less than 255 characters';
-        }
-        break;
-      case 'email':
-        if (value && !validateEmail(value)) {
-          error = 'Invalid email format';
         }
         break;
       case 'mobile_number':
@@ -171,7 +160,8 @@ const AddSellerParty = () => {
       setFormData({
         party_name: '',
         mobile_number: '',
-        email: '',
+        cheque_number: '',
+        bank_name: '',
         address: '',
         opening_balance: 0,
         closing_balance: 0,
@@ -188,11 +178,8 @@ const AddSellerParty = () => {
       if (errorMessage.includes('Mobile number already exists')) {
         setErrors(prev => ({ ...prev, mobile_number: 'Mobile number already exists' }));
         setTouched(prev => ({ ...prev, mobile_number: true }));
-      } else if (errorMessage.includes('Email already exists')) {
-        setErrors(prev => ({ ...prev, email: 'Email already exists' }));
-        setTouched(prev => ({ ...prev, email: true }));
       }
-      
+
       toast.error('Error: ' + errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -333,58 +320,43 @@ const AddSellerParty = () => {
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Email</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="example@email.com"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: errors.email ? '2px solid #dc3545' : touched.email && !errors.email && formData.email ? '2px solid #28a745' : '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      transition: 'all 0.2s ease',
-                      backgroundColor: errors.email ? '#fff5f5' : touched.email && !errors.email && formData.email ? '#f0fff4' : 'white'
-                    }}
-                  />
-                  {touched.email && !errors.email && formData.email && (
-                    <span style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#28a745',
-                      fontSize: '18px'
-                    }}>✓</span>
-                  )}
-                </div>
-                {errors.email && (
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px', 
-                    marginTop: '6px',
-                    padding: '8px 12px',
-                    backgroundColor: '#fff5f5',
+                <label>Cheque number (optional)</label>
+                <input
+                  type="text"
+                  name="cheque_number"
+                  value={formData.cheque_number}
+                  onChange={handleChange}
+                  maxLength={64}
+                  placeholder="Cheque / ref. no."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #ddd',
                     borderRadius: '6px',
-                    border: '1px solid #fecaca'
-                  }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc3545" strokeWidth="2" style={{ flexShrink: 0 }}>
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                      <line x1="12" y1="9" x2="12" y2="13"/>
-                      <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <small style={{ color: '#dc3545', fontSize: '13px', fontWeight: '500' }}>
-                      {errors.email}
-                    </small>
-                  </div>
-                )}
+                    fontSize: '14px'
+                  }}
+                />
               </div>
+              <div className="form-group">
+                <label>Bank name (optional)</label>
+                <input
+                  type="text"
+                  name="bank_name"
+                  value={formData.bank_name}
+                  onChange={handleChange}
+                  maxLength={191}
+                  placeholder="Bank name"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+            <div className="form-row">
               <div className="form-group">
                 <label>Opening Balance</label>
                 <input
@@ -394,7 +366,6 @@ const AddSellerParty = () => {
                   value={formData.opening_balance === 0 ? '' : formData.opening_balance}
                   onChange={handleChange}
                   onKeyDown={(e) => {
-                    // Block mathematical signs and 'e', 'E'
                     if (['+', '-', '*', '/', 'e', 'E'].includes(e.key)) {
                       e.preventDefault();
                     }
@@ -408,8 +379,6 @@ const AddSellerParty = () => {
                   }}
                 />
               </div>
-            </div>
-            <div className="form-row">
               <div className="form-group">
                 <label>Closing Balance</label>
                 <input

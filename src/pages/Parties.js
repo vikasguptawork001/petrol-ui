@@ -18,7 +18,6 @@ const PAYMENT_METHOD_OPTIONS = ['Cash', 'UPI', 'Card', 'Bank transfer', 'Cheque'
 const Icons = {
   User: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
   Phone: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>,
-  Email: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>,
   Location: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
   Money: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>,
   Close: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
@@ -55,7 +54,7 @@ const Parties = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingParty, setEditingParty] = useState(null);
   const [editFormData, setEditFormData] = useState({
-    party_name: '', mobile_number: '', email: '', address: '',
+    party_name: '', mobile_number: '', cheque_number: '', bank_name: '', address: '',
     opening_balance: '', closing_balance: '', gst_number: ''
   });
   const [updating, setUpdating] = useState(false);
@@ -117,7 +116,8 @@ const Parties = () => {
       filtered = filtered.filter(party =>
         party.party_name?.toLowerCase().includes(query) ||
         party.mobile_number?.includes(query) ||
-        party.email?.toLowerCase().includes(query) ||
+        String(party.cheque_number || '').toLowerCase().includes(query) ||
+        String(party.bank_name || '').toLowerCase().includes(query) ||
         party.address?.toLowerCase().includes(query) ||
         party.gst_number?.toLowerCase().includes(query)
       );
@@ -157,7 +157,8 @@ const Parties = () => {
     setEditFormData({
       party_name: party.party_name || '',
       mobile_number: party.mobile_number || '',
-      email: party.email || '',
+      cheque_number: party.cheque_number || '',
+      bank_name: party.bank_name || '',
       address: party.address || '',
       opening_balance: party.opening_balance || '',
       closing_balance: party.closing_balance || '',
@@ -178,7 +179,8 @@ const Parties = () => {
       const updateData = {};
       if (editFormData.party_name) updateData.party_name = editFormData.party_name.trim();
       if (editFormData.mobile_number) updateData.mobile_number = editFormData.mobile_number.trim();
-      if (editFormData.email) updateData.email = editFormData.email.trim().toLowerCase();
+      updateData.cheque_number = (editFormData.cheque_number || '').trim() || null;
+      updateData.bank_name = (editFormData.bank_name || '').trim() || null;
       if (editFormData.address) updateData.address = editFormData.address.trim();
       if (editFormData.opening_balance !== '') updateData.opening_balance = parseFloat(editFormData.opening_balance) || 0;
       if (editFormData.closing_balance !== '') updateData.closing_balance = parseFloat(editFormData.closing_balance) || 0;
@@ -410,7 +412,7 @@ const Parties = () => {
           <input
             id="creditor-search"
             type="text"
-            placeholder="Name, mobile, email, address, or GST…"
+            placeholder="Name, mobile, bank, cheque, address, or GST…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -542,8 +544,12 @@ const Parties = () => {
                   <div style={{ fontSize: '12px', fontWeight: 500 }}>{partyDetails.mobile_number || '—'}</div>
                 </div>
                 <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
-                  <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Email</div>
-                  <div style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{partyDetails.email || '—'}</div>
+                  <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Cheque no.</div>
+                  <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>{partyDetails.cheque_number || '—'}</div>
+                </div>
+                <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
+                  <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Bank</div>
+                  <div style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{partyDetails.bank_name || '—'}</div>
                 </div>
                 <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
                   <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>GST No.</div>
@@ -958,12 +964,23 @@ const Parties = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email</label>
+                  <label>Cheque number</label>
                   <input
-                    type="email"
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                    placeholder="Enter email"
+                    type="text"
+                    value={editFormData.cheque_number}
+                    onChange={(e) => setEditFormData({ ...editFormData, cheque_number: e.target.value })}
+                    placeholder="Cheque / ref. no."
+                    maxLength={64}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Bank name</label>
+                  <input
+                    type="text"
+                    value={editFormData.bank_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, bank_name: e.target.value })}
+                    placeholder="Bank name"
+                    maxLength={191}
                   />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>

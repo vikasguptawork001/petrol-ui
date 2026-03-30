@@ -431,16 +431,6 @@ const Icon = ({ name, size = 14 }) => {
   );
 };
 
-const dueDatePickerInputStyle = {
-  padding: '6px 8px',
-  fontSize: '11px',
-  borderRadius: '4px',
-  border: '1px solid #2a3340',
-  background: '#0f151f',
-  color: '#fff',
-  boxSizing: 'border-box'
-};
-
 /** Full Due Sheet UI — use on `/due-sheet` or embedded on the home dashboard (`embedded`). */
 export function DueSheetPanel({ embedded = false }) {
   const { user } = useAuth();
@@ -846,20 +836,23 @@ export function DueSheetPanel({ embedded = false }) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 18px', borderBottom: '1px solid #1f2937' }}>
-            <div>
+          <div className="ds-due-modal__header">
+            <div className="ds-due-modal__title-block">
               <h2 id="ds-due-modal-title" style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#f8fafc' }}>
                 Credit due date
               </h2>
-              <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
+              <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#94a3b8', lineHeight: 1.45 }}>
                 {dueDateModalParty.party_name}
-                <span style={{ display: 'block', marginTop: '2px', color: '#64748b' }}>
-                  Current: {formatDate(dueDateModalParty.due_date)}
-                </span>
+              </p>
+              <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>
+                <span style={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.06em' }}>Current due</span>
+                {' '}
+                <span style={{ color: '#e2e8f0', fontWeight: 500 }}>{formatDate(dueDateModalParty.due_date)}</span>
               </p>
             </div>
             <button
               type="button"
+              className="ds-due-modal__close"
               aria-label="Close"
               disabled={dueDateSaving}
               onClick={closeDueDateModal}
@@ -876,20 +869,21 @@ export function DueSheetPanel({ embedded = false }) {
               <Icon name="close" size={18} />
             </button>
           </div>
-          <div style={{ padding: '18px' }}>
-            <label htmlFor="ds-modal-due-picker" style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-              New due date
-            </label>
-            <DatePicker
-              id="ds-modal-due-picker"
-              selected={editingDueDateValue}
-              onChange={setEditingDueDateValue}
-              dateFormat="dd/MM/yyyy"
-              className="pp-input"
-              wrapperClassName="react-datepicker-wrapper"
-              style={{ ...dueDatePickerInputStyle, width: '100%', padding: '10px 12px', fontSize: '14px' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+          <div className="ds-due-modal__body">
+            <div className="ds-due-modal__field">
+              <label htmlFor="ds-modal-due-picker">New due date</label>
+              <input
+                id="ds-modal-due-picker"
+                type="date"
+                className="ds-due-modal__date"
+                value={editingDueDateValue ? getLocalDateString(editingDueDateValue) : ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setEditingDueDateValue(v ? new Date(`${v}T12:00:00`) : null);
+                }}
+              />
+            </div>
+            <div className="ds-due-modal__actions">
               <button
                 type="button"
                 onClick={closeDueDateModal}

@@ -586,7 +586,8 @@ const SellItem = () => {
           grandTotal: roundedGrandTotal,
           partyName: updatedSellerInfo?.party_name || sellerInfo?.party_name || 'N/A',
           partyMobile: updatedSellerInfo?.mobile_number || sellerInfo?.mobile_number || 'N/A',
-          partyEmail: updatedSellerInfo?.email || sellerInfo?.email || 'N/A',
+          partyCheque: updatedSellerInfo?.cheque_number || sellerInfo?.cheque_number || '',
+          partyBank: updatedSellerInfo?.bank_name || sellerInfo?.bank_name || '',
           currentBalance: updatedSellerInfo?.balance_amount || sellerInfo?.balance_amount || 0,
           date: formatInIndiaTime(new Date())
         };
@@ -1969,10 +1970,20 @@ const SellItem = () => {
                     <div style={{ fontSize: '14px', fontWeight: '600', color: '#f3f4f6' }}>{successModalData.partyMobile}</div>
                   </div>
                 </div>
-                {successModalData.partyEmail && successModalData.partyEmail !== 'N/A' && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '5px', fontWeight: '600', textTransform: 'uppercase' }}>Email</div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#f3f4f6' }}>{successModalData.partyEmail}</div>
+                {(successModalData.partyCheque || successModalData.partyBank) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                    {successModalData.partyCheque ? (
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '5px', fontWeight: '600', textTransform: 'uppercase' }}>Cheque no.</div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#f3f4f6' }}>{successModalData.partyCheque}</div>
+                      </div>
+                    ) : null}
+                    {successModalData.partyBank ? (
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '5px', fontWeight: '600', textTransform: 'uppercase' }}>Bank</div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#f3f4f6' }}>{successModalData.partyBank}</div>
+                      </div>
+                    ) : null}
                   </div>
                 )}
                 <div style={{ paddingTop: '12px', borderTop: '1px solid #374151' }}>
