@@ -46,7 +46,8 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  overflow: hidden;
+  /* allow party/item suggestion panels to extend outside the card */
+  overflow: visible;
 }
 
 .sell2-card-hd {
@@ -68,6 +69,7 @@
 
 .sell2-card-bd {
   padding: 14px;
+  overflow: visible;
 }
 
 .sell2-row {
@@ -122,7 +124,7 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 20;
+  z-index: 20050;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;

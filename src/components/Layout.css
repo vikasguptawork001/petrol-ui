@@ -35,7 +35,7 @@
 
 .header-content {
   height: 100%;
-  max-width: 1600px;
+  max-width: var(--layout-max-width, min(1680px, 100%));
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -255,7 +255,7 @@
 .main-content {
   flex: 1;
   width: 100%;
-  max-width: var(--app-max, min(1920px, 100%));
+  max-width: var(--layout-max-width, var(--app-max, min(1920px, 100%)));
   margin-left: auto;
   margin-right: auto;
   padding: var(--app-pad-y, clamp(14px, 1.8vw, 24px)) var(--app-pad-x, clamp(14px, 2.2vw, 28px));
@@ -295,7 +295,7 @@
 }
 
 .footer-content {
-  max-width: 1600px;
+  max-width: var(--layout-max-width, min(1680px, 100%));
   margin: 0 auto;
   width: 100%;
   display: flex;

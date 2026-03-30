@@ -4,7 +4,7 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatInIndiaTime, formatDateInIndia } from '../utils/dateUtils';
 import * as XLSX from 'xlsx';
 import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
@@ -147,7 +147,7 @@ const ReturnReport = () => {
     try {
       // Export only the data currently showing on screen (visible/filtered data)
       const data = transactions.map(txn => ({
-        'Date': new Date(txn.created_at).toLocaleString(),
+        'Date': formatInIndiaTime(txn.created_at),
         'Bill Number': txn.bill_number || '-',
         'Party Type': txn.party_type === 'buyer' ? 'Buyer' : 'Seller',
         'Party Name': txn.party_name,
@@ -355,7 +355,7 @@ const ReturnReport = () => {
                 ) : (
                   transactions.map((txn) => (
                     <tr key={txn.id}>
-                      <td style={{ textAlign: 'left' }}>{new Date(txn.created_at).toLocaleString()}</td>
+                      <td style={{ textAlign: 'left' }}>{formatInIndiaTime(txn.created_at)}</td>
                       <td style={{ textAlign: 'left' }}>{txn.bill_number || '-'}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span style={{
@@ -457,10 +457,10 @@ const ReturnReport = () => {
                           <strong>Transaction ID:</strong> {billDetails.transaction_id}
                         </div>
                         <div>
-                          <strong>Return Date:</strong> {new Date(billDetails.return_date).toLocaleDateString()}
+                          <strong>Return Date:</strong> {formatDateInIndia(billDetails.return_date)}
                         </div>
                         <div>
-                          <strong>Created At:</strong> {new Date(billDetails.created_at).toLocaleString()}
+                          <strong>Created At:</strong> {formatInIndiaTime(billDetails.created_at)}
                         </div>
                         <div>
                           <strong>Party Type:</strong> 

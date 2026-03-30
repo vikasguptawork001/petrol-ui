@@ -71,9 +71,9 @@ const ItemWiseSellReport = () => {
           setLoading(true);
           const res = await apiClient.get(config.api.itemWiseSalesReport, { params, signal: ctrl.signal });
           if (!ctrl.signal.aborted) {
-            setRows(res.data.items || []);
-            setSummary(res.data.summary || null);
-            setPagination(res.data.pagination || null);
+            setRows(Array.isArray(res.data?.items) ? res.data.items : []);
+            setSummary(res.data?.summary ?? null);
+            setPagination(res.data?.pagination ?? null);
           }
         } catch (e) { if (e.name === 'CanceledError' || e.name === 'AbortError') return; }
         finally { if (!ctrl.signal.aborted) setLoading(false); }

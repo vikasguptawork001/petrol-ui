@@ -13,6 +13,8 @@ import './Party.css';
 import '../styles/petrolpump-theme.css';
 
 // Minimal Icons
+const PAYMENT_METHOD_OPTIONS = ['Cash', 'UPI', 'Card', 'Bank transfer', 'Cheque', 'Other'];
+
 const Icons = {
   User: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
   Phone: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>,
@@ -135,11 +137,16 @@ const Parties = () => {
     await fetchTransactionHistory(party, 1);
   };
 
-  const handleMakePayment = (party) => {
-    setSelectedParty(party);
+  const handleMakePayment = async (party) => {
     setPaymentAmount('');
     setPaymentMethod('Cash');
     setPaymentNotes('');
+    try {
+      const r = await apiClient.get(`${config.api.sellers}/${party.id}`);
+      setSelectedParty({ ...party, ...(r.data?.party || {}) });
+    } catch {
+      setSelectedParty(party);
+    }
     setShowPaymentModal(true);
   };
 
@@ -206,21 +213,21 @@ const Parties = () => {
       setPartyDetails(response.data.party);
     } catch (error) {
       console.error('Error fetching party details:', error);
-      toast.error('Failed to load party details');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to load party details');
     }
   };
 
   const fetchTransactionHistory = async (party, pageNum = 1) => {
     try {
       setHistoryLoading(true);
-      const response = await apiClient.get(`/api/unified-transactions/party/seller/${party.id}`, {
-        params: { page: pageNum, limit: 20 }
+      const response = await apiClient.get(config.api.unifiedTransactionsParty('seller', party.id), {
+        params: { page: pageNum, limit: 25 }
       });
-      setTransactionHistory(response.data.transactions || []);
-      setHistoryPagination(response.data.pagination);
+      setTransactionHistory(Array.isArray(response.data?.transactions) ? response.data.transactions : []);
+      setHistoryPagination(response.data?.pagination ?? null);
     } catch (error) {
       console.error('Error fetching transaction history:', error);
-      toast.error('Failed to load transaction history');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to load transaction history');
     } finally {
       setHistoryLoading(false);
     }
@@ -276,7 +283,7 @@ const Parties = () => {
       }
     } catch (error) {
       console.error('Error processing payment:', error);
-      toast.error('Failed to process payment: ' + (error.response?.data?.error || 'Unknown error'));
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to process payment');
     } finally {
       setProcessingPayment(false);
     }
@@ -332,50 +339,83 @@ const Parties = () => {
       <TransactionLoader isLoading={loading || processingPayment} type={processingPayment ? "payment" : "transaction"} />
       
       <div style={{ padding: '12px 16px', maxWidth: '1600px', margin: '0 auto' }}>
-        {/* Header - Compact */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Icons.User />
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Creditors</h2>
-              <span style={{ background: 'rgba(245,154,48,0.2)', padding: '2px 8px', borderRadius: '20px', fontSize: '0.75rem', color: '#f59a30' }}>
-                {sellerParties.length}
-              </span>
+        <div
+          style={{
+            background: 'linear-gradient(145deg, #141b26 0%, #0f151f 100%)',
+            border: '1px solid #2a3340',
+            borderRadius: '12px',
+            padding: '16px 18px',
+            marginBottom: '16px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.25)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(245,154,48,0.12)', color: '#f59a30' }}>
+                  <Icons.User />
+                </span>
+                <div>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#f8fafc', letterSpacing: '-0.02em' }}>Creditors &amp; credit parties</h2>
+                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '4px 0 0 0', lineHeight: 1.5, maxWidth: '560px' }}>
+                    Search and review balances, open a party for full history, or record a payment when you are ready.
+                  </p>
+                </div>
+              </div>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Manage pump creditors and payments</p>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" onClick={fetchParties} disabled={loading} className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '8px' }}>
+                Refresh list
+              </button>
+              {user?.role !== 'sales' && (
+                <Link to="/add-seller-party" className="btn btn-success" style={{ padding: '8px 16px', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '8px', textDecoration: 'none' }}>
+                  + New creditor
+                </Link>
+              )}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={fetchParties} disabled={loading} style={{ padding: '6px 12px', fontSize: '0.75rem' }} className="btn btn-secondary">
-              🔄
-            </button>
-            {user?.role !== 'sales' && (
-              <Link to="/add-seller-party" className="btn btn-success" style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: 500 }}>
-                + Add Creditor
-              </Link>
-            )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '14px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Directory</span>
+            <span style={{ background: 'rgba(245,154,48,0.15)', color: '#fbbf24', padding: '4px 12px', borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 700 }}>{sellerParties.length} parties</span>
+            <span style={{ color: '#475569' }}>|</span>
+            <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>
+              Combined outstanding: <strong style={{ color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>₹{totalBalance.toFixed(2)}</strong>
+            </span>
           </div>
         </div>
 
-        {/* Search - Compact */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '14px' }}>
+          <label htmlFor="creditor-search" style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+            Search creditors
+          </label>
           <input
+            id="creditor-search"
             type="text"
-            placeholder="Search by name, mobile, email, address, GST..."
+            placeholder="Name, mobile, email, address, or GST…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #2a3340', background: '#141b26', color: '#fff', fontSize: '0.85rem' }}
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              border: '1px solid #334155',
+              background: '#0f172a',
+              color: '#f1f5f9',
+              fontSize: '0.9rem',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
           />
         </div>
 
-        {/* Summary Card - Compact */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ padding: '10px', background: 'rgba(245,154,48,0.1)', borderRadius: '6px', borderLeft: `3px solid #f59a30` }}>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Creditors</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f59a30' }}>{sellerParties.length}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ padding: '14px 16px', background: '#0f151f', borderRadius: '10px', border: '1px solid #2a3340', borderLeft: '4px solid #f59a30' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Parties on file</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59a30', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>{sellerParties.length}</div>
           </div>
-          <div style={{ padding: '10px', background: 'rgba(29,158,117,0.1)', borderRadius: '6px', borderLeft: `3px solid #1d9e75` }}>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Total Outstanding</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1d9e75' }}>₹{totalBalance.toFixed(2)}</div>
+          <div style={{ padding: '14px 16px', background: '#0f151f', borderRadius: '10px', border: '1px solid #2a3340', borderLeft: '4px solid #22c55e' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total outstanding</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4ade80', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>₹{totalBalance.toFixed(2)}</div>
           </div>
         </div>
 
@@ -465,7 +505,7 @@ const Parties = () => {
       {/* Party Details Modal - Compact */}
       {showPartyDetailsModal && selectedParty && partyDetails && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
+          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: 'min(1200px, 100vw - 32px)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{partyDetails.party_name}</h3>
               <button onClick={() => setShowPartyDetailsModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}><Icons.Close /></button>
@@ -499,6 +539,14 @@ const Parties = () => {
                     </div>
                   </div>
                 )}
+                {partyDetails.due_date && (
+                  <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
+                    <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Credit due date</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: new Date(partyDetails.due_date) < new Date(new Date().toDateString()) ? '#e8593c' : '#9aaebf' }}>
+                      {new Date(`${String(partyDetails.due_date).slice(0, 10)}T12:00:00`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div style={{ padding: '0 0 12px 0', borderBottom: '1px solid #2a3340', marginBottom: '12px' }}>
@@ -520,38 +568,72 @@ const Parties = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                       <thead>
                         <tr style={{ background: '#0f151f', borderBottom: '1px solid #2a3340' }}>
-                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>Date</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>Date &amp; time</th>
                           <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Type</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Bill / Ref</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Prev. Balance</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Amount</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Bill / ref</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Pay status</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Prev. bal</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Invoice amt</th>
                           <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Paid</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Balance After</th>
-                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>Due Date</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Balance after</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600, minWidth: '120px' }}>Due (prev → new)</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Notes</th>
                         </tr>
                       </thead>
                       <tbody>
                         {transactionHistory.map((txn, idx) => {
-                          const amount = parseFloat(txn.transaction_amount || txn.amount || 0);
-                          const paid = parseFloat(txn.paid_amount || 0);
-                          const balance = parseFloat(txn.balance_after || txn.balance_amount || 0);
-                          const prevBal = parseFloat(txn.previous_balance || 0);
-                          const txType = txn.transaction_type;
-                          const typeColor = txType === 'sale' ? '#3b82f6' : txType === 'payment' ? '#22c55e' : '#f59a30';
+                          const amount = parseFloat(txn.transaction_amount ?? txn.this_transaction_amount ?? 0);
+                          const paid = parseFloat(txn.paid_amount ?? 0);
+                          const balance = parseFloat(txn.balance_after ?? 0);
+                          const prevBal = parseFloat(txn.previous_balance ?? 0);
+                          const txType = txn.transaction_type || '';
+                          const typeColor = txType === 'sale' ? '#3b82f6' : txType === 'payment' || txType === 'sale_payment' ? '#22c55e' : txType === 'return' ? '#f59a30' : '#94a3b8';
+                          const ts = txn.transaction_timestamp ? new Date(txn.transaction_timestamp) : null;
+                          const dateStr = ts && !Number.isNaN(ts.getTime())
+                            ? ts.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            : (txn.date || txn.transaction_date
+                              ? new Date(`${String(txn.date || txn.transaction_date).slice(0, 10)}T12:00:00`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })
+                              : '—');
+                          const fmtDue = (d) => {
+                            if (!d) return null;
+                            try {
+                              return new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+                            } catch {
+                              return null;
+                            }
+                          };
+                          const prevDue = fmtDue(txn.previous_due_date);
+                          const newDue = fmtDue(txn.new_due_date);
+                          const payStatus = txn.payment_status
+                            ? String(txn.payment_status).replace(/_/g, ' ')
+                            : (txType === 'sale' ? '—' : '—');
                           return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #1a2330' }}>
-                              <td style={{ padding: '6px 8px', color: '#9aaebf', whiteSpace: 'nowrap' }}>{new Date(txn.transaction_timestamp || txn.created_at).toLocaleDateString('en-IN')}</td>
+                            <tr key={txn.id || idx} style={{ borderBottom: '1px solid #1a2330' }}>
+                              <td style={{ padding: '6px 8px', color: '#cbd5e1', whiteSpace: 'nowrap', fontSize: '10px' }}>{dateStr}</td>
                               <td style={{ padding: '6px 8px' }}>
-                                <span style={{ padding: '2px 7px', borderRadius: '4px', background: `${typeColor}20`, color: typeColor, fontSize: '10px', fontWeight: 600 }}>
-                                  {txType === 'sale' ? 'Sale' : txType === 'payment' ? 'Payment' : txType}
+                                <span style={{ padding: '2px 7px', borderRadius: '4px', background: `${typeColor}22`, color: typeColor, fontSize: '10px', fontWeight: 600 }}>
+                                  {txType === 'sale' ? 'Sale' : txType === 'payment' ? 'Payment' : txType === 'return' ? 'Return' : txType || '—'}
                                 </span>
                               </td>
-                              <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontSize: '10px', color: '#9aaebf' }}>{txn.bill_number || txn.reference_number || '—'}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf' }}>{prevBal > 0 ? `₹${prevBal.toFixed(2)}` : '—'}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#eef2f8' }}>{amount > 0 ? `₹${amount.toFixed(2)}` : '—'}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', color: paid > 0 ? '#22c55e' : '#9aaebf' }}>{paid > 0 ? `₹${paid.toFixed(2)}` : '—'}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: balance > 0 ? '#e8593c' : '#22c55e' }}>₹{balance.toFixed(2)}</td>
-                              <td style={{ padding: '6px 8px', color: '#9aaebf', whiteSpace: 'nowrap', fontSize: '10px' }}>{txn.due_date ? new Date(txn.due_date).toLocaleDateString('en-IN') : '—'}</td>
+                              <td style={{ padding: '6px 8px', fontFamily: 'monospace', fontSize: '10px', color: '#9aaebf' }}>{txn.bill_number || (txn.reference_id ? `#${txn.reference_id}` : '—')}</td>
+                              <td style={{ padding: '6px 8px', fontSize: '10px', color: '#a5b4fc', textTransform: 'capitalize' }}>{payStatus}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf' }}>{prevBal !== 0 ? `₹${prevBal.toFixed(2)}` : '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#eef2f8', fontWeight: 600 }}>{amount !== 0 ? `₹${amount.toFixed(2)}` : '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: paid > 0 ? '#4ade80' : '#64748b' }}>{paid > 0 ? `₹${paid.toFixed(2)}` : '—'}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: balance > 0 ? '#fb923c' : '#4ade80' }}>₹{balance.toFixed(2)}</td>
+                              <td style={{ padding: '6px 8px', color: '#94a3b8', fontSize: '10px', lineHeight: 1.35 }}>
+                                {prevDue || newDue ? (
+                                  <>
+                                    {prevDue ? <div>Prev: {prevDue}</div> : null}
+                                    {newDue ? <div>New: {newDue}</div> : null}
+                                  </>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                              <td style={{ padding: '6px 8px', color: '#64748b', fontSize: '10px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={[txn.payment_method, txn.notes].filter(Boolean).join(' · ')}>
+                                {[txn.payment_method, txn.notes].filter(Boolean).join(' · ') || '—'}
+                              </td>
                             </tr>
                           );
                         })}
@@ -566,50 +648,197 @@ const Parties = () => {
                 </>
               )}
             </div>
-            <div style={{ padding: '12px 16px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowPartyDetailsModal(false)} className="btn btn-secondary" style={{ padding: '6px 16px', fontSize: '0.75rem' }}>Close</button>
+            <div style={{ padding: '14px 18px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', background: '#0f151f' }}>
+              <button type="button" onClick={() => setShowPartyDetailsModal(false)} className="btn btn-secondary" style={{ padding: '10px 22px', fontSize: '0.875rem', fontWeight: 600, borderRadius: '10px', border: '1px solid #475569' }}>
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Payment Modal - Compact */}
+      {/* Payment Modal */}
       {showPaymentModal && selectedParty && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: '420px', border: '1px solid #2a3340' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>Make Payment - {selectedParty.party_name}</h3>
-              <button onClick={() => setShowPaymentModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Icons.Close /></button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px' }}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-modal-title"
+            style={{
+              background: '#141b26',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '440px',
+              border: '1px solid #334155',
+              boxShadow: '0 24px 48px rgba(0,0,0,0.45)',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 18px', borderBottom: '1px solid #2a3340', gap: '12px' }}>
+              <div>
+                <div id="payment-modal-title" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
+                  Record payment
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: '#94a3b8', marginTop: '6px', wordBreak: 'break-word' }}>{selectedParty.party_name}</div>
+              </div>
+              <button type="button" onClick={() => setShowPaymentModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px', flexShrink: 0 }} aria-label="Close">
+                <Icons.Close />
+              </button>
             </div>
-            <div style={{ padding: '16px' }}>
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '4px' }}>Current Balance</div>
-                <div style={{ padding: '10px', background: parseFloat(selectedParty.balance_amount || 0) > 0 ? '#e8593c20' : '#1d9e7520', borderRadius: '6px', textAlign: 'center', fontSize: '1.1rem', fontWeight: 600 }}>
+            <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Amount due now</div>
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    background: parseFloat(selectedParty.balance_amount || 0) > 0 ? 'rgba(232,89,60,0.12)' : 'rgba(34,197,94,0.12)',
+                    border: `1px solid ${parseFloat(selectedParty.balance_amount || 0) > 0 ? 'rgba(232,89,60,0.35)' : 'rgba(34,197,94,0.35)'}`,
+                    borderRadius: '10px',
+                    textAlign: 'center',
+                    fontSize: '1.35rem',
+                    fontWeight: 800,
+                    color: parseFloat(selectedParty.balance_amount || 0) > 0 ? '#fb923c' : '#4ade80',
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
+                >
                   ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}
                 </div>
               </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Payment Amount *</label>
-                <input type="number" min="1" max={parseFloat(selectedParty.balance_amount || 0)} value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="Enter amount" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff' }} />
-                <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px' }}>Max: ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}</div>
+              <div>
+                <label htmlFor="party-pay-amt" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+                  Payment amount <span style={{ color: '#f87171' }}>*</span>
+                </label>
+                <input
+                  id="party-pay-amt"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  max={parseFloat(selectedParty.balance_amount || 0)}
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0.00"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    border: '1px solid #475569',
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums'
+                  }}
+                />
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>Maximum you can apply: ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}</div>
               </div>
               {paymentAmount && parseFloat(paymentAmount) > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '4px' }}>After Payment</div>
-                  <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', textAlign: 'center' }}>
-                    ₹{(parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)).toFixed(2)}
+                <div style={{ padding: '12px 14px', background: '#0f172a', borderRadius: '10px', border: '1px solid #334155' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Balance after this payment</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#e2e8f0', fontVariantNumeric: 'tabular-nums' }}>
+                    ₹{Math.max(0, parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)).toFixed(2)}
                   </div>
                 </div>
               )}
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Notes</label>
-                <textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows="2" placeholder="Optional notes..." style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #2a3340', background: '#0f151f', color: '#fff', fontSize: '0.8rem', resize: 'vertical' }} />
+              <div>
+                <label htmlFor="party-pay-method" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+                  Payment method
+                </label>
+                <select
+                  id="party-pay-method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '11px 14px',
+                    borderRadius: '10px',
+                    border: '1px solid #475569',
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {PAYMENT_METHOD_OPTIONS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="party-pay-notes" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
+                  Notes <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#64748b' }}>(optional)</span>
+                </label>
+                <textarea
+                  id="party-pay-notes"
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Reference no., bank, UPI id…"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid #475569',
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    fontSize: '0.875rem',
+                    resize: 'vertical',
+                    minHeight: '72px',
+                    lineHeight: 1.45
+                  }}
+                />
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 16px', borderTop: '1px solid #2a3340' }}>
-              <button onClick={() => setShowPaymentModal(false)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={processingPayment}>Cancel</button>
-              <button onClick={handlePaymentSubmit} className="btn btn-success" style={{ padding: '6px 12px', fontSize: '0.75rem' }} disabled={processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}>
-                {processingPayment ? 'Processing...' : 'Record Payment'}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row-reverse',
+                flexWrap: 'wrap',
+                justifyContent: 'flex-start',
+                gap: '10px',
+                padding: '16px 18px',
+                borderTop: '1px solid #2a3340',
+                background: '#0f151f'
+              }}
+            >
+              <button
+                type="button"
+                onClick={handlePaymentSubmit}
+                className="btn btn-success"
+                style={{
+                  padding: '12px 22px',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  borderRadius: '10px',
+                  minWidth: '160px',
+                  border: 'none',
+                  cursor: processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0 ? 'not-allowed' : 'pointer',
+                  opacity: processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0 ? 0.65 : 1
+                }}
+                disabled={processingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}
+              >
+                {processingPayment ? 'Recording…' : 'Record payment'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="btn btn-secondary"
+                style={{
+                  padding: '12px 20px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  borderRadius: '10px',
+                  minWidth: '120px',
+                  border: '1px solid #475569',
+                  background: 'transparent',
+                  color: '#e2e8f0',
+                  cursor: processingPayment ? 'not-allowed' : 'pointer'
+                }}
+                disabled={processingPayment}
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -709,12 +938,12 @@ const Parties = () => {
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-secondary" disabled={updating}>
-                Cancel
+            <div className="modal-footer" style={{ display: 'flex', flexDirection: 'row-reverse', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-start', padding: '14px 18px' }}>
+              <button type="button" onClick={handleUpdate} className="btn btn-primary" disabled={updating} style={{ padding: '10px 22px', fontSize: '0.9rem', fontWeight: 700, borderRadius: '10px', minWidth: '140px' }}>
+                {updating ? 'Saving…' : 'Save changes'}
               </button>
-              <button type="button" onClick={handleUpdate} className="btn btn-primary" disabled={updating}>
-                {updating ? 'Updating...' : 'Update'}
+              <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-secondary" disabled={updating} style={{ padding: '10px 20px', fontSize: '0.9rem', fontWeight: 600, borderRadius: '10px', minWidth: '120px', border: '1px solid #475569' }}>
+                Cancel
               </button>
             </div>
           </div>

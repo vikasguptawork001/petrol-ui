@@ -1,17 +1,31 @@
-/** Format date/time in India timezone (Asia/Kolkata) for consistent display across app and PDF */
+/** India Standard Time (IST, Asia/Kolkata) for all business dates and datetimes */
+
+const IST = 'Asia/Kolkata';
+
+function collectISTParts(date, options) {
+  const d = new Date(date);
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone: IST, ...options });
+  const parts = {};
+  for (const x of f.formatToParts(d)) {
+    if (x.type !== 'literal') parts[x.type] = x.value;
+  }
+  return parts;
+}
+
+/** Format date/time in India timezone for display */
 export const formatInIndiaTime = (date) => {
   if (!date) return '-';
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
+    timeZone: IST,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: true
+    hour12: true,
   });
 };
 
@@ -20,34 +34,40 @@ export const formatDateInIndia = (date) => {
   if (!date) return '-';
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '-';
-  return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { timeZone: IST, day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 /**
- * Get local date string in YYYY-MM-DD format
- * This ensures we use local time instead of UTC
+ * Calendar date in IST as YYYY-MM-DD (API filters, filenames, server payloads)
  */
 export const getLocalDateString = (date = new Date()) => {
   const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  if (Number.isNaN(d.getTime())) return '';
+  const p = collectISTParts(d, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  return `${p.year}-${p.month}-${p.day}`;
 };
 
 /**
- * Get local ISO string (similar to toISOString but in local time)
- * Returns format: YYYY-MM-DDTHH:mm:ss.sss
+ * ISO-like string in IST: YYYY-MM-DDTHH:mm:ss.sss (no timezone suffix)
  */
 export const getLocalISOString = (date = new Date()) => {
   const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-  const milliseconds = String(d.getMilliseconds()).padStart(3, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
+  if (Number.isNaN(d.getTime())) return '';
+  const f = new Intl.DateTimeFormat('en-CA', {
+    timeZone: IST,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    fractionalSecondDigits: 3,
+    hour12: false,
+  });
+  const parts = {};
+  for (const x of f.formatToParts(d)) {
+    if (x.type !== 'literal') parts[x.type] = x.value;
+  }
+  const frac = parts.fractionalSecond != null ? parts.fractionalSecond : String(d.getMilliseconds()).padStart(3, '0');
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.${frac}`;
 };
-

@@ -68,9 +68,9 @@ const SellReport = () => {
       if (attendantFilter) params.attendant_id = attendantFilter;
       const res = await apiClient.get(config.api.salesReport, { params, signal: ctrl.signal });
       if (!ctrl.signal.aborted) {
-        setTransactions(res.data.transactions);
-        setSummary(res.data.summary);
-        setPagination(res.data.pagination);
+        setTransactions(Array.isArray(res.data?.transactions) ? res.data.transactions : []);
+        setSummary(res.data?.summary ?? null);
+        setPagination(res.data?.pagination ?? null);
       }
     } catch (e) { if (e.name === 'CanceledError' || e.name === 'AbortError') return; }
     finally { if (!abortRef.current?.signal.aborted) setLoading(false); }
@@ -91,7 +91,7 @@ const SellReport = () => {
     setExporting(true);
     try {
       const data = transactions.map(t => ({
-        'Date': new Date(t.created_at).toLocaleString(),
+        'Date': formatInIndiaTime(t.created_at),
         'Bill Number': t.bill_number,
         'Party': t.party_name,
         'Total (₹)': fmt(t.total_amount),

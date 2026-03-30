@@ -3581,7 +3581,7 @@ import ActionMenu from '../components/ActionMenu';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import * as XLSX from 'xlsx';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDateInIndia } from '../utils/dateUtils';
 import './Dashboard.css';
 
 // Minimal Icons
@@ -4372,7 +4372,7 @@ const Dashboard = () => {
                             </div>
                           ) : (
                             <span>
-                              {p.due_date ? new Date(p.due_date).toLocaleDateString() : '—'}
+                              {p.due_date ? formatDateInIndia(p.due_date) : '—'}
                               <button onClick={() => { setDueDateEditingId(p.id); setDueDateEditingValue(p.due_date || ''); }} style={{ marginLeft: '6px', fontSize: '9px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59a30' }}>✏️</button>
                             </span>
                           )}

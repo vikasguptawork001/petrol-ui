@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,7 +8,7 @@ import config from '../config/config';
 import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
 import { numberToWords } from '../utils/numberToWords';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatInIndiaTime, formatDateInIndia } from '../utils/dateUtils';
 import {
   fetchSellerParties,
   fetchSellerInfo,
@@ -54,7 +54,7 @@ const SellItem = () => {
   const sellerSearchInputRef = useRef(null);
   const paidAmountDebounceRef = useRef(null);
   const handlePreviewRef = useRef(null);
-  
+
   // Success modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalData, setSuccessModalData] = useState(null);
@@ -67,6 +67,9 @@ const SellItem = () => {
   const [nozzles, setNozzles] = useState([]);
   const [dueDateForPartial, setDueDateForPartial] = useState('');
   const [isSellerInputFocused, setIsSellerInputFocused] = useState(false);
+  const [sellerSuggestPos, setSellerSuggestPos] = useState(null);
+  const [itemSuggestPos, setItemSuggestPos] = useState(null);
+
   const minFutureDueDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -98,6 +101,53 @@ const SellItem = () => {
     errors
   } = useSelector((state) => state.sellItem);
 
+  const sellerDropdownOpen =
+    showSellerSuggestions &&
+    (filteredSellerParties.length > 0 ||
+      (sellerSearchQuery.trim() && filteredSellerParties.length === 0 && sellerParties.length > 0));
+
+  const itemDropdownOpen = searchQuery.trim().length >= 2;
+
+  useLayoutEffect(() => {
+    if (!sellerDropdownOpen || !sellerSearchInputRef.current) {
+      setSellerSuggestPos(null);
+      return;
+    }
+    const update = () => {
+      const el = sellerSearchInputRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setSellerSuggestPos({ left: r.left, top: r.bottom + 4, width: r.width });
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [sellerDropdownOpen]);
+
+  useLayoutEffect(() => {
+    if (!itemDropdownOpen || !itemSearchInputRef.current) {
+      setItemSuggestPos(null);
+      return;
+    }
+    const update = () => {
+      const el = itemSearchInputRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setItemSuggestPos({ left: r.left, top: r.bottom + 4, width: r.width });
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [itemDropdownOpen]);
+
   useEffect(() => {
     dispatch(setWithGst(false));
   }, [dispatch]);
@@ -106,7 +156,6 @@ const SellItem = () => {
   useEffect(() => {
     if (!isSellerInputFocused) return;
     if (!sellerParties || sellerParties.length === 0) return;
-
     const q = (sellerSearchQuery || '').trim();
     if (!q) {
       dispatch(setShowSellerSuggestions(true));
@@ -172,7 +221,6 @@ const SellItem = () => {
   }, [selectedSeller, sellerInfo, dispatch, toast]);
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  
   useEffect(() => {
     const timer = setTimeout(() => {
       const trimmedQuery = searchQuery.trim();
@@ -286,7 +334,6 @@ const SellItem = () => {
       toast.warning('⚠️ Please add at least one item to the cart');
       return;
     }
-
     const invalidItems = [];
     let hasStockIssue = false;
     for (const item of selectedItems) {
@@ -303,7 +350,6 @@ const SellItem = () => {
       toast.error(`❌ Invalid quantity for: ${invalidItems.join(', ')}. Quantity must be greater than 0`);
       return;
     }
-
     const belowMinRateItems = [];
     for (const item of selectedItems) {
       const saleRate = parseFloat(item.sale_rate) || 0;
@@ -393,7 +439,6 @@ const SellItem = () => {
       toast.warning('⏳ Transaction is already being processed...');
       return;
     }
-
     let currentPreviewData = previewData;
     if (!currentPreviewData) {
       toast.info('⏳ Generating bill preview before confirming sale...');
@@ -412,7 +457,6 @@ const SellItem = () => {
         return;
       }
     }
-
     if (isPreviewStale() && currentPreviewData) {
       toast.info('⏳ Updating preview and confirming sale...');
       try {
@@ -433,13 +477,11 @@ const SellItem = () => {
       toast.warning('⚠️ Please generate bill preview first.');
       return;
     }
-
     try {
       if (!currentPreviewData.items || currentPreviewData.items.length === 0) {
         toast.error('❌ Please add at least one item to the sale');
         return;
       }
-
       const isPetrolOrDiesel = (it) => it.product_code === 'PETROL-001' || it.product_code === 'DIESEL-001';
       const withQty = (currentPreviewData.items || []).filter(it => (parseInt(it.quantity, 10) || 0) > 0);
       if (withQty.length === 0) {
@@ -466,7 +508,6 @@ const SellItem = () => {
         toast.error('❌ Please select a payment status (Fully Paid or Partially Paid)');
         return;
       }
-
       if (currentPreviewData.paymentStatus === 'partially_paid') {
         const paidAmt = Math.round(paidAmount || 0);
         const grandTotal = currentPreviewData.grandTotal || currentPreviewData.total || 0;
@@ -493,7 +534,6 @@ const SellItem = () => {
       const updatedPreviewData = { ...currentPreviewData, paidAmount: currentPaidAmount };
       const dueDateToSend = currentPreviewData.paymentStatus === 'partially_paid' ? (dueDateForPartial || '').trim() : null;
       const result = await dispatch(submitSale({ previewData: updatedPreviewData, selectedSeller, dueDate: dueDateToSend })).unwrap();
-
       let updatedSellerInfo = sellerInfo;
       if (selectedSeller) {
         try {
@@ -503,7 +543,6 @@ const SellItem = () => {
           console.error('Error refreshing seller info:', error);
         }
       }
-
       if (result.transactionId) {
         dispatch(setPrintDisabled(false));
         const invoiceTotal = currentPreviewData.total || 0;
@@ -512,7 +551,6 @@ const SellItem = () => {
         const roundedGrandTotal = Math.round(grandTotalBeforeRounding);
         const roundedPaidAmount = Math.round(currentPaidAmount);
         const balanceDue = Math.max(0, roundedGrandTotal - roundedPaidAmount);
-
         const modalData = {
           transactionId: result.transactionId,
           billNumber: result.billNumber || 'N/A',
@@ -526,12 +564,8 @@ const SellItem = () => {
           partyMobile: updatedSellerInfo?.mobile_number || sellerInfo?.mobile_number || 'N/A',
           partyEmail: updatedSellerInfo?.email || sellerInfo?.email || 'N/A',
           currentBalance: updatedSellerInfo?.balance_amount || sellerInfo?.balance_amount || 0,
-          date: new Date().toLocaleDateString('en-IN', {
-            year: 'numeric', month: 'long', day: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          })
+          date: formatInIndiaTime(new Date())
         };
-
         setSuccessModalData(modalData);
         setShowSuccessModal(true);
         toast.success(`✅ Sale completed successfully! Bill Number: ${result.billNumber || 'N/A'}`);
@@ -793,7 +827,7 @@ const SellItem = () => {
       previewData?.dueDate ||
       (previewData?.paymentStatus === 'partially_paid' ? dueDateForPartial : '');
     const billDueDateDisplay = billDueDateRaw
-      ? new Date(`${billDueDateRaw}T00:00:00`).toLocaleDateString('en-GB')
+      ? formatDateInIndia(`${billDueDateRaw}T00:00:00`)
       : '';
 
     return (
@@ -802,10 +836,10 @@ const SellItem = () => {
           isLoading={loading.submit || actionInProgress || previewLoading}
           message={loading.submit ? 'Processing sale...' : previewLoading ? 'Processing preview...' : 'Processing...'}
         />
+        <div>
         <div className="sell-item">
           <div className="sell-item-wrapper">
             <div className="sell-item-main">
-
               {/* Preview header */}
               <div className="preview-header" style={{ marginBottom: '20px' }}>
                 <div>
@@ -825,14 +859,12 @@ const SellItem = () => {
                   )}
                 </div>
               </div>
-
               {previewLoading && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', padding: '40px', textAlign: 'center', width: '100%', background: '#0a0f16' }}>
                   <div style={{ display: 'inline-block', width: '48px', height: '48px', border: '4px solid rgba(245, 154, 48, 0.15)', borderTop: '4px solid var(--pp-orange, #f59a30)', borderRadius: '50%', animation: 'si-spin 0.8s linear infinite', marginBottom: '20px' }}></div>
                   <p style={{ marginTop: '0', fontSize: '15px', color: '#9aaebf' }}>Calculating preview...</p>
                 </div>
               )}
-
               {previewData && !previewLoading && (
                 <div style={{ position: 'relative' }}>
                   <div
@@ -850,7 +882,7 @@ const SellItem = () => {
                           {previewData.billNumber && (
                             <span>Invoice No.: <strong>{previewData.billNumber}</strong></span>
                           )}
-                          <span>Date: <strong>{new Date().toLocaleDateString('en-GB')}</strong></span>
+                          <span>Date: <strong>{formatDateInIndia(new Date())}</strong></span>
                           {billDueDateDisplay && (
                             <span>Due Date: <strong>{billDueDateDisplay}</strong></span>
                           )}
@@ -876,10 +908,9 @@ const SellItem = () => {
                         )}
                       </div>
                     </div>
-
                     {/* ── Bill Table ── */}
                     <div className="bp-table-scroll">
-                      <table className="bill-preview-table">
+                      <table className={`bill-preview-table ${previewData.withGst ? 'has-gst' : 'no-gst'}`}>
                         <thead>
                           <tr>
                             <th style={{ textAlign: 'center', width: '36px' }}>S.N.</th>
@@ -914,12 +945,12 @@ const SellItem = () => {
                                 {previewData.withGst && (
                                   <td style={{ textAlign: 'center' }}>{item.product_code || '-'}</td>
                                 )}
-                                {/* Qty cell */}
-                                <td style={{ textAlign: 'center' }}>
+                                {/* Qty cell — class bp-qty-cell for CSS (GST on/off column index differs) */}
+                                <td className="bp-qty-cell">
                                   {previewData.transactionId ? (
                                     <span style={{ fontWeight: '600', color: '#eef2f8' }}>{quantity}</span>
                                   ) : (
-                                    <>
+                                    <div className="bp-qty-cell-inner">
                                       <input
                                         type="number"
                                         step="any"
@@ -940,11 +971,10 @@ const SellItem = () => {
                                         style={{ width: '40px' }}
                                         min="1"
                                       />
-                                      {isOverStock && <div className="bp-avail-warning">Available: {availableQty}</div>}
-                                      {!isOverStock && (
-                                        <div className="bp-avail-info">Available: {availableQty}</div>
-                                      )}
-                                    </>
+                                      <span className={isOverStock ? 'bp-avail-line bp-avail-line--warn' : 'bp-avail-line'}>
+                                        Available: {availableQty}
+                                      </span>
+                                    </div>
                                   )}
                                 </td>
                                 {/* Unit */}
@@ -1093,7 +1123,6 @@ const SellItem = () => {
                             // colspan depends on GST + action col
                             const colsLeft = previewData.withGst ? 8 : 7;
                             const colsAll = previewData.withGst ? (previewData.transactionId ? 9 : 10) : (previewData.transactionId ? 8 : 9);
-
                             return (
                               <>
                                 <tr>
@@ -1101,7 +1130,6 @@ const SellItem = () => {
                                   <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#eef2f8', fontWeight: 700 }}>₹{cartAmount.toFixed(2)}</td>
                                   {!previewData.transactionId && <td></td>}
                                 </tr>
-
                                 {totalDiscountAmount > 0 && (
                                   <tr>
                                     <td colSpan={colsLeft} style={{ textAlign: 'right', color: '#2bc48f' }}>Total Discount:</td>
@@ -1109,7 +1137,6 @@ const SellItem = () => {
                                     {!previewData.transactionId && <td></td>}
                                   </tr>
                                 )}
-
                                 {Math.abs(roundedOff) > 0.0001 && (
                                   <tr>
                                     <td colSpan={colsLeft} style={{ textAlign: 'right' }}>Rounded Off ({roundedOff > 0 ? '+' : '-'}):</td>
@@ -1119,7 +1146,6 @@ const SellItem = () => {
                                     {!previewData.transactionId && <td></td>}
                                   </tr>
                                 )}
-
                                 <tr className="bp-grand-total-row">
                                   <td colSpan={previewData.withGst ? 3 : 2} style={{ textAlign: 'left' }}>
                                     Grand Total (Qty): {totalQty.toFixed(2)} PCS
@@ -1129,7 +1155,6 @@ const SellItem = () => {
                                   </td>
                                   {!previewData.transactionId && <td></td>}
                                 </tr>
-
                                 {previewData.withGst && totalTax > 0 && (
                                   <tr>
                                     <td colSpan={colsLeft} style={{ fontWeight: 700 }}>Tax Summary:</td>
@@ -1145,7 +1170,6 @@ const SellItem = () => {
                                     {!previewData.transactionId && <td></td>}
                                   </tr>
                                 )}
-
                                 {(previewData.previousBalance || 0) > 0 && (
                                   <tr>
                                     <td colSpan={colsLeft} style={{ textAlign: 'right', color: '#f59f00', fontWeight: 700 }}>Previous Balance:</td>
@@ -1153,19 +1177,16 @@ const SellItem = () => {
                                     {!previewData.transactionId && <td></td>}
                                   </tr>
                                 )}
-
                                 <tr className="bp-paid-row">
                                   <td colSpan={colsLeft} style={{ textAlign: 'right', fontWeight: 700 }}>Amount Paid:</td>
                                   <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>₹{roundedPaidAmount.toFixed(2)}</td>
                                   {!previewData.transactionId && <td></td>}
                                 </tr>
-
                                 <tr className={balanceDue > 0 ? 'bp-balance-row-red' : 'bp-balance-row-green'}>
                                   <td colSpan={colsLeft} style={{ textAlign: 'right', fontWeight: 700 }}>Balance Due:</td>
                                   <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>₹{balanceDue.toFixed(2)}</td>
                                   {!previewData.transactionId && <td></td>}
                                 </tr>
-
                                 <tr className="bp-words-row">
                                   <td colSpan={colsAll}>
                                     <strong>Amount in Words:</strong>
@@ -1178,7 +1199,6 @@ const SellItem = () => {
                         </tfoot>
                       </table>
                     </div>{/* end bp-table-scroll */}
-
                     {/* Transaction complete summary */}
                     {previewData.transactionId && (
                       <div className="payment-section" style={{
@@ -1196,7 +1216,6 @@ const SellItem = () => {
                             </p>
                           </div>
                         </div>
-
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', padding: '20px', backgroundColor: '#1f2937', borderRadius: '12px', border: '1px solid #374151', marginBottom: '20px' }}>
                           {[
                             { label: 'Payment Status', value: previewData.paymentStatus === 'fully_paid' ? '✓ Fully Paid' : '⚡ Partially Paid', color: '#2bc48f', bg: 'rgba(29,158,117,0.08)', border: 'rgba(29,158,117,0.25)' },
@@ -1220,168 +1239,165 @@ const SellItem = () => {
                 </div>
               )}
             </div>
-
-            {/* Right Panel — preview mode */}
-            {createPortal(
-              <aside className="sell-item-right-panel">
-                <div className="right-panel-section">
-                  <div className="right-panel-label">Actions</div>
-                  {isTransactionComplete ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <button onClick={handleNewSaleClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing}>New Sale</button>
-                      <button onClick={handlePrintClick} className="btn btn-primary right-panel-btn" disabled={printDisabled || printClicked || isProcessing}>
-                        {printClicked ? 'Printing...' : 'Print'}
-                      </button>
-                      <button onClick={handleDownloadPDFClick} className="btn btn-success right-panel-btn" disabled={!previewData.transactionId || isProcessing}>Download PDF</button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={handleBackToEditClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing} style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}>Back</button>
-                        <button
-                          onClick={async () => {
-                            if (isProcessing || !previewStale) return;
-                            setActionInProgress(true);
-                            try { await handlePreview(); toast.success('✅ Bill preview updated'); }
-                            finally { setActionInProgress(false); }
-                          }}
-                          className="btn btn-primary right-panel-btn"
-                          disabled={isProcessing || !previewStale}
-                          style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}
-                        >
-                          {previewStale ? 'Update' : 'Updated'}
-                        </button>
-                      </div>
-                      <button onClick={handleSubmitClick} className="btn btn-success right-panel-btn" disabled={isProcessing || previewStale} style={{ margin: 0 }}>
-                        {loading.submit ? 'Processing...' : previewStale ? 'Generate Preview First' : 'Confirm Sale'}
+          </div>
+          {/* Right Panel — preview mode */}
+          {createPortal(
+            <aside className="sell-item-right-panel">
+              <div className="right-panel-section">
+                <div className="right-panel-label">Actions</div>
+                {isTransactionComplete ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button onClick={handleNewSaleClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing}>New Sale</button>
+                    <button onClick={handlePrintClick} className="btn btn-primary right-panel-btn" disabled={printDisabled || printClicked || isProcessing}>
+                      {printClicked ? 'Printing...' : 'Print'}
+                    </button>
+                    <button onClick={handleDownloadPDFClick} className="btn btn-success right-panel-btn" disabled={!previewData.transactionId || isProcessing}>Download PDF</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button onClick={handleBackToEditClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing} style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}>Back</button>
+                      <button
+                        onClick={async () => {
+                          if (isProcessing || !previewStale) return;
+                          setActionInProgress(true);
+                          try { await handlePreview(); toast.success('✅ Bill preview updated'); }
+                          finally { setActionInProgress(false); }
+                        }}
+                        className="btn btn-primary right-panel-btn"
+                        disabled={isProcessing || !previewStale}
+                        style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}
+                      >
+                        {previewStale ? 'Update' : 'Updated'}
                       </button>
                     </div>
-                  )}
-                  {isTransactionComplete && <div className="right-panel-badge success">Sale Confirmed</div>}
-                </div>
-
-                {!previewData.transactionId && (
-                  <div className="right-panel-section">
-                    <div className="right-panel-label">Payment</div>
-                    <div className="right-panel-radio-group">
-                      <label className={`right-panel-radio-option ${paymentStatus === 'fully_paid' ? 'selected' : ''}`}>
-                        <input type="radio" name="payStatus" checked={paymentStatus === 'fully_paid'}
-                          onChange={async () => {
-                            if (actionInProgress) return;
-                            setActionInProgress(true);
-                            try { dispatch(setPaymentStatus('fully_paid')); await handlePreview(null, { paymentStatus: 'fully_paid' }); }
-                            finally { setActionInProgress(false); }
-                          }}
-                          disabled={actionInProgress} />
-                        <span>Fully Paid</span>
-                      </label>
-                      <label className={`right-panel-radio-option ${paymentStatus === 'partially_paid' ? 'partial-selected' : ''}`}>
-                        <input type="radio" name="payStatus" checked={paymentStatus === 'partially_paid'}
-                          onChange={async () => {
-                            if (actionInProgress) return;
-                            setActionInProgress(true);
-                            try { dispatch(setPaymentStatus('partially_paid')); dispatch(setPaidAmount(0)); await handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: 0 }); }
-                            finally { setActionInProgress(false); }
-                          }}
-                          disabled={actionInProgress} />
-                        <span>Partially Paid</span>
-                      </label>
-                    </div>
-                    {paymentStatus === 'partially_paid' && (
-                      <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <div className="right-panel-section" style={{ flex: 1, marginBottom: 0 }}>
-                          <div className="right-panel-label" style={{ fontSize: '12px' }}>Amount (₹)</div>
-                          <input
-                            type="number"
-                            className="right-panel-input"
-                            min="0"
-                            max={previewData.grandTotal || previewData.total}
-                            value={amountPaidLocalValue}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '') {
-                                setAmountPaidLocalValue('');
-                                dispatch(setPaidAmount(0));
-                                if (paidAmountDebounceRef.current) { clearTimeout(paidAmountDebounceRef.current); paidAmountDebounceRef.current = null; }
-                                return;
-                              }
-                              if (!/^\d+$/.test(val)) return;
-                              setAmountPaidLocalValue(val);
-                              if (paidAmountDebounceRef.current) clearTimeout(paidAmountDebounceRef.current);
-                              paidAmountDebounceRef.current = setTimeout(() => {
-                                const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
-                                const amt = Math.min(Math.max(0, parseInt(val) || 0), maxAmt);
-                                dispatch(setPaidAmount(amt));
-                                setAmountPaidLocalValue(amt === 0 ? '' : String(amt));
-                                handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: amt });
-                                paidAmountDebounceRef.current = null;
-                              }, 1000);
-                            }}
-                            onBlur={() => {
-                              const parsed = parseInt(amountPaidLocalValue, 10);
-                              if (amountPaidLocalValue === '' || isNaN(parsed)) return;
-                              const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
-                              const finalAmount = Math.min(Math.max(0, parsed), maxAmt);
-                              if (finalAmount !== paidAmount) dispatch(setPaidAmount(finalAmount));
-                              setAmountPaidLocalValue(finalAmount === 0 ? '' : String(finalAmount));
-                            }}
-                            placeholder="0"
-                            style={{ padding: '6px', fontSize: '13px' }}
-                          />
-                        </div>
-                        <div className="right-panel-section" style={{ flex: 1, marginBottom: 0 }}>
-                          <div className="right-panel-label" style={{ fontSize: '12px' }}>Due Date <span style={{ color: '#dc3545' }}>*</span></div>
-                          <input
-                            type="date"
-                            className="right-panel-input"
-                            value={dueDateForPartial || ''}
-                            min={minFutureDueDate}
-                            onChange={(e) => {
-                              const selected = e.target.value;
-                              if (!selected) {
-                                setDueDateForPartial('');
-                                return;
-                              }
-                              if (selected < minFutureDueDate) {
-                                toast.error('❌ Due date must be a future date');
-                                setDueDateForPartial('');
-                                return;
-                              }
-                              setDueDateForPartial(selected);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key !== 'Tab') e.preventDefault();
-                            }}
-                            onPaste={(e) => e.preventDefault()}
-                            style={{ padding: '6px', fontSize: '13px' }}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <button onClick={handleSubmitClick} className="btn btn-success right-panel-btn" disabled={isProcessing || previewStale} style={{ margin: 0 }}>
+                      {loading.submit ? 'Processing...' : previewStale ? 'Generate Preview First' : 'Confirm Sale'}
+                    </button>
                   </div>
                 )}
-
+                {isTransactionComplete && <div className="right-panel-badge success">Sale Confirmed</div>}
+              </div>
+              {!previewData.transactionId && (
                 <div className="right-panel-section">
-                  <div className="right-panel-label">Summary</div>
-                  <div className="summary-row"><span>Cart Amount</span><span>₹{(previewData.total || 0).toFixed(2)}</span></div>
-                  {(() => {
-                    const totalDiscount = (previewData.items || []).reduce((s, i) => s + (parseFloat(i.itemDiscount) || 0), 0);
-                    return totalDiscount > 0 ? <div className="summary-row"><span>Total Discount</span><span>-₹{totalDiscount.toFixed(2)}</span></div> : null;
-                  })()}
-                  {(previewData.previousBalance || 0) > 0 && <div className="summary-row"><span>Prev Balance</span><span>+₹{(previewData.previousBalance || 0).toFixed(2)}</span></div>}
-                  <div className="summary-row"><span>Grand Total</span><span>₹{Math.round(previewData.grandTotal || previewData.total || 0).toFixed(2)}</span></div>
-                  <div className="summary-row"><span>Amount Paid</span><span>₹{Math.round(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || previewData.grandTotal || 0)).toFixed(2)}</span></div>
-                  <div className="summary-row"><span>Balance Due</span><span>₹{(Math.max(0, Math.round(previewData.grandTotal || previewData.total || 0) - Math.round(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || previewData.grandTotal || 0)))).toFixed(2)}</span></div>
+                  <div className="right-panel-label">Payment</div>
+                  <div className="right-panel-radio-group">
+                    <label className={`right-panel-radio-option ${paymentStatus === 'fully_paid' ? 'selected' : ''}`}>
+                      <input type="radio" name="payStatus" checked={paymentStatus === 'fully_paid'}
+                        onChange={async () => {
+                          if (actionInProgress) return;
+                          setActionInProgress(true);
+                          try { dispatch(setPaymentStatus('fully_paid')); await handlePreview(null, { paymentStatus: 'fully_paid' }); }
+                          finally { setActionInProgress(false); }
+                        }}
+                        disabled={actionInProgress} />
+                      <span>Fully Paid</span>
+                    </label>
+                    <label className={`right-panel-radio-option ${paymentStatus === 'partially_paid' ? 'partial-selected' : ''}`}>
+                      <input type="radio" name="payStatus" checked={paymentStatus === 'partially_paid'}
+                        onChange={async () => {
+                          if (actionInProgress) return;
+                          setActionInProgress(true);
+                          try { dispatch(setPaymentStatus('partially_paid')); dispatch(setPaidAmount(0)); await handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: 0 }); }
+                          finally { setActionInProgress(false); }
+                        }}
+                        disabled={actionInProgress} />
+                      <span>Partially Paid</span>
+                    </label>
+                  </div>
+                  {paymentStatus === 'partially_paid' && (
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                      <div className="right-panel-section" style={{ flex: 1, marginBottom: 0 }}>
+                        <div className="right-panel-label" style={{ fontSize: '12px' }}>Amount (₹)</div>
+                        <input
+                          type="number"
+                          className="right-panel-input"
+                          min="0"
+                          max={previewData.grandTotal || previewData.total}
+                          value={amountPaidLocalValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setAmountPaidLocalValue('');
+                              dispatch(setPaidAmount(0));
+                              if (paidAmountDebounceRef.current) { clearTimeout(paidAmountDebounceRef.current); paidAmountDebounceRef.current = null; }
+                              return;
+                            }
+                            if (!/^\d+$/.test(val)) return;
+                            setAmountPaidLocalValue(val);
+                            if (paidAmountDebounceRef.current) clearTimeout(paidAmountDebounceRef.current);
+                            paidAmountDebounceRef.current = setTimeout(() => {
+                              const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
+                              const amt = Math.min(Math.max(0, parseInt(val) || 0), maxAmt);
+                              dispatch(setPaidAmount(amt));
+                              setAmountPaidLocalValue(amt === 0 ? '' : String(amt));
+                              handlePreview(null, { paymentStatus: 'partially_paid', paidAmount: amt });
+                              paidAmountDebounceRef.current = null;
+                            }, 1000);
+                          }}
+                          onBlur={() => {
+                            const parsed = parseInt(amountPaidLocalValue, 10);
+                            if (amountPaidLocalValue === '' || isNaN(parsed)) return;
+                            const maxAmt = Math.round(previewData.grandTotal || previewData.total || 0);
+                            const finalAmount = Math.min(Math.max(0, parsed), maxAmt);
+                            if (finalAmount !== paidAmount) dispatch(setPaidAmount(finalAmount));
+                            setAmountPaidLocalValue(finalAmount === 0 ? '' : String(finalAmount));
+                          }}
+                          placeholder="0"
+                          style={{ padding: '6px', fontSize: '13px' }}
+                        />
+                      </div>
+                      <div className="right-panel-section" style={{ flex: 1, marginBottom: 0 }}>
+                        <div className="right-panel-label" style={{ fontSize: '12px' }}>Due Date <span style={{ color: '#dc3545' }}>*</span></div>
+                        <input
+                          type="date"
+                          className="right-panel-input"
+                          value={dueDateForPartial || ''}
+                          min={minFutureDueDate}
+                          onChange={(e) => {
+                            const selected = e.target.value;
+                            if (!selected) {
+                              setDueDateForPartial('');
+                              return;
+                            }
+                            if (selected < minFutureDueDate) {
+                              toast.error('❌ Due date must be a future date');
+                              setDueDateForPartial('');
+                              return;
+                            }
+                            setDueDateForPartial(selected);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key !== 'Tab') e.preventDefault();
+                          }}
+                          onPaste={(e) => e.preventDefault()}
+                          style={{ padding: '6px', fontSize: '13px' }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </aside>,
-              document.body
-            )}
-          </div>
+              )}
+              <div className="right-panel-section">
+                <div className="right-panel-label">Summary</div>
+                <div className="summary-row"><span>Cart Amount</span><span>₹{(previewData.total || 0).toFixed(2)}</span></div>
+                {(() => {
+                  const totalDiscount = (previewData.items || []).reduce((s, i) => s + (parseFloat(i.itemDiscount) || 0), 0);
+                  return totalDiscount > 0 ? <div className="summary-row"><span>Total Discount</span><span>-₹{totalDiscount.toFixed(2)}</span></div> : null;
+                })()}
+                {(previewData.previousBalance || 0) > 0 && <div className="summary-row"><span>Prev Balance</span><span>+₹{(previewData.previousBalance || 0).toFixed(2)}</span></div>}
+                <div className="summary-row"><span>Grand Total</span><span>₹{Math.round(previewData.grandTotal || previewData.total || 0).toFixed(2)}</span></div>
+                <div className="summary-row"><span>Amount Paid</span><span>₹{Math.round(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || previewData.grandTotal || 0)).toFixed(2)}</span></div>
+                <div className="summary-row"><span>Balance Due</span><span>₹{(Math.max(0, Math.round(previewData.grandTotal || previewData.total || 0) - Math.round(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || previewData.grandTotal || 0)))).toFixed(2)}</span></div>
+              </div>
+            </aside>,
+            document.body
+          )}
         </div>
-      </Layout>
+      </div>
+    </Layout>
     );
   }
-
   // ─── CART / EDIT VIEW ────────────────────────────────────────────────────────
   return (
     <Layout>
@@ -1399,7 +1415,6 @@ const SellItem = () => {
               </div>
               <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#9ca3af' }}>New customer transaction fuel bills</p>
             </div>
-
             {/* Sticky search / seller selection */}
             <div className="card sticky-search-section" style={{ padding: '8px 12px' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-start', marginBottom: '0' }}>
@@ -1417,7 +1432,6 @@ const SellItem = () => {
                     ))}
                   </select>
                 </div>
-
                 {/* Nozzle */}
                 <div className="form-group" style={{ marginBottom: '8px', flex: '1 1 140px', maxWidth: '240px' }}>
                   <label>Nozzle</label>
@@ -1432,7 +1446,6 @@ const SellItem = () => {
                     ))}
                   </select>
                 </div>
-
                 {/* Seller Selection */}
                 <div className="form-group" style={{ marginBottom: '8px', flex: '2 1 200px' }}>
                   <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1443,7 +1456,8 @@ const SellItem = () => {
                       </span>
                     )}
                   </label>
-                  <div className="search-wrapper" style={{ position: 'relative' }}>
+                  {/* FIX 1: Added overflow: 'visible' to search-wrapper */}
+                  <div className="search-wrapper" style={{ position: 'relative', overflow: 'visible' }}>
                     <input
                       ref={sellerSearchInputRef}
                       type="text"
@@ -1477,25 +1491,43 @@ const SellItem = () => {
                         onMouseDown={(e) => e.preventDefault()}
                       >×</button>
                     )}
-                    {showSellerSuggestions && filteredSellerParties.length > 0 && (
-                      <div className="suggestions seller-suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}>
-                        {filteredSellerParties.map(party => (
-                          <div
-                            key={party.id}
-                            className="suggestion-item"
-                            onClick={() => { dispatch(selectSellerParty(party)); dispatch(setShowSellerSuggestions(false)); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-                          >
-                            <span style={{ fontWeight: '600' }}>{party.party_name}</span>
-                            {party.mobile_number && <span style={{ fontSize: '12px', color: '#6c7f8f', whiteSpace: 'nowrap' }}>📱 {party.mobile_number}</span>}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {sellerSearchQuery.trim() && filteredSellerParties.length === 0 && sellerParties.length > 0 && (
-                      <div className="suggestions seller-suggestions" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000 }}>
-                        <div className="suggestion-item">No seller party found</div>
-                      </div>
+                    {sellerSuggestPos && sellerDropdownOpen && createPortal(
+                      <div
+                        className="suggestions seller-suggestions seller-suggestions-portal"
+                        style={{
+                          position: 'fixed',
+                          left: sellerSuggestPos.left,
+                          top: sellerSuggestPos.top,
+                          width: sellerSuggestPos.width,
+                          maxHeight: 'min(360px, 55vh)',
+                          overflowY: 'auto',
+                          zIndex: 20000,
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        {filteredSellerParties.length > 0 ? (
+                          filteredSellerParties.map((party) => (
+                            <div
+                              key={party.id}
+                              className="suggestion-item"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                dispatch(selectSellerParty(party));
+                                dispatch(setShowSellerSuggestions(false));
+                              }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                              <span style={{ fontWeight: '600' }}>{party.party_name}</span>
+                              {party.mobile_number && (
+                                <span style={{ fontSize: '12px', color: '#6c7f8f', whiteSpace: 'nowrap' }}>📱 {party.mobile_number}</span>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="suggestion-item">No seller party found</div>
+                        )}
+                      </div>,
+                      document.body
                     )}
                   </div>
                   {loading.sellerParties ? (
@@ -1509,7 +1541,6 @@ const SellItem = () => {
                   ) : null}
                 </div>
               </div>
-
               {/* Seller Info Compact */}
               {sellerInfo && (
                 <div className="seller-info-compact" style={{ padding: '6px 10px', marginTop: '6px', fontSize: '12px' }}>
@@ -1524,7 +1555,7 @@ const SellItem = () => {
                   {sellerInfo.due_date && (
                     <div style={{ borderLeft: '1px solid #374151', paddingLeft: '8px', color: '#e8593c' }}>
                       <span style={{ fontSize: '12px', marginRight: '4px' }}>Last Due:</span>
-                      {new Date(sellerInfo.due_date).toLocaleDateString('en-IN')}
+                      {formatDateInIndia(sellerInfo.due_date)}
                     </div>
                   )}
                   {sellerInfo.gst_number && (
@@ -1538,7 +1569,6 @@ const SellItem = () => {
                 </div>
               )}
             </div>
-
             {/* Cart Table */}
             {selectedSeller && (
               <div className="card" style={{ padding: '8px 12px' }}>
@@ -1563,7 +1593,6 @@ const SellItem = () => {
                       </button>
                     )}
                   </div>
-
                   <div className="table-responsive-container">
                     <table className="table">
                       <thead>
@@ -1586,7 +1615,6 @@ const SellItem = () => {
                           const discountVal = parseFloat(item.discount || 0);
                           const effectiveRate = saleRateVal - (quantity > 0 ? (discountVal / quantity) : 0);
                           const isUnderMinRate = item.min_sale_rate != null && effectiveRate < parseFloat(item.min_sale_rate);
-
                           return (
                             <tr key={item.item_id} className={isOverStock ? 'over-stock-row' : ''}>
                               <td style={{ textAlign: 'center', fontWeight: '600', color: '#9aaebf', verticalAlign: 'middle' }}>{index + 1}</td>
@@ -1619,26 +1647,28 @@ const SellItem = () => {
                                 />
                               </td>
                               {/* QTY */}
-                              <td style={{ textAlign: 'center' }}>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={item.quantity === '' ? '' : item.quantity}
-                                  onChange={(e) => handleUpdateQuantity(item.item_id, e.target.value)}
-                                  onBlur={(e) => {
-                                    const isPetrolDiesel = item.product_code === 'PETROL-001' || item.product_code === 'DIESEL-001';
-                                    const val = e.target.value;
-                                    if (isPetrolDiesel && (val === '' || parseInt(val, 10) === 0)) {
-                                      dispatch(updateItemQuantity({ itemId: item.item_id, quantity: 0 }));
-                                      return;
-                                    }
-                                    if (val === '' || parseInt(val, 10) <= 0) handleUpdateQuantity(item.item_id, '1');
-                                  }}
-                                  className={isOverStock ? 'over-stock-input error' : ''}
-                                  style={{ width: '70px', textAlign: 'center' }}
-                                />
-                                {isOverStock && <div className="stock-warning">Max: {availableQty}</div>}
-                                {!isOverStock && availableQty > 0 && <div className="stock-info">{availableQty} left</div>}
+                              <td className="si-qty-cell">
+                                <div className="si-qty-cell-inner">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.quantity === '' ? '' : item.quantity}
+                                    onChange={(e) => handleUpdateQuantity(item.item_id, e.target.value)}
+                                    onBlur={(e) => {
+                                      const isPetrolDiesel = item.product_code === 'PETROL-001' || item.product_code === 'DIESEL-001';
+                                      const val = e.target.value;
+                                      if (isPetrolDiesel && (val === '' || parseInt(val, 10) === 0)) {
+                                        dispatch(updateItemQuantity({ itemId: item.item_id, quantity: 0 }));
+                                        return;
+                                      }
+                                      if (val === '' || parseInt(val, 10) <= 0) handleUpdateQuantity(item.item_id, '1');
+                                    }}
+                                    className={isOverStock ? 'over-stock-input error' : ''}
+                                    style={{ width: '70px', textAlign: 'center' }}
+                                  />
+                                  {isOverStock && <div className="stock-warning">Max: {availableQty}</div>}
+                                  {!isOverStock && availableQty > 0 && <div className="stock-info">{availableQty} left</div>}
+                                </div>
                               </td>
                               {/* DISCOUNT */}
                               <td style={{ textAlign: 'center' }}>
@@ -1685,7 +1715,6 @@ const SellItem = () => {
                             </tr>
                           );
                         })}
-
                         {/* Search Row */}
                         <tr className="table-search-row">
                           <td style={{ textAlign: 'center', fontWeight: '600', color: '#6c7f8f' }}>{selectedItems.length + 1}</td>
@@ -1709,8 +1738,20 @@ const SellItem = () => {
                                   } else if (e.key === 'Escape') { dispatch(setSearchQuery('')); setActiveSuggestionIndex(-1); }
                                 }}
                               />
-                              {searchQuery.trim().length >= 2 && (
-                                <div className="table-suggestions item-suggestions">
+                              {searchQuery.trim().length >= 2 && itemSuggestPos && createPortal(
+                                <div
+                                  className="table-suggestions item-suggestions item-suggestions-portal"
+                                  style={{
+                                    position: 'fixed',
+                                    left: itemSuggestPos.left,
+                                    top: itemSuggestPos.top,
+                                    width: itemSuggestPos.width,
+                                    maxHeight: 'min(360px, 55vh)',
+                                    overflowY: 'auto',
+                                    zIndex: 20000,
+                                    boxSizing: 'border-box'
+                                  }}
+                                >
                                   <div className="table-suggestions-header">
                                     <span>Product Suggestions</span>
                                     {loading.items && <div className="search-spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }}></div>}
@@ -1732,6 +1773,7 @@ const SellItem = () => {
                                         <div
                                           key={item.id}
                                           className={`table-suggestion-item ${idx === activeSuggestionIndex ? 'active' : ''} ${isOutOfStock ? 'out-of-stock' : ''} ${isAlreadyInCart ? 'already-selected' : ''}`}
+                                          onMouseDown={(e) => e.preventDefault()}
                                           onClick={() => {
                                             if (!isOutOfStock) { handleAddItemToCart(item); dispatch(setSearchQuery('')); setActiveSuggestionIndex(-1); itemSearchInputRef.current?.focus(); }
                                             else toast.warning('Product out of stock');
@@ -1763,7 +1805,8 @@ const SellItem = () => {
                                       <span>↑↓ Navigate • Enter to Add</span>
                                     </div>
                                   )}
-                                </div>
+                                </div>,
+                                document.body
                               )}
                             </div>
                           </td>
@@ -1775,15 +1818,16 @@ const SellItem = () => {
                           </td>
                         </tr>
                       </tbody>
+                      {/* FIX 2: Added whiteSpace: 'nowrap' to tfoot cells */}
                       <tfoot>
-                        <tr>
-                          <td colSpan="5" style={{ textAlign: 'right', fontSize: '12px', paddingRight: '12px', color: '#9aaebf', fontWeight: '800', border: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            Cart balance:
+                        <tr className="si-cart-total-row">
+                          <td colSpan="5" className="si-cart-total-label">
+                            Cart balance
                           </td>
-                          <td style={{ fontWeight: '800', fontSize: '16px', color: 'var(--pp-orange, #f59a30)', textAlign: 'right', fontFamily: 'var(--pp-font-mono, monospace)', border: 'none' }}>
+                          <td className="si-cart-total-amount">
                             ₹{calculateTotal().toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td style={{ border: 'none' }}></td>
+                          <td style={{ border: 'none' }} />
                         </tr>
                       </tfoot>
                     </table>
@@ -1794,7 +1838,6 @@ const SellItem = () => {
           </div>
         </div>
       </div>
-
       {/* Right Panel — cart mode */}
       {createPortal(
         <aside className="sell-item-right-panel">
@@ -1846,7 +1889,6 @@ const SellItem = () => {
         </aside>,
         document.body
       )}
-
       {/* Success Modal */}
       {showSuccessModal && successModalData && successModalData.transactionId && createPortal(
         <div
@@ -1865,13 +1907,11 @@ const SellItem = () => {
               </h3>
               <button className="modal-close" onClick={() => { setShowSuccessModal(false); setSuccessModalData(null); }}>×</button>
             </div>
-
             <div className="modal-body" style={{ padding: '20px' }}>
               <div style={{ textAlign: 'center', marginBottom: '20px', padding: '12px', backgroundColor: '#1f2937', borderRadius: '8px' }}>
                 <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '5px' }}>Bill Number</div>
                 <div style={{ fontSize: '16px', fontWeight: '600', color: '#f3f4f6' }}>{successModalData.billNumber}</div>
               </div>
-
               <h4 style={{ marginBottom: '15px', color: '#f3f4f6', fontSize: '16px', fontWeight: '600' }}>Transaction Summary</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 {[
@@ -1892,7 +1932,6 @@ const SellItem = () => {
                   </div>
                 )}
               </div>
-
               <h4 style={{ marginBottom: '15px', color: '#f3f4f6', fontSize: '16px', fontWeight: '600' }}>Party Information</h4>
               <div style={{ padding: '15px', backgroundColor: '#1f2937', borderRadius: '8px', border: '1px solid #374151', marginBottom: '15px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -1918,12 +1957,10 @@ const SellItem = () => {
                   </div>
                 </div>
               </div>
-
               <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1f2937', borderRadius: '8px', fontSize: '12px', color: '#6c757d' }}>
                 Transaction Date: {successModalData.date}
               </div>
             </div>
-
             <div className="modal-footer" style={{ position: 'sticky', bottom: 0, backgroundColor: '#1f2937', borderTop: '1px solid #374151', padding: '15px 20px', display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button onClick={handleNewSale} className="btn btn-primary" disabled={downloadingPDF || printingPDF || downloadingReceipt} style={{ minWidth: '120px' }}>🆕 New Sale</button>
               <button onClick={() => handleDownloadPDF(successModalData.transactionId, successModalData.billNumber)} className="btn btn-primary" disabled={downloadingPDF || printingPDF || downloadingReceipt} style={{ minWidth: '140px' }}>

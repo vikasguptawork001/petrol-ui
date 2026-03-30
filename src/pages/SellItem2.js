@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDateInIndia } from '../utils/dateUtils';
 import {
   searchItems,
   searchSellers,
@@ -208,7 +208,7 @@ const SellItem2 = () => {
         paidAmount: calculations.paidAmount,
         balanceAmount: calculations.balanceAmount,
         paymentStatus,
-        date: new Date().toLocaleDateString('en-IN'),
+        date: formatDateInIndia(new Date()),
         invoiceNumber: `INV-${Date.now()}`
       };
       
@@ -540,7 +540,7 @@ const SellItem2 = () => {
                     <strong>Invoice No:</strong> INV-{Date.now()}
                   </div>
                   <div>
-                    <strong>Date:</strong> {new Date().toLocaleDateString('en-IN')}
+                    <strong>Date:</strong> {formatDateInIndia(new Date())}
                   </div>
                 </div>
                 

@@ -9,6 +9,18 @@
   --app-pad-y: clamp(14px, 1.8vw, 24px);
   --app-max: min(100%, 1920px);
   --app-readable: min(100%, 1680px);
+  /* Shared content width — laptop & desktop (readable line length on ultra-wide) */
+  --layout-max-width: var(--app-readable, min(100%, 1680px));
+  /* Breakpoint tokens (reference for media queries & JS if needed) */
+  --bp-tablet: 900px;
+  --bp-laptop: 1024px;
+  --bp-laptop-lg: 1280px;
+  --bp-desktop: 1440px;
+  --bp-desktop-xl: 1920px;
+  /* Fluid body text for main shells */
+  --text-page-title: clamp(1.125rem, 1rem + 0.5vw, 1.35rem);
+  --text-section: clamp(0.9375rem, 0.88rem + 0.2vw, 1.0625rem);
+  --text-muted: clamp(0.75rem, 0.7rem + 0.15vw, 0.875rem);
 }
 
 /* ─── Home / hub hero (Dashboard) ─── */
@@ -124,14 +136,46 @@
 }
 
 /* Wide monitors: avoid ultra-wide content */
+@media (min-width: 1024px) {
+  :root {
+    --app-pad-x: clamp(18px, 2vw, 32px);
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --app-pad-x: clamp(20px, 2.2vw, 36px);
+    --app-pad-y: clamp(16px, 1.6vw, 28px);
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --layout-max-width: min(100%, 1720px);
+  }
+}
+
 @media (min-width: 1920px) {
   :root {
     --app-max: 1920px;
+    --layout-max-width: min(100%, 1920px);
   }
 }
 
 @media (min-width: 2200px) {
+  .layout .header-content,
+  .layout .footer-content,
   .layout .main-content {
     max-width: 2048px;
   }
+}
+
+/* Header / footer align with main content width */
+.layout .header-content,
+.layout .footer-content {
+  max-width: var(--layout-max-width);
+}
+
+.layout .main-content {
+  max-width: var(--layout-max-width);
 }

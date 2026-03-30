@@ -4,6 +4,7 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
+import { formatDateInIndia } from '../utils/dateUtils';
 
 import ActionMenu from '../components/ActionMenu';
 import './ReturnItem.css';
@@ -561,7 +562,7 @@ const ReturnItem = () => {
           returnAmount: previewData?.total || 0,
           reason: returnData.reason,
           returnType: returnData.return_type,
-          date: new Date().toLocaleDateString()
+          date: formatDateInIndia(new Date())
         });
         setShowReceiptModal(true);
       } else if (response.data.return_transaction_id && response.data.bill_number && partyType === 'buyer') {
