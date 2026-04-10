@@ -19,6 +19,8 @@ import DueSheet from './pages/DueSheet';
 import Nozzles from './pages/Nozzles';
 import Attendants from './pages/Attendants';
 import NozzleReading from './pages/NozzleReading';
+import DayWiseReports from './pages/DayWiseReports';
+import Expenses from './pages/Expenses';
 import CreditorDashboard from './pages/CreditorDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -115,6 +117,22 @@ function App() {
             element={
               <PrivateRoute>
                 <SellReport />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/day-wise-reports"
+            element={
+              <PrivateRoute>
+                <DayWiseReports />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <PrivateRoute>
+                <Expenses />
               </PrivateRoute>
             }
           />

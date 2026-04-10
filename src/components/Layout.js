@@ -35,6 +35,8 @@ const Layout = ({ children }) => {
     { path: '/nozzles', label: 'Manage Nozzles', roles: ['admin', 'super_admin'] },
     { path: '/attendants', label: 'Manage Attendants', roles: ['admin', 'super_admin'] },
     { path: '/sell-report', label: 'Sell Report' },
+    { path: '/day-wise-reports', label: 'Day-wise Reports' },
+    { path: '/expenses', label: 'Expenses' },
     { path: '/sell-report-items', label: 'Item-wise Sell Report', roles: ['admin', 'super_admin'] },
     // { path: '/return-report', label: 'Return Report' },
     { path: '/order-sheet', label: 'Order Sheet' },

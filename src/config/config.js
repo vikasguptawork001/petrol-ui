@@ -49,11 +49,17 @@ const config = {
     returnsReport: '/api/reports/returns',
     returnsReportExport: '/api/reports/returns/export',
     returnsBillDetails: (identifier) => `/api/reports/returns/bill/${identifier}`,
+    nozzleReadingsDaywiseReport: '/api/reports/nozzle-readings/daywise',
+    salesDaywiseReport: '/api/reports/sales/daywise',
     
     // Nozzles & attendants (petrol pump)
     nozzles: '/api/nozzles',
     attendants: '/api/attendants',
     nozzleReadings: '/api/nozzle-readings',
+
+    expenses: '/api/expenses',
+    expensesReportSummary: '/api/expenses/report/summary',
+    expensesReportByPurpose: '/api/expenses/report/by-purpose',
 
     // Orders endpoints
     orders: '/api/orders',
