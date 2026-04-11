@@ -322,7 +322,7 @@ const Expenses = () => {
               <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Expenses</h1>
             </div>
             <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>
-              Record date, amount, purpose, paid to, reason — and run reports by period
+              Track what you spent, who you paid, and why — then see totals by day and by category
             </p>
           </div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -428,12 +428,12 @@ const Expenses = () => {
                   />
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={lbl}>Why (reason)</label>
+                  <label style={lbl}>Reason (why this payment)</label>
                   <textarea
                     value={form.reason}
                     onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                     style={{ ...inp, minHeight: '64px', resize: 'vertical' }}
-                    placeholder="Brief reason for this expense"
+                    placeholder="Short note — e.g. diesel for generator, shop rent"
                   />
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -557,7 +557,7 @@ const Expenses = () => {
                     <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Amount</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Purpose</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Paid to</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Why</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Reason</th>
                     <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Actions</th>
                   </tr>
                 </thead>

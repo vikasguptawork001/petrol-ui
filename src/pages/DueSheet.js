@@ -457,7 +457,7 @@ export function DueSheetPanel({ embedded = false }) {
   useEffect(() => {
     if (!user || user.role === 'super_admin') return;
     if (!embedded) {
-      toast.error('Access denied. Due Sheet is visible only to Super Admin.');
+      toast.error('This page is only for the business owner account.');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, embedded]);
@@ -632,28 +632,35 @@ export function DueSheetPanel({ embedded = false }) {
     if (embedded) {
       return (
         <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
-          Due Sheet is visible only to Super Admin.
+          This list is only available on the owner login.
         </div>
       );
     }
     return (
       <div style={{ padding: '24px', textAlign: 'center', color: '#e8593c', fontWeight: 500 }}>
-        Access denied. Due Sheet is visible only to Super Admin.
+        This page is only for the owner login. Ask your administrator.
       </div>
     );
   }
 
   const inner = (
     <>
+      <TransactionLoader
+        isLoading={loading || dueDateSaving || exporting}
+        message={
+          dueDateSaving ? 'Saving due date…' : exporting ? 'Preparing export…' : 'Loading due sheet…'
+        }
+        type="transaction"
+      />
     <div style={{ padding: embedded ? '0' : '8px 12px', maxWidth: '1600px', margin: '0 auto' }}>
       {!embedded && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon name="due" size={18} />
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Due Sheet</h1>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>What you owe suppliers</h1>
             </div>
-            <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Outstanding balances and credit recovery</p>
+            <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Balances due, dates, and who is overdue</p>
           </div>
         </div>
       )}
@@ -743,7 +750,7 @@ export function DueSheetPanel({ embedded = false }) {
       {/* Table */}
       <div style={{ overflowX: 'auto', borderRadius: '6px', border: '1px solid #2a3340' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}><TransactionLoader message="Loading..." /></div>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading…</div>
         ) : parties.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', fontSize: '12px' }}>No creditors found</div>
         ) : (

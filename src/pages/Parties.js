@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
@@ -33,7 +33,10 @@ const Parties = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sellerParties, setSellerParties] = useState([]);
+  const [listPage, setListPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [listPagination, setListPagination] = useState(null);
+  const [listSummary, setListSummary] = useState(null);
   const [selectedParty, setSelectedParty] = useState(null);
   const [showPartyDetailsModal, setShowPartyDetailsModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -59,6 +62,17 @@ const Parties = () => {
   });
   const [updating, setUpdating] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  /** 'all' | 'owing' | 'settled' — filter list by outstanding balance */
+  const [balanceFilter, setBalanceFilter] = useState('all');
+
+  const parseBal = (p) => parseFloat(p?.balance_amount || 0);
+  const formatInr = (n) => {
+    const v = typeof n === 'number' ? n : parseFloat(n);
+    if (!Number.isFinite(v)) return '0.00';
+    return v.toFixed(2);
+  };
+  const moneyClass = (balance) =>
+    balance > 0.009 ? 'parties-money parties-money--owe' : 'parties-money parties-money--clear';
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -67,68 +81,57 @@ const Parties = () => {
   }, []);
 
   useEffect(() => {
-    if (processingPayment) document.body.classList.add('transaction-loading');
-    else document.body.classList.remove('transaction-loading');
-    return () => document.body.classList.remove('transaction-loading');
-  }, [processingPayment]);
-
-  useEffect(() => {
-    fetchParties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery.trim()), 500);
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+      setListPage(1);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchParties = async () => {
+  useEffect(() => {
+    setListPage(1);
+  }, [balanceFilter, pageSize]);
+
+  const fetchParties = useCallback(async () => {
     try {
       setLoading(true);
-      let allSellers = [];
-      let sellerPage = 1;
-      let hasMoreSellers = true;
-
-      while (hasMoreSellers) {
-        const response = await apiClient.get(config.api.sellers, { 
-          params: { page: sellerPage, limit: 5000 } 
-        });
-        const sellers = response.data.parties || [];
-        allSellers = [...allSellers, ...sellers];
-        hasMoreSellers = sellers.length === 5000;
-        sellerPage++;
+      const response = await apiClient.get(config.api.sellers, {
+        params: {
+          page: listPage,
+          limit: pageSize,
+          search: debouncedSearchQuery || undefined,
+          balance: balanceFilter
+        }
+      });
+      const pg = response.data.pagination;
+      if (pg && listPage > pg.totalPages && pg.totalPages >= 1) {
+        setListPage(Math.max(1, pg.totalPages));
+        return;
       }
-
-      setSellerParties(allSellers);
-      setParties(allSellers.map(p => ({ ...p, party_type: 'seller' })));
+      const rows = response.data.parties || [];
+      setParties(rows.map((p) => ({ ...p, party_type: 'seller' })));
+      setListPagination(response.data.pagination || null);
+      setListSummary(response.data.summary || null);
     } catch (error) {
       console.error('Error fetching parties:', error);
       toast.error('Failed to load parties');
+      setParties([]);
+      setListPagination(null);
+      setListSummary(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [listPage, pageSize, debouncedSearchQuery, balanceFilter, toast]);
 
-  const filteredParties = useMemo(() => {
-    let filtered = parties;
-    if (debouncedSearchQuery) {
-      const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter(party =>
-        party.party_name?.toLowerCase().includes(query) ||
-        party.mobile_number?.includes(query) ||
-        String(party.cheque_number || '').toLowerCase().includes(query) ||
-        String(party.bank_name || '').toLowerCase().includes(query) ||
-        party.address?.toLowerCase().includes(query) ||
-        party.gst_number?.toLowerCase().includes(query)
-      );
-    }
-    return filtered.sort((a, b) => a.party_name?.localeCompare(b.party_name));
-  }, [parties, debouncedSearchQuery]);
+  useEffect(() => {
+    fetchParties();
+  }, [fetchParties]);
 
-  const totalBalance = useMemo(() => 
-    filteredParties.reduce((sum, p) => sum + parseFloat(p.balance_amount || 0), 0), 
-    [filteredParties]
-  );
+  const totalBalance = listSummary?.totalOutstanding ?? 0;
+  const totalOnFile = listSummary?.totalOnFile ?? 0;
+  const owingCount = listSummary?.owingCountGlobal ?? 0;
+  const totalFiltered = listPagination?.totalRecords ?? 0;
+  const rowOffset = (listPage - 1) * pageSize;
 
   const handleViewDetails = async (party) => {
     setSelectedParty(party);
@@ -355,173 +358,240 @@ const Parties = () => {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  const partiesBusy =
+    loading ||
+    processingPayment ||
+    updating ||
+    historyLoading ||
+    downloadingReceipt ||
+    printingReceipt;
+
   return (
     <Layout>
-      <TransactionLoader isLoading={loading || processingPayment} type={processingPayment ? "payment" : "transaction"} />
-      
-      <div style={{ padding: '12px 16px', maxWidth: '1600px', margin: '0 auto' }}>
-        <div
-          style={{
-            background: 'linear-gradient(145deg, #141b26 0%, #0f151f 100%)',
-            border: '1px solid #2a3340',
-            borderRadius: '12px',
-            padding: '16px 18px',
-            marginBottom: '16px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.25)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(245,154,48,0.12)', color: '#f59a30' }}>
-                  <Icons.User />
-                </span>
-                <div>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#f8fafc', letterSpacing: '-0.02em' }}>Creditors &amp; credit parties</h2>
-                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '4px 0 0 0', lineHeight: 1.5, maxWidth: '560px' }}>
-                    Search and review balances, open a party for full history, or record a payment when you are ready.
-                  </p>
-                </div>
+      <TransactionLoader
+        isLoading={partiesBusy}
+        type={processingPayment ? 'payment' : 'transaction'}
+        message={
+          processingPayment
+            ? undefined
+            : updating
+              ? 'Saving supplier…'
+              : historyLoading
+                ? 'Loading history…'
+                : downloadingReceipt
+                  ? 'Downloading receipt…'
+                  : printingReceipt
+                    ? 'Preparing print…'
+                    : undefined
+        }
+      />
+
+      <div className="parties-page parties-page-inner">
+        <header className="parties-hero parties-hero--compact">
+          <div className="parties-hero-top">
+            <div className="parties-hero-title-row">
+              <span className="parties-hero-icon" aria-hidden>
+                <Icons.User />
+              </span>
+              <div>
+                <h1>Suppliers &amp; balances</h1>
+                <p className="parties-hero-desc">
+                  DB search, filters, and paging — click a row for history or payment.
+                </p>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <button type="button" onClick={fetchParties} disabled={loading} className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '8px' }}>
-                Refresh list
+            <div className="parties-hero-actions">
+              <button
+                type="button"
+                onClick={fetchParties}
+                disabled={loading}
+                className="btn btn-secondary"
+                style={{ padding: '8px 14px', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '8px' }}
+              >
+                Refresh
               </button>
               {user?.role !== 'sales' && (
-                <Link to="/add-seller-party" className="btn btn-success" style={{ padding: '8px 16px', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '8px', textDecoration: 'none' }}>
-                  + New creditor
+                <Link
+                  to="/add-seller-party"
+                  className="btn btn-success"
+                  style={{ padding: '8px 16px', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '8px', textDecoration: 'none' }}
+                >
+                  + Add supplier
                 </Link>
               )}
             </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '14px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Directory</span>
-            <span style={{ background: 'rgba(245,154,48,0.15)', color: '#fbbf24', padding: '4px 12px', borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 700 }}>{sellerParties.length} parties</span>
-            <span style={{ color: '#475569' }}>|</span>
-            <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>
-              Combined outstanding: <strong style={{ color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>₹{totalBalance.toFixed(2)}</strong>
+        </header>
+
+        <div className="parties-toolbar parties-toolbar--compact">
+          <div className="parties-search-wrap">
+            <label htmlFor="creditor-search" className="parties-search-label">
+              Search (server)
+            </label>
+            <input
+              id="creditor-search"
+              type="search"
+              autoComplete="off"
+              placeholder="Name, mobile, email, GST, bank, cheque…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="parties-search-input"
+            />
+          </div>
+          <div className="parties-filter-group" role="group" aria-label="Filter by balance">
+            <span className="parties-filter-label">Balance</span>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'owing', label: 'Owing' },
+              { id: 'settled', label: 'Settled' }
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                className={`parties-filter-chip${balanceFilter === id ? ' is-active' : ''}`}
+                onClick={() => setBalanceFilter(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="parties-page-size">
+            <label htmlFor="parties-page-size" className="parties-filter-label">
+              Per page
+            </label>
+            <select
+              id="parties-page-size"
+              className="parties-page-size-select"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              {[15, 25, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="parties-kpi-grid parties-kpi-grid--compact">
+          <div className="parties-kpi parties-kpi--count">
+            <span className="parties-kpi-label">Match / filter</span>
+            <span className="parties-kpi-value">{totalFiltered}</span>
+            <span className="parties-kpi-hint">
+              {totalOnFile} on file
+              {owingCount > 0 ? ` · ${owingCount} owing` : ''}
             </span>
           </div>
+          {(user?.role === 'super_admin' || user?.role === 'admin') && (
+            <div className="parties-kpi parties-kpi--owe">
+              <span className="parties-kpi-label">Outstanding (filtered)</span>
+              <span className={`parties-kpi-value${totalBalance > 0.009 ? ' text-owe' : ''}`}>₹{formatInr(totalBalance)}</span>
+              <span className="parties-kpi-hint">Sum of balances for current search &amp; filters (all pages).</span>
+            </div>
+          )}
         </div>
 
-        <div style={{ marginBottom: '14px' }}>
-          <label htmlFor="creditor-search" style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
-            Search creditors
-          </label>
-          <input
-            id="creditor-search"
-            type="text"
-            placeholder="Name, mobile, bank, cheque, address, or GST…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 14px',
-              borderRadius: '10px',
-              border: '1px solid #334155',
-              background: '#0f172a',
-              color: '#f1f5f9',
-              fontSize: '0.9rem',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-          <div style={{ padding: '14px 16px', background: '#0f151f', borderRadius: '10px', border: '1px solid #2a3340', borderLeft: '4px solid #f59a30' }}>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Parties on file</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59a30', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>{sellerParties.length}</div>
-          </div>
-          <div style={{ padding: '14px 16px', background: '#0f151f', borderRadius: '10px', border: '1px solid #2a3340', borderLeft: '4px solid #22c55e' }}>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total outstanding</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4ade80', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>₹{totalBalance.toFixed(2)}</div>
-          </div>
-        </div>
-
-        {/* Table - Compact, No extra padding */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading...</div>
+          <div className="parties-loading">Loading suppliers…</div>
         ) : (
-          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #2a3340' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-              <thead style={{ background: '#0f151f' }}>
+          <div className="parties-table-shell">
+            <table className="parties-table">
+              <thead>
                 <tr>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>#</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Party Name</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Mobile</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>GST No.</th>
+                  <th className="idx" scope="col">
+                    #
+                  </th>
+                  <th scope="col">Supplier</th>
+                  <th scope="col">Mobile</th>
+                  <th scope="col">GST</th>
                   {(user?.role === 'super_admin' || user?.role === 'admin') && (
-                    <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: '#94a3b8' }}>Balance</th>
+                    <th className="num" scope="col">
+                      Balance (₹)
+                    </th>
                   )}
-                  <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>Actions</th>
+                  <th className="actions-cell" scope="col">
+                    <span className="visually-hidden">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredParties.map((party, idx) => (
-                  <tr
-                    key={party.id}
-                    style={{ borderBottom: '1px solid #2a3340', cursor: 'pointer' }}
-                    onClick={() => handleViewDetails(party)}
-                    title="Click row for details"
-                  >
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#94a3b8' }}>{idx + 1}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: 500, whiteSpace: 'nowrap' }}>{party.party_name}</td>
-                    <td style={{ padding: '8px 10px', color: '#9aaebf' }}>{party.mobile_number || '-'}</td>
-                    <td style={{ padding: '8px 10px', color: '#9aaebf', fontFamily: 'monospace', fontSize: '11px' }}>{party.gst_number || '-'}</td>
-                    {(user?.role === 'super_admin' || user?.role === 'admin') && (
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: parseFloat(party.balance_amount || 0) > 0 ? '#e8593c' : '#1d9e75' }}>
-                        ₹{parseFloat(party.balance_amount || 0).toFixed(2)}
+                {parties.map((party, idx) => {
+                  const bal = parseBal(party);
+                  return (
+                    <tr key={party.id} onClick={() => handleViewDetails(party)} title="View details">
+                      <td className="idx">{rowOffset + idx + 1}</td>
+                      <td className="name">{party.party_name}</td>
+                      <td className="meta">{party.mobile_number || '—'}</td>
+                      <td className="mono meta">{party.gst_number || '—'}</td>
+                      {(user?.role === 'super_admin' || user?.role === 'admin') && (
+                        <td className={`num ${moneyClass(bal)}`}>₹{formatInr(bal)}</td>
+                      )}
+                      <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
+                        <ActionMenu
+                          itemId={party.id}
+                          itemName={party.party_name}
+                          actions={[
+                            {
+                              label: 'View Details',
+                              icon: '👁️',
+                              onClick: () => handleViewDetails(party)
+                            },
+                            ...(user?.role === 'super_admin'
+                              ? [
+                                  {
+                                    label: 'Make Payment',
+                                    icon: '💰',
+                                    onClick: () => handleMakePayment(party)
+                                  },
+                                  {
+                                    label: 'Edit supplier',
+                                    icon: '✏️',
+                                    onClick: () => handleEdit(party)
+                                  },
+                                  {
+                                    label: 'Delete',
+                                    icon: '🗑️',
+                                    danger: true,
+                                    onClick: () => handleArchive(party)
+                                  }
+                                ]
+                              : [])
+                          ]}
+                        />
                       </td>
-                    )}
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                      <ActionMenu
-                        itemId={party.id}
-                        itemName={party.party_name}
-                        actions={[
-                          {
-                            label: 'View Details',
-                            icon: '👁️',
-                            onClick: () => handleViewDetails(party)
-                          },
-                          ...(user?.role === 'super_admin' ? [
-                            {
-                              label: 'Make Payment',
-                              icon: '💰',
-                              onClick: () => handleMakePayment(party)
-                            },
-                            {
-                              label: 'Edit Creditor',
-                              icon: '✏️',
-                              onClick: () => handleEdit(party)
-                            },
-                            {
-                              label: 'Delete',
-                              icon: '🗑️',
-                              danger: true,
-                              onClick: () => handleArchive(party)
-                            }
-                          ] : [])
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
-              {user?.role === 'super_admin' && filteredParties.length > 0 && (
-                <tfoot style={{ background: '#0f151f', borderTop: '1px solid #2a3340' }}>
+              {(user?.role === 'super_admin' || user?.role === 'admin') && parties.length > 0 && totalFiltered > 0 && (
+                <tfoot>
                   <tr>
-                    <td colSpan="4" style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>Total Outstanding:</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#f59a30' }}>₹{totalBalance.toFixed(2)}</td>
-                    <td></td>
+                    <td colSpan={4} style={{ textAlign: 'right', color: 'var(--pp-text-secondary, #94a3b8)' }}>
+                      Total outstanding (filtered)
+                    </td>
+                    <td className={`num ${moneyClass(totalBalance)}`}>₹{formatInr(totalBalance)}</td>
+                    <td />
                   </tr>
                 </tfoot>
               )}
             </table>
-            {filteredParties.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
-                {searchQuery ? 'No matching creditors found' : 'No creditors found'}
+            {parties.length === 0 && !loading && (
+              <div className="parties-empty">
+                {debouncedSearchQuery || balanceFilter !== 'all'
+                  ? 'No suppliers match your search or filters.'
+                  : 'No suppliers found.'}
+              </div>
+            )}
+            {listPagination && listPagination.totalPages > 1 && (
+              <div className="parties-pagination-wrap">
+                <Pagination
+                  currentPage={listPage}
+                  totalPages={listPagination.totalPages}
+                  onPageChange={setListPage}
+                  totalRecords={listPagination.totalRecords}
+                  showTotalRecords
+                />
               </div>
             )}
           </div>
@@ -938,7 +1008,7 @@ const Parties = () => {
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Edit Creditor</h3>
+              <h3>Edit supplier</h3>
               <button className="modal-close" type="button" onClick={() => setShowEditModal(false)} aria-label="Close">
                 <Icons.Close />
               </button>

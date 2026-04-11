@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
 import { useToast } from '../context/ToastContext';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 
 const AddBuyerParty = () => {
@@ -199,6 +200,7 @@ const AddBuyerParty = () => {
 
   return (
     <Layout>
+      <TransactionLoader isLoading={isSubmitting} message="Saving buyer…" type="transaction" />
       <div className="party-form">
         <h2>Add Buyer Party</h2>
         <div className="card">

@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 
 const DASHBOARD_TABS = [
-  { id: 'items', label: 'Stock & items' },
-  { id: 'nozzles', label: 'Nozzle readings' },
-  { id: 'creditors', label: 'Due sheet' }
+  { id: 'items', label: 'Stock & products' },
+  { id: 'nozzles', label: 'Pump readings' },
+  { id: 'creditors', label: 'Money owed' }
 ];
 
 const Layout = ({ children }) => {
@@ -25,23 +25,20 @@ const Layout = ({ children }) => {
   };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/add-item', label: 'Add Item', roles: ['admin', 'super_admin', 'sales'] },
-    { path: '/sell-item', label: 'Sell Item' },
-    // { path: '/return-item', label: 'Return Item' },
-    { path: '/parties', label: 'Creditors' },
-    // { path: '/add-seller-party', label: 'Add Creditor', roles: ['admin', 'super_admin'] },
-    { path: '/nozzle-reading', label: 'Daily Nozzle Reading' },
-    { path: '/nozzles', label: 'Manage Nozzles', roles: ['admin', 'super_admin'] },
-    { path: '/attendants', label: 'Manage Attendants', roles: ['admin', 'super_admin'] },
-    { path: '/sell-report', label: 'Sell Report' },
-    { path: '/day-wise-reports', label: 'Day-wise Reports' },
+    { path: '/dashboard', label: 'Home / Dashboard' },
+    { path: '/add-item', label: 'Add product to stock', roles: ['admin', 'super_admin', 'sales'] },
+    { path: '/sell-item', label: 'New sale (billing)' },
+    { path: '/parties', label: 'Suppliers & balances' },
+    { path: '/nozzle-reading', label: 'Daily pump readings' },
+    { path: '/pump-shift-reports', label: 'Pump shift reports' },
+    { path: '/nozzles', label: 'Pumps & nozzles', roles: ['admin', 'super_admin'] },
+    { path: '/attendants', label: 'Pump staff', roles: ['admin', 'super_admin'] },
+    { path: '/sell-report', label: 'Sales report' },
+    { path: '/day-wise-reports', label: 'Daily summaries' },
     { path: '/expenses', label: 'Expenses' },
-    { path: '/sell-report-items', label: 'Item-wise Sell Report', roles: ['admin', 'super_admin'] },
-    // { path: '/return-report', label: 'Return Report' },
-    { path: '/order-sheet', label: 'Order Sheet' },
-    // { path: '/creditor-dashboard', label: 'Creditor Dashboard', roles: ['super_admin'] },
-    { path: '/due-sheet', label: 'Due Sheet', roles: ['super_admin'] }
+    { path: '/sell-report-items', label: 'Sales by product', roles: ['admin', 'super_admin'] },
+    { path: '/order-sheet', label: 'Orders' },
+    { path: '/due-sheet', label: 'All dues & dates', roles: ['super_admin'] }
   ];
 
   // Filter menu items based on user role
@@ -52,9 +49,9 @@ const Layout = ({ children }) => {
 
   const getRoleLabel = (role) => {
     const roles = {
-      super_admin: 'Super Admin',
-      admin: 'Admin',
-      sales: 'Sales'
+      super_admin: 'Owner',
+      admin: 'Manager',
+      sales: 'Staff'
     };
     return roles[role] || role;
   };
@@ -89,8 +86,8 @@ const Layout = ({ children }) => {
             </nav>
           )}
           <div className="header-right">
-            <span className="user-info">
-              {user?.user_id} ({getRoleLabel(user?.role)})
+            <span className="user-info" title="Your login and access level">
+              Signed in as {user?.user_id} · {getRoleLabel(user?.role)}
             </span>
             <button onClick={handleLogout} className="btn btn-secondary">
               Logout

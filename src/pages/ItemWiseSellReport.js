@@ -53,7 +53,7 @@ const ItemWiseSellReport = () => {
   }, []);
 
   const params = useMemo(() => {
-    const p = { from_date: getLocalDateString(fromDate), to_date: getLocalDateString(toDate), gst_filter: 'all', page, limit };
+    const p = { from_date: getLocalDateString(fromDate), to_date: getLocalDateString(toDate), page, limit };
     if (nozzleFilter) p.nozzle_id = nozzleFilter;
     if (partyFilter) p.seller_party_id = partyFilter;
     if (attendantFilter) p.attendant_id = attendantFilter;
@@ -109,7 +109,7 @@ const ItemWiseSellReport = () => {
 
   return (
     <Layout>
-      <TransactionLoader isLoading={loading} type="transaction" message="Loading item-wise report..." />
+      <TransactionLoader isLoading={loading} type="transaction" message="Loading sales by product…" />
       <div style={{ padding: '10px 14px', maxWidth: '1600px', margin: '0 auto' }}>
 
         {/* Header */}
@@ -117,9 +117,9 @@ const ItemWiseSellReport = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '18px' }}>📦</span>
-              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Item-wise Sell Report</h1>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Sales by product</h1>
             </div>
-            <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>Sales summary per product with quantity and profit</p>
+            <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>How much you sold of each product — quantities and amounts</p>
           </div>
           <button
             onClick={exportToExcel}

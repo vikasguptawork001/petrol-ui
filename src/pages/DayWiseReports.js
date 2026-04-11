@@ -29,7 +29,6 @@ const DayWiseReports = () => {
   const [sellerParties, setSellerParties] = useState([]);
   const [attendantFilter, setAttendantFilter] = useState('');
   const [attendants, setAttendants] = useState([]);
-  const [gstFilter, setGstFilter] = useState('all');
   const [creditOnly, setCreditOnly] = useState(false);
 
   const [nozzleByDay, setNozzleByDay] = useState([]);
@@ -92,8 +91,6 @@ const DayWiseReports = () => {
             to_date: getLocalDateString(toDate),
             credit_only: creditOnly
           };
-          if (gstFilter === 'with_gst') params.gst_filter = 'with_gst';
-          else if (gstFilter === 'without_gst') params.gst_filter = 'without_gst';
           if (partyFilter) params.seller_party_id = partyFilter;
           if (nozzleFilter) params.nozzle_id = nozzleFilter;
           if (attendantFilter) params.attendant_id = attendantFilter;
@@ -115,7 +112,7 @@ const DayWiseReports = () => {
     };
     run();
     return () => ctrl.abort();
-  }, [tab, fromDate, toDate, nozzleFilter, partyFilter, attendantFilter, gstFilter, creditOnly]);
+  }, [tab, fromDate, toDate, nozzleFilter, partyFilter, attendantFilter, creditOnly]);
 
   const displayDate = (d) => {
     if (!d) return '—';
@@ -161,7 +158,7 @@ const DayWiseReports = () => {
         Bills: r.bill_count,
         'Total sales': fmt(r.total_sales),
         Paid: fmt(r.total_paid),
-        'Due (balance)': fmt(r.total_due)
+        'Still pending (₹)': fmt(r.total_due)
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -231,10 +228,10 @@ const DayWiseReports = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '18px' }}>📅</span>
-              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Day-wise reports</h1>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Daily summaries</h1>
             </div>
             <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>
-              Nozzle meter readings by day, and sales with paid vs due totals by day
+              See pump meter sales by day, and how much was collected vs still pending each day
             </p>
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -252,7 +249,7 @@ const DayWiseReports = () => {
                 color: tab === 'nozzle' ? '#1a1200' : '#9aaebf'
               }}
             >
-              Nozzle readings
+              Pump meters
             </button>
             <button
               type="button"
@@ -268,7 +265,7 @@ const DayWiseReports = () => {
                 color: tab === 'sales' ? '#1a1200' : '#9aaebf'
               }}
             >
-              Sales & due
+              Sales & pending
             </button>
             <button
               onClick={tab === 'nozzle' ? exportNozzleExcel : exportSalesExcel}
@@ -384,18 +381,6 @@ const DayWiseReports = () => {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label style={lbl}>GST</label>
-                  <select
-                    value={gstFilter}
-                    onChange={(e) => setGstFilter(e.target.value)}
-                    style={inp}
-                  >
-                    <option value="all">All</option>
-                    <option value="with_gst">With GST</option>
-                    <option value="without_gst">Without GST</option>
-                  </select>
-                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '4px' }}>
                   <label style={{ ...lbl, marginBottom: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input
@@ -404,7 +389,7 @@ const DayWiseReports = () => {
                       onChange={(e) => setCreditOnly(e.target.checked)}
                       style={{ accentColor: '#f59a30' }}
                     />
-                    <span>{'Credit bills only (balance > 0)'}</span>
+                    <span>{'Only unpaid / partly paid bills'}</span>
                   </label>
                 </div>
               </>
@@ -420,7 +405,6 @@ const DayWiseReports = () => {
                 setNozzleFilter('');
                 setPartyFilter('');
                 setAttendantFilter('');
-                setGstFilter('all');
                 setCreditOnly(false);
               }}
               style={{
@@ -448,7 +432,7 @@ const DayWiseReports = () => {
               </div>
             )}
             <div style={{ marginBottom: '8px', fontSize: '11px', color: '#9aaebf', fontWeight: 600 }}>
-              By date & nozzle
+              By date and pump nozzle
             </div>
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
@@ -489,7 +473,7 @@ const DayWiseReports = () => {
               </table>
             </div>
             <div style={{ margin: '16px 0 8px', fontSize: '11px', color: '#9aaebf', fontWeight: 600 }}>
-              Daily totals (all nozzles)
+              Daily totals (all pumps combined)
             </div>
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
@@ -539,7 +523,7 @@ const DayWiseReports = () => {
             )}
             {salesCreditOnly && (
               <p style={{ fontSize: '11px', color: '#f59a30', marginBottom: '8px' }}>
-                Showing days with at least one bill that still has a balance (credit only).
+                Only bills that still have money pending are included in these totals.
               </p>
             )}
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflowX: 'auto' }}>
@@ -550,7 +534,7 @@ const DayWiseReports = () => {
                     <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Bills</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Sales</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Paid</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Due</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Pending</th>
                   </tr>
                 </thead>
                 <tbody>

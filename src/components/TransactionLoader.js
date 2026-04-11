@@ -11,6 +11,19 @@ const TransactionLoader = ({ isLoading, message, type = 'transaction' }) => {
   const animRef = useRef(null);
   const startTimeRef = useRef(null);
 
+  /** Lock scroll + show wait cursor while any CRUD/async overlay is active */
+  useEffect(() => {
+    if (!isLoading) return undefined;
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.add('tl-active');
+    body.classList.add('tl-active');
+    return () => {
+      root.classList.remove('tl-active');
+      body.classList.remove('tl-active');
+    };
+  }, [isLoading]);
+
   useEffect(() => {
     if (!isLoading) {
       litresRef.current = 0;

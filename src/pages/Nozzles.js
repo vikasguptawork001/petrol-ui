@@ -205,6 +205,7 @@ import config from '../config/config';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getLocalDateString } from '../utils/dateUtils';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 import './PetrolPump.css';
 import '../styles/petrolpump-theme.css';
@@ -235,6 +236,7 @@ const Nozzles = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [reportFrom, setReportFrom] = useState(() => {
     const d = new Date();
@@ -242,7 +244,6 @@ const Nozzles = () => {
     return getLocalDateString(d);
   });
   const [reportTo, setReportTo] = useState(() => getLocalDateString());
-  const [gstFilter, setGstFilter] = useState('all');
   const [reportRows, setReportRows] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
 
@@ -257,8 +258,6 @@ const Nozzles = () => {
     setReportLoading(true);
     try {
       const params = { from_date: reportFrom, to_date: reportTo };
-      if (gstFilter === 'with_gst') params.gst_filter = 'with_gst';
-      if (gstFilter === 'without_gst') params.gst_filter = 'without_gst';
       const res = await apiClient.get(config.api.salesByNozzle, { params });
       setReportRows(Array.isArray(res.data?.rows) ? res.data.rows : []);
     } catch (e) {
@@ -268,7 +267,7 @@ const Nozzles = () => {
     } finally {
       setReportLoading(false);
     }
-  }, [user, reportFrom, reportTo, gstFilter, toast]);
+  }, [user, reportFrom, reportTo, toast]);
 
   useEffect(() => {
     fetchSalesByNozzle();
@@ -341,14 +340,19 @@ const Nozzles = () => {
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? It will be archived and hidden from the list.`)) return;
+    setDeleting(true);
     try {
       await apiClient.delete(`${config.api.nozzles}/${id}`);
       toast.success('Nozzle deleted');
       fetchNozzles();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete');
+    } finally {
+      setDeleting(false);
     }
   };
+
+  const crudBusy = loading || submitting || reportLoading || deleting;
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -364,6 +368,13 @@ const Nozzles = () => {
 
   return (
     <Layout>
+      <TransactionLoader
+        isLoading={crudBusy}
+        message={
+          deleting ? 'Archiving nozzle…' : submitting ? 'Saving nozzle…' : reportLoading ? 'Loading sales…' : 'Loading…'
+        }
+        type="transaction"
+      />
       <div style={{ padding: '8px 12px', maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
@@ -395,7 +406,7 @@ const Nozzles = () => {
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>Nozzle directory</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>These names appear when recording a sale.</div>
             </div>
-            <button onClick={openAdd} type="button" style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <button onClick={openAdd} type="button" disabled={crudBusy} style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: crudBusy ? 'not-allowed' : 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px', opacity: crudBusy ? 0.65 : 1 }}>
               <Icon name="plus" size={14} /> Add nozzle
             </button>
           </div>
@@ -422,10 +433,10 @@ const Nozzles = () => {
                       <td style={{ padding: '10px 12px', fontWeight: 500 }}>{n.name}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button type="button" onClick={() => openEdit(n)} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fff' }}>
+                          <button type="button" onClick={() => openEdit(n)} disabled={crudBusy} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fff', opacity: crudBusy ? 0.65 : 1 }}>
                             Edit
                           </button>
-                          <button type="button" onClick={() => handleDelete(n.id, n.name)} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#fecaca' }}>
+                          <button type="button" onClick={() => handleDelete(n.id, n.name)} disabled={crudBusy} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fecaca', opacity: crudBusy ? 0.65 : 1 }}>
                             Archive
                           </button>
                         </div>
@@ -457,7 +468,7 @@ const Nozzles = () => {
             <button
               type="button"
               onClick={fetchSalesByNozzle}
-              disabled={reportLoading}
+              disabled={crudBusy}
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
@@ -466,7 +477,8 @@ const Nozzles = () => {
                 border: '1px solid #374151',
                 borderRadius: '8px',
                 color: '#9aaebf',
-                cursor: reportLoading ? 'wait' : 'pointer'
+                cursor: crudBusy ? 'wait' : 'pointer',
+                opacity: crudBusy ? 0.65 : 1
               }}
             >
               {reportLoading ? 'Refreshing…' : 'Refresh'}
@@ -480,14 +492,6 @@ const Nozzles = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '140px' }}>
               <label style={{ fontSize: '10px', fontWeight: 700, color: '#6c7f8f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>To</label>
               <input type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2a3340', background: '#0a0f16', color: '#eef2f8', fontSize: '12px' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '160px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 700, color: '#6c7f8f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>GST</label>
-              <select value={gstFilter} onChange={(e) => setGstFilter(e.target.value)} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #2a3340', background: '#0a0f16', color: '#eef2f8', fontSize: '12px' }}>
-                <option value="all">All bills</option>
-                <option value="with_gst">With GST only</option>
-                <option value="without_gst">Without GST only</option>
-              </select>
             </div>
           </div>
           {reportLoading && reportRows.length === 0 ? (

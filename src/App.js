@@ -21,6 +21,7 @@ import Attendants from './pages/Attendants';
 import NozzleReading from './pages/NozzleReading';
 import DayWiseReports from './pages/DayWiseReports';
 import Expenses from './pages/Expenses';
+import PumpShiftReports from './pages/PumpShiftReports';
 import CreditorDashboard from './pages/CreditorDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -39,7 +40,7 @@ const PrivateRoute = ({ children }) => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '16px', background: '#f8fafc' }}>
         {usePetrolLoader && <PetrolNozzleLoader size="large" />}
-        <span style={{ color: usePetrolLoader ? '#64748b' : '#1e293b', fontWeight: 500 }}>Loading…</span>
+        <span style={{ color: usePetrolLoader ? '#64748b' : '#1e293b', fontWeight: 500 }}>Opening your workspace…</span>
       </div>
     );
   }
@@ -197,6 +198,14 @@ function App() {
             element={
               <PrivateRoute>
                 <NozzleReading />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/pump-shift-reports"
+            element={
+              <PrivateRoute>
+                <PumpShiftReports />
               </PrivateRoute>
             }
           />

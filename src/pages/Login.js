@@ -37,7 +37,7 @@ const Login = () => {
     return (
       <div className="loader-container">
         <PetrolNozzleLoader size="large" />
-        <div className="loader-text" style={{ marginTop: '8px' }}>loading system...</div>
+        <div className="loader-text" style={{ marginTop: '8px' }}>Please wait…</div>
         <div className="fuel-gauge" style={{ width: '200px' }}>
           <span className="fuel-gauge-e">E</span>
           <div className="fuel-gauge-track">
@@ -53,19 +53,19 @@ const Login = () => {
     <div className="login-container">
       <div className="login-box">
         {/* Dispenser icon + company name */}
-        <h2>⛽ Petrol Pump System</h2>
-        <p className="brand-tagline">Steepray Info Solutions</p>
+        <h2>⛽ Steepray business app</h2>
+        <p className="brand-tagline">Sign in with your staff login</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="login-userid">User ID</label>
+            <label htmlFor="login-userid">Login name</label>
             <input
               id="login-userid"
               type="text"
               value={user_id}
               onChange={(e) => setUser_id(e.target.value)}
               required
-              placeholder="Enter user ID"
+              placeholder="Your login ID"
               autoComplete="username"
             />
           </div>

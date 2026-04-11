@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import apiClient from '../config/axios';
 import config from '../config/config';
 import { useToast } from '../context/ToastContext';
+import TransactionLoader from '../components/TransactionLoader';
 import './Party.css';
 
 const AddSellerParty = () => {
@@ -188,6 +189,7 @@ const AddSellerParty = () => {
 
   return (
     <Layout>
+      <TransactionLoader isLoading={isSubmitting} message="Saving supplier…" type="transaction" />
       <div className="party-form">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '8px' }}>
           <h2 style={{ margin: 0 }}>Add Creditor</h2>

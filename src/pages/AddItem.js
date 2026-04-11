@@ -47,7 +47,7 @@ const AddItem = () => {
 
   useEffect(() => {
     if (user && user.role !== 'admin' && user.role !== 'super_admin') {
-      alert('Access Denied: Only Admin and Super Admin can add items to inventory.');
+      alert('Only managers and owners can add products to stock. Ask your administrator if you need access.');
       navigate('/dashboard');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -517,7 +517,11 @@ const AddItem = () => {
 
   return (
     <Layout>
-      <TransactionLoader isLoading={isAddingNewItem} type="purchase" />
+      <TransactionLoader
+        isLoading={isAddingNewItem || isSaving || isSubmittingPurchase || isLoadingItems}
+        message={isSaving ? 'Saving changes…' : isSubmittingPurchase ? 'Recording purchase…' : isLoadingItems ? 'Loading…' : undefined}
+        type="purchase"
+      />
       <div className="add-item">
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>

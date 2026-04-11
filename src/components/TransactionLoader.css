@@ -4,20 +4,27 @@
    fuel-hose progress bar, 7-segment style text
    ============================================================ */
 
-/* ─── Full-screen overlay ─── */
+/* ─── Full-screen overlay (above app modals, which may use z-index ~10k–20k) ─── */
 .tl-overlay {
   position: fixed;
   inset: 0;
   background: rgba(6, 14, 28, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 9999;
+  z-index: 200000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 32px;
-  pointer-events: all;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+html.tl-active,
+body.tl-active {
+  overflow: hidden !important;
+  cursor: wait;
 }
 
 /* ─── Outer card ─── */

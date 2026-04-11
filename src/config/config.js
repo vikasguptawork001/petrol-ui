@@ -56,6 +56,8 @@ const config = {
     nozzles: '/api/nozzles',
     attendants: '/api/attendants',
     nozzleReadings: '/api/nozzle-readings',
+    nozzleReadingsAttendantHistory: '/api/nozzle-readings/report/attendant-history',
+    nozzleReadingsNozzleDaily: '/api/nozzle-readings/report/nozzle-daily',
 
     expenses: '/api/expenses',
     expensesReportSummary: '/api/expenses/report/summary',

@@ -495,22 +495,12 @@ const SellItemV2 = () => {
     return numberToWords(rounded);
   }, [bill.grandTotal]);
 
-  // Manage body scroll when transaction is processing
-  useEffect(() => {
-    const isProcessing = loading.submit || loading.pdf;
-    if (isProcessing) {
-      document.body.classList.add('transaction-loading');
-    } else {
-      document.body.classList.remove('transaction-loading');
-    }
-    return () => {
-      document.body.classList.remove('transaction-loading');
-    };
-  }, [loading.submit, loading.pdf]);
+  const sellBusy =
+    loading.submit || loading.pdf || loading.sellers || loading.sellerInfo;
 
   return (
     <Layout>
-      <TransactionLoader isLoading={loading.submit || loading.pdf} type="sell" />
+      <TransactionLoader isLoading={sellBusy} type="sell" message={loading.submit ? undefined : loading.pdf ? 'Preparing PDF…' : undefined} />
       <div className="sell2">
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>

@@ -62,7 +62,7 @@ const SellReport = () => {
     abortRef.current = ctrl;
     try {
       setLoading(true);
-      const params = { from_date: getLocalDateString(fromDate), to_date: getLocalDateString(toDate), gst_filter: 'all', page, limit };
+      const params = { from_date: getLocalDateString(fromDate), to_date: getLocalDateString(toDate), page, limit };
       if (partyFilter) params.seller_party_id = partyFilter;
       if (nozzleFilter) params.nozzle_id = nozzleFilter;
       if (attendantFilter) params.attendant_id = attendantFilter;
@@ -127,9 +127,9 @@ const SellReport = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '18px' }}>📊</span>
-              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Sell Report</h1>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Sales report</h1>
             </div>
-            <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>Detailed sale transactions by date range</p>
+            <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>Every bill in the dates you pick — totals, paid amount, and balance</p>
           </div>
           <button
             onClick={exportToExcel}

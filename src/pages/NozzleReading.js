@@ -1229,6 +1229,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { getLocalDateString, getLocalISOString, formatInIndiaTime } from '../utils/dateUtils';
 import Pagination from '../components/Pagination';
 import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
+import TransactionLoader from '../components/TransactionLoader';
 import * as XLSX from 'xlsx';
 import './Report.css';
 import './PetrolPump.css';
@@ -1303,6 +1304,9 @@ export function NozzleReadingPanel({ embedded = false }) {
   const [activeTab, setActiveTab] = useState('details');
 
   const rangeDayCount = useMemo(() => daysInclusive(filters.from, filters.to), [filters.from, filters.to]);
+
+  const panelBusy =
+    loading || submitting || loadingPending || submittingClosing || exporting;
 
   useEffect(() => {
     fetchMeta();
@@ -1589,6 +1593,24 @@ export function NozzleReadingPanel({ embedded = false }) {
   };
 
   return (
+    <>
+      <TransactionLoader
+        isLoading={panelBusy}
+        message={
+          submitting
+            ? 'Saving reading…'
+            : submittingClosing
+              ? 'Saving closing…'
+              : exporting
+                ? 'Exporting…'
+                : loadingPending
+                  ? 'Loading pending…'
+                  : loading
+                    ? 'Loading readings…'
+                    : undefined
+        }
+        type="transaction"
+      />
     <div style={{ padding: '8px 12px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -1599,7 +1621,7 @@ export function NozzleReadingPanel({ embedded = false }) {
           </div>
           <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0 0' }}>Daily shift readings & sales summary</p>
         </div>
-        <button onClick={() => { setShowModal(true); setRecordMode('both'); }} style={{ padding: '6px 14px', background: '#f59a30', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <button type="button" onClick={() => { setShowModal(true); setRecordMode('both'); }} disabled={panelBusy} style={{ padding: '6px 14px', background: '#f59a30', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 500, cursor: panelBusy ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', opacity: panelBusy ? 0.65 : 1 }}>
           <Icon name="plus" size={12} /> Record
         </button>
       </div>
@@ -1981,6 +2003,7 @@ export function NozzleReadingPanel({ embedded = false }) {
         </div>
       )}
     </div>
+    </>
   );
 }
 
