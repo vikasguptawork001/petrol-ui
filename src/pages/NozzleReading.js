@@ -1948,7 +1948,7 @@ export function NozzleReadingPanel({ embedded = false }) {
                       <label style={{ display: 'block', fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: '4px' }}>To Date</label>
                       <DatePicker selected={filters.to} onChange={d => setFilters({ ...filters, to: d })} dateFormat="dd-MM-yy" className="pp-input" style={{ width: '100%' }} />
                     </div>
-                    <button onClick={fetchPendingReadings} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#fff', whiteSpace: 'nowrap' }}>🔄 Refresh</button>
+                    <button onClick={fetchPendingReadings} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#fff', whiteSpace: 'nowrap' }}>Refresh</button>
                   </div>
                   {loadingPending ? (
                     <div style={{ textAlign: 'center', padding: '20px' }}><PetrolNozzleLoader size="small" /></div>

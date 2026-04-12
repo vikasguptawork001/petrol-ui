@@ -12,6 +12,7 @@ import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
 import * as XLSX from 'xlsx';
 import { getLocalDateString, formatDateInIndia } from '../utils/dateUtils';
+import { validateItemRates } from '../utils/itemRateValidation';
 import './Dashboard.css';
 
 // Minimal Icons
@@ -292,6 +293,17 @@ const Dashboard = () => {
       toast.error('Product name required');
       return;
     }
+    const rateCheck = validateItemRates({
+      sale_rate: editFormData.sale_rate,
+      purchase_rate: user?.role === 'super_admin' ? editFormData.purchase_rate : undefined,
+      min_sale_rate: editFormData.min_sale_rate,
+      productLabel: editFormData.product_name?.trim() || 'Item',
+      requirePositivePurchase: user?.role === 'super_admin'
+    });
+    if (!rateCheck.ok) {
+      toast.error(rateCheck.message);
+      return;
+    }
     const changed = {};
     Object.keys(editFormData).forEach(key => {
       const cur = editFormData[key];
@@ -544,10 +556,10 @@ const Dashboard = () => {
                         itemName={item.product_name}
                         disabled={modalLoading || updating || deleting || quickSaleLoading}
                         actions={[
-                          { label: 'View Details', icon: '👁️', onClick: () => handleView(item) },
-                          ...((user?.role === 'admin' || user?.role === 'super_admin') ? [{ label: 'Edit', icon: '✏️', onClick: () => handleEdit(item) }] : []),
-                          { label: 'Quick bill', icon: '⚡', onClick: () => { setQuickSaleItem(item); setQuickSaleQuantity(1); setShowQuickSaleModal(true); } },
-                          ...((user?.role === 'super_admin') ? [{ label: 'Delete', icon: '🗑️', danger: true, onClick: (id, name) => handleDelete(id, name) }] : [])
+                          { label: 'View Details', onClick: () => handleView(item) },
+                          ...((user?.role === 'admin' || user?.role === 'super_admin') ? [{ label: 'Edit', onClick: () => handleEdit(item) }] : []),
+                          { label: 'Quick bill', onClick: () => { setQuickSaleItem(item); setQuickSaleQuantity(1); setShowQuickSaleModal(true); } },
+                          ...((user?.role === 'super_admin') ? [{ label: 'Delete', danger: true, onClick: (id, name) => handleDelete(id, name) }] : [])
                         ]}
                       />
                     </td>
@@ -623,6 +635,23 @@ const Dashboard = () => {
                   <input type="number" step="0.01" placeholder="Sale Rate" value={editFormData.sale_rate} onChange={e => setEditFormData({ ...editFormData, sale_rate: parseFloat(e.target.value) || 0 })} style={inputStyle} />
                 </div>
                 <div>
+                  <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Min sale rate</div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Optional floor"
+                    value={editFormData.min_sale_rate === null || editFormData.min_sale_rate === undefined || editFormData.min_sale_rate === '' ? '' : editFormData.min_sale_rate}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setEditFormData({
+                        ...editFormData,
+                        min_sale_rate: v === '' ? null : parseFloat(v) || 0
+                      });
+                    }}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
                   <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Tax Rate</div>
                   <select value={editFormData.tax_rate} onChange={e => setEditFormData({ ...editFormData, tax_rate: parseInt(e.target.value) })} style={inputStyle}>
                     <option value="0">0%</option><option value="5">5%</option><option value="12">12%</option><option value="18">18%</option><option value="28">28%</option>
@@ -668,12 +697,12 @@ const Dashboard = () => {
                 <div>
                   <div style={{ fontSize: '11px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>Item Details</div>
                   <div style={{ fontSize: '17px', fontWeight: 700, color: '#eef2f8', lineHeight: 1.2 }}>{viewItem.product_name}</div>
-                  {viewItem.brand && <div style={{ fontSize: '12px', color: '#f59a30', marginTop: '3px', fontWeight: 600 }}>🏷️ {viewItem.brand}</div>}
+                  {viewItem.brand && <div style={{ fontSize: '12px', color: '#f59a30', marginTop: '3px', fontWeight: 600 }}>Brand: {viewItem.brand}</div>}
                 </div>
                 <button onClick={() => setShowViewModal(false)} style={closeBtn}>×</button>
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                {viewItem.unit && <span style={{ background: '#2a3340', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: '#9aaebf' }}>📦 {viewItem.unit}</span>}
+                {viewItem.unit && <span style={{ background: '#2a3340', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: '#9aaebf' }}>Unit: {viewItem.unit}</span>}
                 <span style={{ background: viewItem.quantity <= (viewItem.alert_quantity || 0) ? 'rgba(232,89,60,0.2)' : 'rgba(34,197,94,0.15)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: viewItem.quantity <= (viewItem.alert_quantity || 0) ? '#e8593c' : '#22c55e', fontWeight: 700 }}>Stock: {viewItem.quantity}</span>
                 {viewItem.rack_number && <span style={{ background: '#2a3340', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: '#9aaebf' }}>Rack: {viewItem.rack_number}</span>}
               </div>
@@ -816,7 +845,7 @@ const Dashboard = () => {
                           ) : (
                             <span>
                               {p.due_date ? formatDateInIndia(p.due_date) : '—'}
-                              <button onClick={() => { setDueDateEditingId(p.id); setDueDateEditingValue(p.due_date || ''); }} style={{ marginLeft: '6px', fontSize: '9px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59a30' }}>✏️</button>
+                              <button type="button" onClick={() => { setDueDateEditingId(p.id); setDueDateEditingValue(p.due_date || ''); }} style={{ marginLeft: '6px', fontSize: '9px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59a30', textDecoration: 'underline' }}>Edit</button>
                             </span>
                           )}
                         </td>

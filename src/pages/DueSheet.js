@@ -406,7 +406,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Pagination from '../components/Pagination';
 import TransactionLoader from '../components/TransactionLoader';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDateInIndia } from '../utils/dateUtils';
 import * as XLSX from 'xlsx';
 import './DueSheet.css';
 import '../styles/petrolpump-theme.css';
@@ -603,7 +603,7 @@ export function DueSheetPanel({ embedded = false }) {
     try {
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return '-';
-      return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' });
+      return formatDateInIndia(d);
     } catch {
       return '-';
     }

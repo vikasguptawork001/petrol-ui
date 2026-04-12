@@ -5,6 +5,7 @@ import config from '../config/config';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getLocalDateString, formatDateInIndia, formatInIndiaTime } from '../utils/dateUtils';
+import * as XLSX from 'xlsx';
 import TransactionLoader from '../components/TransactionLoader';
 import './Report.css';
 
@@ -136,6 +137,40 @@ const PumpShiftReports = () => {
     return formatDateInIndia(d);
   };
 
+  const exportAttendantExcel = () => {
+    if (!ahShifts.length || !attendantId) return;
+    const rows = ahShifts.map((r) => ({
+      Date: showDate(r.reading_date),
+      Nozzle: r.nozzle_name,
+      Opening: r.opening_reading,
+      Closing: r.closing_reading,
+      Liters: r.sale_liters,
+      Opened_at: r.opening_at || '',
+      Closed_at: r.closing_at || '',
+      Status: r.completed ? 'Done' : 'Open'
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Shifts');
+    XLSX.writeFile(wb, `pump_shifts_attendant_${attendantId}_${getLocalDateString(ahFrom)}_${getLocalDateString(ahTo)}.xlsx`);
+  };
+  const exportNozzleExcel = () => {
+    if (!ndShifts.length || !nozzleId) return;
+    const rows = ndShifts.map((r) => ({
+      Seq: r.sequence,
+      Date: showDate(r.reading_date),
+      Attendant: r.attendant_name,
+      Opening: r.opening_reading,
+      Closing: r.closing_reading,
+      Liters: r.sale_liters,
+      Opened_at: r.opening_at || '',
+      Closed_at: r.closing_at || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Shifts');
+    XLSX.writeFile(wb, `pump_shifts_nozzle_${nozzleId}_${getLocalDateString(ndFrom)}_${getLocalDateString(ndTo)}.xlsx`);
+  };
   return (
     <Layout>
       <TransactionLoader
@@ -228,7 +263,7 @@ const PumpShiftReports = () => {
                     setAhFrom(d);
                     if (d && ahTo && d > ahTo) setAhTo(d);
                   }}
-                  dateFormat="dd-MM-yy"
+                  dateFormat="dd/MM/yyyy"
                   maxDate={ahTo}
                   className="pp-datepicker-compact"
                 />
@@ -241,7 +276,7 @@ const PumpShiftReports = () => {
                     setAhTo(d);
                     if (d && ahFrom && d < ahFrom) setAhFrom(d);
                   }}
-                  dateFormat="dd-MM-yy"
+                  dateFormat="dd/MM/yyyy"
                   minDate={ahFrom}
                   className="pp-datepicker-compact"
                 />
@@ -263,6 +298,24 @@ const PumpShiftReports = () => {
                 }}
               >
                 Refresh
+              </button>
+              <button
+                type="button"
+                onClick={exportAttendantExcel}
+                disabled={!attendantId || !ahShifts.length || ahLoading}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  background: '#1e293b',
+                  border: '1px solid #334155',
+                  borderRadius: '6px',
+                  color: '#e2e8f0',
+                  cursor: attendantId && ahShifts.length ? 'pointer' : 'not-allowed',
+                  opacity: attendantId && ahShifts.length ? 1 : 0.5
+                }}
+              >
+                Export Excel
               </button>
             </div>
 
@@ -371,7 +424,7 @@ const PumpShiftReports = () => {
                     setNdFrom(d);
                     if (ndTo && d > ndTo) setNdTo(d);
                   }}
-                  dateFormat="dd-MM-yy"
+                  dateFormat="dd/MM/yyyy"
                   maxDate={ndTo}
                   className="pp-datepicker-compact"
                 />
@@ -385,7 +438,7 @@ const PumpShiftReports = () => {
                     setNdTo(d);
                     if (ndFrom && d < ndFrom) setNdFrom(d);
                   }}
-                  dateFormat="dd-MM-yy"
+                  dateFormat="dd/MM/yyyy"
                   minDate={ndFrom}
                   className="pp-datepicker-compact"
                 />
@@ -407,6 +460,24 @@ const PumpShiftReports = () => {
                 }}
               >
                 Refresh
+              </button>
+              <button
+                type="button"
+                onClick={exportNozzleExcel}
+                disabled={!nozzleId || !ndShifts.length || ndLoading}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  background: '#1e293b',
+                  border: '1px solid #334155',
+                  borderRadius: '6px',
+                  color: '#e2e8f0',
+                  cursor: nozzleId && ndShifts.length ? 'pointer' : 'not-allowed',
+                  opacity: nozzleId && ndShifts.length ? 1 : 0.5
+                }}
+              >
+                Export Excel
               </button>
             </div>
 

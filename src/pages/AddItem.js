@@ -7,6 +7,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
+import { validateItemRates } from '../utils/itemRateValidation';
+import { STANDARD_SALE_UNITS } from '../utils/saleUnits';
 import './AddItem.css';
 
 const AddItem = () => {
@@ -26,7 +28,7 @@ const AddItem = () => {
   const [isAddingNewItem, setIsAddingNewItem] = useState(false);
   const [newItem, setNewItem] = useState({
     product_name: '',
-    unit: '',
+    unit: 'PCS',
     brand: '',
     tax_rate: 18,
     sale_rate: 0,
@@ -188,7 +190,7 @@ const AddItem = () => {
     }
     
     if (successCount > 0) {
-      toast.success(`✓ Added ${successCount} item${successCount !== 1 ? 's' : ''} to list`);
+      toast.success(`Added ${successCount} item${successCount !== 1 ? 's' : ''} to list`);
     }
     if (errorCount > 0) {
       toast.error(`Failed to add ${errorCount} item${errorCount !== 1 ? 's' : ''}`);
@@ -323,9 +325,16 @@ const AddItem = () => {
           const sale_rate = parseFloat(item.sale_rate) || 0;
           const purchase_rate = parseFloat(item.purchase_rate) || 0;
           const min_sale_rate = item.min_sale_rate != null && item.min_sale_rate !== '' && !isNaN(parseFloat(item.min_sale_rate)) && parseFloat(item.min_sale_rate) >= 0 ? parseFloat(item.min_sale_rate) : null;
-          
-          if (sale_rate > 0 && min_sale_rate !== null && sale_rate < min_sale_rate) {
-            toast.error(`Sale rate for ${item.product_name} cannot be less than minimum sale rate (₹${min_sale_rate.toFixed(2)})`);
+
+          const vr = validateItemRates({
+            sale_rate,
+            purchase_rate,
+            min_sale_rate,
+            productLabel: item.product_name,
+            requirePositivePurchase: true
+          });
+          if (!vr.ok) {
+            toast.error(vr.message);
             setIsSaving(false);
             return;
           }
@@ -367,11 +376,15 @@ const AddItem = () => {
         return;
       }
 
-      const sale_rate = parseFloat(item.sale_rate) || 0;
-      const min_sale_rate = item.min_sale_rate != null && item.min_sale_rate !== '' ? parseFloat(item.min_sale_rate) : null;
-      if (sale_rate > 0 && min_sale_rate !== null && sale_rate < min_sale_rate) {
-        toast.error(`Sale rate for ${item.product_name} cannot be less than minimum sale rate (₹${min_sale_rate.toFixed(2)})`);
-        setIsSubmittingPurchase(false);
+      const vr = validateItemRates({
+        sale_rate: item.sale_rate,
+        purchase_rate: item.purchase_rate,
+        min_sale_rate: item.min_sale_rate,
+        productLabel: item.product_name,
+        requirePositivePurchase: true
+      });
+      if (!vr.ok) {
+        toast.error(vr.message);
         return;
       }
     }
@@ -424,11 +437,12 @@ const AddItem = () => {
     setShowAddItemForm(false);
     setNewItem({
       product_name: '',
-      unit: '',
+      unit: 'PCS',
       product_code: '',
       brand: '',
       tax_rate: 18,
       sale_rate: 0,
+      min_sale_rate: 0,
       purchase_rate: 0,
       quantity: 0,
       alert_quantity: 0,
@@ -442,7 +456,7 @@ const AddItem = () => {
       toast.warning('Product name is required');
       return;
     }
-    if (!newItem.unit) {
+    if (!newItem.unit || !String(newItem.unit).trim()) {
       toast.warning('Unit is required');
       return;
     }
@@ -455,14 +469,15 @@ const AddItem = () => {
       toast.warning('Purchase rate is required');
       return;
     }
-    if (newItem.sale_rate && parseFloat(newItem.sale_rate) < parseFloat(newItem.purchase_rate)) {
-      if (!window.confirm('Sale rate is lower than purchase rate. Continue?')) {
-        return;
-      }
-    }
-
-    if (newItem.sale_rate && newItem.min_sale_rate && parseFloat(newItem.sale_rate) < parseFloat(newItem.min_sale_rate)) {
-      toast.error('Sale rate cannot be less than minimum sale rate');
+    const vrNew = validateItemRates({
+      sale_rate: newItem.sale_rate,
+      purchase_rate: newItem.purchase_rate,
+      min_sale_rate: newItem.min_sale_rate,
+      productLabel: newItem.product_name,
+      requirePositivePurchase: true
+    });
+    if (!vrNew.ok) {
+      toast.error(vrNew.message);
       return;
     }
 
@@ -470,7 +485,7 @@ const AddItem = () => {
     try {
       const payload = {
         product_name: newItem.product_name,
-        unit: newItem.unit,
+        unit: String(newItem.unit).trim(),
         brand: newItem.brand || '',
         tax_rate: newItem.tax_rate,
         purchase_rate: newItem.purchase_rate,
@@ -519,17 +534,16 @@ const AddItem = () => {
     <Layout>
       <TransactionLoader
         isLoading={isAddingNewItem || isSaving || isSubmittingPurchase || isLoadingItems}
-        message={isSaving ? 'Saving changes…' : isSubmittingPurchase ? 'Recording purchase…' : isLoadingItems ? 'Loading…' : undefined}
+        message={isSaving ? 'Saving changes...' : isSubmittingPurchase ? 'Recording purchase...' : isLoadingItems ? 'Loading...' : undefined}
         type="purchase"
       />
       <div className="add-item">
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '20px' }}>📦</span>
               <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Add Item to Inventory</h2>
             </div>
-            <p style={{ margin: '2px 0 0 24px', fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Search to add existing items • Use button to create new</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Search to add existing items, or use the button to create new.</p>
           </div>
         </div>
 
@@ -546,7 +560,7 @@ const AddItem = () => {
                   className="btn btn-danger"
                   style={{ minWidth: '120px' }}
                 >
-                  🗑️ Clear All
+                  Clear All
                 </button>
               )}
               <button
@@ -582,7 +596,7 @@ const AddItem = () => {
                         <td style={{ textAlign: 'left', padding: '10px 14px' }}>
                           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--pp-text-primary, #eef2f8)' }}>{item.product_name}</div>
                           <div style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)', marginTop: '2px' }}>
-                            {item.product_name} {item.unit ? `• Unit: ${item.unit}` : ''}
+                            {item.unit ? `Unit: ${item.unit}` : ''}
                           </div>
                         </td>
                         <td style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)' }}>{item.brand || '-'}</td>
@@ -669,13 +683,13 @@ const AddItem = () => {
                               style={{ cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
                               title="Click to edit"
                             >
-                              {item.min_sale_rate != null && item.min_sale_rate !== '' ? `₹${parseFloat(item.min_sale_rate).toFixed(2)}` : '–'}
+                              {item.min_sale_rate != null && item.min_sale_rate !== '' ? `₹${parseFloat(item.min_sale_rate).toFixed(2)}` : '—'}
                             </span>
                           )}
                         </td>
                         <td style={{ textAlign: 'right' }}>{item.tax_rate || 0}%</td>
                         <td style={{ textAlign: 'right', fontWeight: '500', color: '#555' }} title="Stock in inventory">
-                          {item.current_quantity != null && item.current_quantity !== '' ? Number(item.current_quantity) : '–'}
+                          {item.current_quantity != null && item.current_quantity !== '' ? Number(item.current_quantity) : '—'}
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <input
@@ -705,7 +719,7 @@ const AddItem = () => {
                             style={{ padding: '5px 10px', fontSize: '13px' }}
                             title="Remove"
                           >
-                            🗑️
+                            Remove
                           </button>
                         </td>
                       </tr>
@@ -719,7 +733,7 @@ const AddItem = () => {
                           <input
                             type="text"
                             className="table-search-input"
-                            placeholder="🔍 Type product name or brand to search and add items..."
+                            placeholder="Type product name or brand to search and add items..."
                             value={searchQuery}
                             ref={itemSearchInputRef}
                             onChange={(e) => {
@@ -762,7 +776,7 @@ const AddItem = () => {
                                 )}
                                 {!isLoadingItems && suggestedItems.length === 0 && (
                                   <div className="no-results-container">
-                                    <div className="no-results-icon">🔍</div>
+                                    <div className="no-results-icon" aria-hidden />
                                     <div>No products found for &quot;{searchQuery}&quot;</div>
                                   </div>
                                 )}
@@ -770,7 +784,7 @@ const AddItem = () => {
                                   const isAlreadyInCart = selectedItems.some(it => it.item_id === item.id);
                                   const stockLevel = item.quantity || 0;
                                   const stockClass = stockLevel <= 0 ? 'none' : (stockLevel < 10 ? 'low' : 'good');
-                                  const stockIcon = stockLevel <= 0 ? '🚫' : (stockLevel < 10 ? '⚠️' : '📦');
+                                  const stockLabel = stockLevel <= 0 ? 'Out' : stockLevel < 10 ? 'Low' : 'OK';
 
                                   return (
                                     <div
@@ -788,9 +802,9 @@ const AddItem = () => {
                                           {isAlreadyInCart && <span className="selected-badge">In Cart</span>}
                                         </div>
                                         <div className="table-suggestion-meta">
-                                          <span>🏢 {item.brand}</span>
+                                          <span>{item.brand}</span>
                                           <span className={`stock-pill ${stockClass}`}>
-                                            {stockIcon} {stockLevel} Stock
+                                            {stockLabel} · {stockLevel} in stock
                                           </span>
                                           {item.unit && <span>Unit: {item.unit}</span>}
                                         </div>
@@ -808,7 +822,7 @@ const AddItem = () => {
                               {suggestedItems.length > 0 && (
                                 <div className="table-suggestions-footer">
                                   <span>{suggestedItems.length} results found</span>
-                                  <span>↑↓ Navigate • Enter to Add</span>
+                                  <span>Up/Down to navigate · Enter to add</span>
                                 </div>
                               )}
                             </div>
@@ -816,7 +830,7 @@ const AddItem = () => {
                         </div>
                       </td>
                       <td colSpan="5" style={{ color: 'var(--pp-text-muted, #6c7f8f)', fontStyle: 'italic', fontSize: '12px', verticalAlign: 'middle' }}>
-                        &nbsp;&nbsp;← Search and add existing items
+                        Search and add existing items
                       </td>
                     </tr>
                   </tbody>
@@ -825,7 +839,7 @@ const AddItem = () => {
 
           {selectedItems.length > 0 && (
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Click rate to edit • Enter → next field</span>
+              <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Click a rate to edit · Enter moves to the next field</span>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   onClick={handleSaveRates}
@@ -873,7 +887,7 @@ const AddItem = () => {
                 <div style={{ fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Create New</div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: '#eef2f8' }}>Add Product to Inventory</div>
               </div>
-              <button type="button" onClick={closeAddItemModal} style={{ background: 'none', border: 'none', color: '#9aaebf', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }} aria-label="Close">×</button>
+              <button type="button" onClick={closeAddItemModal} style={{ background: 'none', border: 'none', color: '#9aaebf', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }} aria-label="Close">&times;</button>
             </div>
 
             {/* Modal Body */}
@@ -905,23 +919,25 @@ const AddItem = () => {
                   />
                 </div>
 
-                {/* Unit */}
+                {/* Unit — presets + free text (matches bill / DB) */}
                 <div>
                   <label style={{ display: 'block', fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px', fontWeight: 600 }}>Unit *</label>
-                  <select
+                  <input
+                    type="text"
+                    list="add-item-unit-presets"
                     value={newItem.unit}
                     onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+                    placeholder="e.g. PCS, LTR, or custom"
+                    maxLength={20}
                     required
                     style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
-                  >
-                    <option value="">— Select Unit —</option>
-                    <option value="liter">Liter</option>
-                    <option value="packet">Packet</option>
-                    <option value="kg">KG</option>
-                    <option value="pcs">Pcs</option>
-                    <option value="box">Box</option>
-                    <option value="mtr">Meter</option>
-                  </select>
+                  />
+                  <datalist id="add-item-unit-presets">
+                    {STANDARD_SALE_UNITS.map((u) => (
+                      <option key={u} value={u} />
+                    ))}
+                  </datalist>
+                  <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px' }}>Defaults to PCS; pick a preset or type your own.</div>
                 </div>
 
                 {/* Purchase Rate */}
@@ -935,7 +951,7 @@ const AddItem = () => {
                     style={{ width: '100%', padding: '8px 10px', fontSize: '13px', background: '#0f151f', border: `1px solid ${newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate ? '#e8593c' : '#2a3340'}`, borderRadius: '6px', color: '#eef2f8', outline: 'none', boxSizing: 'border-box' }}
                   />
                   {newItem.sale_rate > 0 && newItem.purchase_rate > 0 && newItem.sale_rate < newItem.purchase_rate && (
-                    <div style={{ color: '#e8593c', fontSize: '11px', marginTop: '4px' }}>⚠️ Purchase rate cannot exceed sale rate</div>
+                    <div style={{ color: '#e8593c', fontSize: '11px', marginTop: '4px' }}>Purchase rate cannot exceed sale rate</div>
                   )}
                 </div>
 
@@ -1041,7 +1057,7 @@ const AddItem = () => {
                 disabled={isAddingNewItem}
                 style={{ padding: '7px 20px', fontSize: '12px', background: '#f59a30', border: 'none', borderRadius: '5px', cursor: isAddingNewItem ? 'not-allowed' : 'pointer', color: '#1a1200', fontWeight: 700, opacity: isAddingNewItem ? 0.6 : 1 }}
               >
-                {isAddingNewItem ? '⏳ Adding...' : '+ Add to Inventory'}
+                {isAddingNewItem ? 'Adding...' : '+ Add to Inventory'}
               </button>
             </div>
 
@@ -1055,5 +1071,6 @@ const AddItem = () => {
 };
 
 export default AddItem;
+
 
 

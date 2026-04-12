@@ -29,13 +29,17 @@ export const formatInIndiaTime = (date) => {
   });
 };
 
-/** Date only in India timezone */
+/** Date only in India timezone — always DD/MM/YYYY */
 export const formatDateInIndia = (date) => {
   if (!date) return '-';
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '-';
-  return d.toLocaleDateString('en-IN', { timeZone: IST, day: '2-digit', month: '2-digit', year: 'numeric' });
+  const p = collectISTParts(d, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  return `${p.day}/${p.month}/${p.year}`;
 };
+
+/** Alias: explicit DD/MM/YYYY for display (same as formatDateInIndia). */
+export const formatDateDDMMYYYY = formatDateInIndia;
 
 /**
  * Calendar date in IST as YYYY-MM-DD (API filters, filenames, server payloads)

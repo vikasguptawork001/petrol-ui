@@ -83,7 +83,7 @@
 //   };
 
 //   const handleDelete = async (id) => {
-//     if (!window.confirm('Delete this nozzle? It will be archived and hidden from the list. You can restore it later.')) return;
+//     if (!window.confirm('Delete this nozzle? It will be removed from the list from the list. You can restore it later.')) return;
 //     setDeleting(true);
 //     try {
 //       await apiClient.delete(`${config.api.nozzles}/${id}`);
@@ -246,6 +246,7 @@ const Nozzles = () => {
   const [reportTo, setReportTo] = useState(() => getLocalDateString());
   const [reportRows, setReportRows] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
+  const [nozzleDirectoryExpanded, setNozzleDirectoryExpanded] = useState(false);
 
   const formatInr = (n) => {
     const num = Number(n || 0);
@@ -339,7 +340,7 @@ const Nozzles = () => {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"? It will be archived and hidden from the list.`)) return;
+    if (!window.confirm(`Delete "${name}"? It will be removed from the list.`)) return;
     setDeleting(true);
     try {
       await apiClient.delete(`${config.api.nozzles}/${id}`);
@@ -371,7 +372,7 @@ const Nozzles = () => {
       <TransactionLoader
         isLoading={crudBusy}
         message={
-          deleting ? 'Archiving nozzle…' : submitting ? 'Saving nozzle…' : reportLoading ? 'Loading sales…' : 'Loading…'
+          deleting ? 'Removing nozzle…' : submitting ? 'Saving nozzle…' : reportLoading ? 'Loading sales…' : 'Loading…'
         }
         type="transaction"
       />
@@ -384,7 +385,7 @@ const Nozzles = () => {
               <h1 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: '#fff' }}>Nozzles</h1>
             </div>
             <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0 0', maxWidth: '560px', lineHeight: 1.45 }}>
-              Add, rename, or archive pump nozzles. Sales-by-nozzle analytics are below for the period you choose.
+              Add, rename, or delete pump nozzles. Sales-by-nozzle analytics are below for the period you choose.
             </p>
           </div>
         </div>
@@ -401,16 +402,21 @@ const Nozzles = () => {
         </div>
 
         <div style={{ marginBottom: '16px', padding: '16px 18px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: nozzleDirectoryExpanded ? '14px' : '0', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>Nozzle directory</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>These names appear when recording a sale.</div>
             </div>
-            <button onClick={openAdd} type="button" disabled={crudBusy} style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: crudBusy ? 'not-allowed' : 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px', opacity: crudBusy ? 0.65 : 1 }}>
-              <Icon name="plus" size={14} /> Add nozzle
-            </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" onClick={() => setNozzleDirectoryExpanded((v) => !v)} disabled={crudBusy} style={{ padding: '8px 14px', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: crudBusy ? 'not-allowed' : 'pointer', color: '#e2e8f0' }}>
+                {nozzleDirectoryExpanded ? 'Collapse' : 'Expand'}
+              </button>
+              <button onClick={openAdd} type="button" disabled={crudBusy} style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: crudBusy ? 'not-allowed' : 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px', opacity: crudBusy ? 0.65 : 1 }}>
+                <Icon name="plus" size={14} /> Add nozzle
+              </button>
+            </div>
           </div>
-          {loading ? (
+          {nozzleDirectoryExpanded && (loading ? (
             <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading list…</div>
           ) : nozzles.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '28px', color: '#6c7f8f', background: '#0f151f', borderRadius: '8px', fontSize: '13px' }}>
@@ -437,7 +443,7 @@ const Nozzles = () => {
                             Edit
                           </button>
                           <button type="button" onClick={() => handleDelete(n.id, n.name)} disabled={crudBusy} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fecaca', opacity: crudBusy ? 0.65 : 1 }}>
-                            Archive
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -446,7 +452,7 @@ const Nozzles = () => {
                 </tbody>
               </table>
             </div>
-          )}
+          ))}
         </div>
 
         <div style={{

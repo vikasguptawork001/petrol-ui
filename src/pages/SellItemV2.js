@@ -505,7 +505,6 @@ const SellItemV2 = () => {
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}>🛒</span>
               <h2 style={{ color: '#fff', margin: 0 }}>Sell Item 2.0</h2>
             </div>
             <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Fast selling flow + clean bill preview + PDF based on the updated tax invoice template.</p>
@@ -565,7 +564,7 @@ const SellItemV2 = () => {
                               <p className="sell2-suggest-title" style={{ margin: 0 }}>{p.party_name}</p>
                               {p.mobile_number && (
                                 <p className="sell2-suggest-sub" style={{ margin: 0, fontSize: '12px', color: '#6c757d', whiteSpace: 'nowrap' }}>
-                                  📱 {p.mobile_number}
+                                  {p.mobile_number}
                                 </p>
                               )}
                             </div>
@@ -931,7 +930,6 @@ const SellItemV2 = () => {
                                   actions={[
                                     {
                                       label: 'Remove',
-                                      icon: '🗑️',
                                       danger: true,
                                       onClick: (id) => removeCartItem(id)
                                     }
@@ -1062,7 +1060,7 @@ const SellItemV2 = () => {
                         <th>Item</th>
                         <th style={{ width: 70 }}>Qty</th>
                         <th style={{ width: 86 }}>Rate</th>
-                        <th style={{ width: 86 }}>Disc</th>
+                        <th style={{ width: 86 }}>Discount</th>
                         <th style={{ width: 70 }}>Tax%</th>
                         <th style={{ width: 100, textAlign: 'right' }}>Amount</th>
                       </tr>

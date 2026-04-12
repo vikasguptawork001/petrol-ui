@@ -234,7 +234,7 @@ const AddBuyerParty = () => {
                       transform: 'translateY(-50%)',
                       color: '#28a745',
                       fontSize: '18px'
-                    }}>✓</span>
+                    }}>OK</span>
                   )}
                 </div>
                 {errors.party_name && (
@@ -289,7 +289,7 @@ const AddBuyerParty = () => {
                       transform: 'translateY(-50%)',
                       color: '#28a745',
                       fontSize: '18px'
-                    }}>✓</span>
+                    }}>OK</span>
                   )}
                 </div>
                 {errors.mobile_number && (
@@ -349,7 +349,7 @@ const AddBuyerParty = () => {
                       transform: 'translateY(-50%)',
                       color: '#28a745',
                       fontSize: '18px'
-                    }}>✓</span>
+                    }}>OK</span>
                   )}
                 </div>
                 {errors.email && (
@@ -446,7 +446,7 @@ const AddBuyerParty = () => {
                       transform: 'translateY(-50%)',
                       color: '#28a745',
                       fontSize: '18px'
-                    }}>✓</span>
+                    }}>OK</span>
                   )}
                 </div>
                 {errors.gst_number && (

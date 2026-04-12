@@ -274,7 +274,7 @@ const ItemSearchModal = ({
                         )}
                       </div>
                       {isSelected && (
-                        <span className="item-search-modal-selected-badge">✓ Added</span>
+                        <span className="item-search-modal-selected-badge">Added</span>
                       )}
                     </div>
                   </div>

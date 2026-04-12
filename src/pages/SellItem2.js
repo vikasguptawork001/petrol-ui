@@ -244,20 +244,20 @@ const SellItem2 = () => {
     <div className="sell-item2-container">
       {/* Header */}
       <div className="sell-item2-header">
-        <h1>📝 Create Sale Invoice</h1>
+        <h1>Create Sale Invoice</h1>
         <div className="header-actions">
           <button 
             className="btn-secondary"
             onClick={() => dispatch(toggleBillPreview())}
           >
-            {showBillPreview ? '📋 Hide Preview' : '📋 Show Preview'}
+            {showBillPreview ? 'Hide Preview' : 'Show Preview'}
           </button>
           <button 
             className="btn-danger"
             onClick={() => dispatch(resetForm())}
             disabled={loading}
           >
-            🔄 Reset
+            Reset
           </button>
         </div>
       </div>
@@ -272,7 +272,7 @@ const SellItem2 = () => {
         <div className="sell-item2-left">
           {/* Seller Selection */}
           <div className="form-section">
-            <h2>👤 Select Seller</h2>
+            <h2>Select Seller</h2>
             <div className="search-input-wrapper">
               <input
                 type="text"
@@ -281,16 +281,16 @@ const SellItem2 = () => {
                 value={sellerSearchQuery}
                 onChange={(e) => handleSellerSearch(e.target.value)}
               />
-              {sellerSearchLoading && <span className="loading-spinner">⏳</span>}
+              {sellerSearchLoading && <span className="loading-spinner">...</span>}
             </div>
             
             {selectedSeller && (
               <div className="selected-party-card">
                 <div className="party-info">
                   <h3>{selectedSeller.party_name}</h3>
-                  <p>📞 {selectedSeller.mobile_number || 'N/A'}</p>
-                  <p>📧 {selectedSeller.email || 'N/A'}</p>
-                  {selectedSeller.gst_number && <p>🏢 GST: {selectedSeller.gst_number}</p>}
+                  <p>Phone: {selectedSeller.mobile_number || 'N/A'}</p>
+                  <p>Email: {selectedSeller.email || 'N/A'}</p>
+                  {selectedSeller.gst_number && <p>GST: {selectedSeller.gst_number}</p>}
                 </div>
                 <button
                   className="btn-text"
@@ -317,7 +317,7 @@ const SellItem2 = () => {
                       <strong>{seller.party_name}</strong>
                       {seller.mobile_number && (
                         <small style={{ fontSize: '12px', color: '#6c757d', whiteSpace: 'nowrap' }}>
-                          📱 {seller.mobile_number}
+                          {seller.mobile_number}
                         </small>
                       )}
                     </div>
@@ -329,7 +329,7 @@ const SellItem2 = () => {
           
           {/* Item Search */}
           <div className="form-section">
-            <h2>🔍 Add Items</h2>
+            <h2>Add Items</h2>
             <div className="search-input-wrapper">
               <input
                 type="text"
@@ -338,7 +338,7 @@ const SellItem2 = () => {
                 value={itemSearchQuery}
                 onChange={(e) => handleItemSearch(e.target.value)}
               />
-              {itemSearchLoading && <span className="loading-spinner">⏳</span>}
+              {itemSearchLoading && <span className="loading-spinner">...</span>}
             </div>
             
             {suggestedItems.length > 0 && (
@@ -364,7 +364,7 @@ const SellItem2 = () => {
           {/* Cart */}
           <div className="form-section cart-section">
             <div className="cart-header">
-              <h2>🛒 Cart ({cartItems.length})</h2>
+              <h2>Cart ({cartItems.length})</h2>
               {cartItems.length > 0 && (
                 <button
                   className="btn-text btn-text-danger"
@@ -377,7 +377,7 @@ const SellItem2 = () => {
             
             {cartItems.length === 0 ? (
               <div className="empty-cart">
-                <p>🛍️ Cart is empty</p>
+                <p>Cart is empty</p>
                 <small>Search and add items to get started</small>
               </div>
             ) : (
@@ -391,7 +391,7 @@ const SellItem2 = () => {
                         onClick={() => dispatch(removeFromCart(item.item_id))}
                         title="Remove item"
                       >
-                        ✕
+                        x
                       </button>
                     </div>
                     
@@ -446,7 +446,7 @@ const SellItem2 = () => {
           {/* Payment Section */}
           {cartItems.length > 0 && (
             <div className="form-section payment-section">
-              <h2>💰 Payment Details</h2>
+              <h2>Payment Details</h2>
               
               <div className="payment-options">
                 <label className="radio-label">
@@ -506,7 +506,7 @@ const SellItem2 = () => {
                 onClick={handleSubmit}
                 disabled={loading || !selectedSeller || cartItems.length === 0}
               >
-                {loading ? '⏳ Processing...' : '✅ Complete Sale & Generate Bill'}
+                {loading ? 'Processing...' : 'Complete Sale & Generate Bill'}
               </button>
             </div>
           )}
@@ -517,7 +517,7 @@ const SellItem2 = () => {
           <div className="sell-item2-right">
             <div className="bill-preview">
               <div className="bill-preview-header">
-                <h2>📄 Bill Preview</h2>
+                <h2>Bill Preview</h2>
               </div>
               
               <div className="bill-content">

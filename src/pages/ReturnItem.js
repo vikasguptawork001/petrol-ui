@@ -179,7 +179,7 @@ const ReturnItem = () => {
   const handleToggleItemSelection = (itemId) => {
     const item = suggestedItems.find(i => i.id === itemId);
     if (item && (item.quantity || 0) <= 0) {
-      toast.warning(`⚠️ "${item.product_name}" is out of stock and cannot be selected`);
+      toast.warning(`"${item.product_name}" is out of stock and cannot be selected`);
       return;
     }
     
@@ -216,7 +216,7 @@ const ReturnItem = () => {
 
     if (validItemsToAdd.length === 0) {
       if (skippedCount > 0) {
-        toast.warning(`⚠️ All selected items are out of stock`);
+        toast.warning('All selected items are out of stock');
       }
       setSelectedItemIds(new Set());
       return;
@@ -257,10 +257,10 @@ const ReturnItem = () => {
     });
     
     if (successCount > 0) {
-      toast.success(`✓ Added ${successCount} item${successCount !== 1 ? 's' : ''} to return list`);
+      toast.success(`Added ${successCount} item${successCount !== 1 ? 's' : ''} to return list`);
     }
     if (skippedCount > 0) {
-      toast.warning(`⚠️ Skipped ${skippedCount} item${skippedCount !== 1 ? 's' : ''} (out of stock or error)`);
+      toast.warning(`Skipped ${skippedCount} item${skippedCount !== 1 ? 's' : ''} (out of stock or error)`);
     }
     
     setSelectedItemIds(new Set());
@@ -274,7 +274,7 @@ const ReturnItem = () => {
     // For buyer returns, prevent adding out-of-stock items
     // For seller returns, allow out-of-stock items (seller is giving them back)
     if ((item.quantity || 0) <= 0 && partyType === 'buyer') {
-      toast.warning(`⚠️ "${item.product_name || item.item_name}" is out of stock and cannot be added`);
+      toast.warning(`"${item.product_name || item.item_name}" is out of stock and cannot be added`);
       return;
     }
 
@@ -688,7 +688,6 @@ const ReturnItem = () => {
       <div className="return-item">
         <div className="pp-page-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '24px' }}>🔄</span>
             <h2>Return Items</h2>
           </div>
           <p>Process product returns from customers or back to suppliers</p>
@@ -787,7 +786,7 @@ const ReturnItem = () => {
                         <span style={{ fontWeight: '600' }}>{party.party_name}</span>
                         {party.mobile_number && (
                           <span style={{ fontSize: '12px', color: '#6c757d', whiteSpace: 'nowrap' }}>
-                            📱 {party.mobile_number}
+                            {party.mobile_number}
                           </span>
                         )}
                       </div>
@@ -1013,7 +1012,6 @@ const ReturnItem = () => {
                               actions={[
                                 {
                                   label: 'Remove',
-                                  icon: '🗑️',
                                   danger: true,
                                   onClick: (id) => removeItem(id)
                                 }
@@ -1033,7 +1031,7 @@ const ReturnItem = () => {
                             <input
                               type="text"
                               className="table-search-input"
-                              placeholder="🔍 Type product name, brand, or HSN to search and add items..."
+                              placeholder="Type product name, brand, or HSN to search and add items..."
                               value={searchQuery}
                               ref={itemSearchInputRef}
                               onChange={(e) => {
@@ -1392,8 +1390,7 @@ const ReturnItem = () => {
             width: '90%',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
           }}>
-            <h3 style={{ color: '#856404', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '24px' }}>⚠️</span>
+            <h3 style={{ color: '#856404', marginBottom: '20px' }}>
               {partyType === 'buyer' ? 'Return to Buyer' : 'Warning: Return Amount Exceeds Balance'}
             </h3>
             <div style={{ marginBottom: '20px', lineHeight: '1.6' }}>
@@ -1541,14 +1538,14 @@ const ReturnItem = () => {
                 className="btn btn-primary"
                 disabled={downloadingReceipt || printingReceipt}
               >
-                {downloadingReceipt ? 'Downloading...' : '📥 Download Receipt'}
+                {downloadingReceipt ? 'Downloading...' : 'Download Receipt'}
               </button>
               <button
                 onClick={handlePrintReceipt}
                 className="btn btn-success"
                 disabled={downloadingReceipt || printingReceipt}
               >
-                {printingReceipt ? 'Opening...' : '🖨️ Print Receipt'}
+                {printingReceipt ? 'Opening...' : 'Print Receipt'}
               </button>
             </div>
           </div>

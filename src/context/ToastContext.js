@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Toast from '../components/Toast';
+import '../components/Toast.css';
 
 const ToastContext = createContext();
 
@@ -16,12 +18,12 @@ export const ToastProvider = ({ children }) => {
 
   const showToast = (message, type = 'info', duration = 3000) => {
     const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type, duration }]);
+    setToasts((prev) => [...prev, { id, message, type, duration }]);
     return id;
   };
 
   const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
   const success = (message, duration) => showToast(message, 'success', duration);
@@ -29,11 +31,11 @@ export const ToastProvider = ({ children }) => {
   const warning = (message, duration) => showToast(message, 'warning', duration);
   const info = (message, duration) => showToast(message, 'info', duration);
 
-  return (
-    <ToastContext.Provider value={{ success, error, warning, info }}>
-      {children}
-      <div className="toast-container">
-        {toasts.map(toast => (
+  const toastLayer =
+    typeof document !== 'undefined' &&
+    createPortal(
+      <div className="toast-container" aria-live="polite" aria-relevant="additions text">
+        {toasts.map((toast) => (
           <Toast
             key={toast.id}
             message={toast.message}
@@ -42,14 +44,14 @@ export const ToastProvider = ({ children }) => {
             onClose={() => removeToast(toast.id)}
           />
         ))}
-      </div>
+      </div>,
+      document.body
+    );
+
+  return (
+    <ToastContext.Provider value={{ success, error, warning, info }}>
+      {children}
+      {toastLayer}
     </ToastContext.Provider>
   );
 };
-
-
-
-
-
-
-

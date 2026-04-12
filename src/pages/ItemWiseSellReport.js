@@ -116,7 +116,6 @@ const ItemWiseSellReport = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px' }}>📦</span>
               <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Sales by product</h1>
             </div>
             <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>How much you sold of each product — quantities and amounts</p>
@@ -126,7 +125,7 @@ const ItemWiseSellReport = () => {
             disabled={!rows.length || loading}
             style={{ padding: '6px 14px', fontSize: '11px', fontWeight: 600, background: '#f59a30', border: 'none', borderRadius: '5px', cursor: !rows.length ? 'not-allowed' : 'pointer', color: '#1a1200', opacity: !rows.length ? 0.5 : 1 }}
           >
-            📁 Export Excel
+            Export Excel
           </button>
         </div>
 

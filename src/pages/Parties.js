@@ -5,7 +5,7 @@ import config from '../config/config';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, formatDateInIndia, formatInIndiaTime } from '../utils/dateUtils';
 import TransactionLoader from '../components/TransactionLoader';
 import Pagination from '../components/Pagination';
 import ActionMenu from '../components/ActionMenu';
@@ -13,8 +13,6 @@ import './Party.css';
 import '../styles/petrolpump-theme.css';
 
 // Minimal Icons
-const PAYMENT_METHOD_OPTIONS = ['Cash', 'UPI', 'Card', 'Bank transfer', 'Cheque', 'Other'];
-
 const Icons = {
   User: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
   Phone: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>,
@@ -42,7 +40,6 @@ const Parties = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [partyDetails, setPartyDetails] = useState(null);
   const [transactionHistory, setTransactionHistory] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
@@ -144,7 +141,6 @@ const Parties = () => {
   const handleMakePayment = async (party) => {
     setPaymentAmount('');
     setPaymentNewDueDate('');
-    setPaymentMethod('Cash');
     setPaymentNotes('');
     try {
       const r = await apiClient.get(`${config.api.sellers}/${party.id}`);
@@ -240,9 +236,61 @@ const Parties = () => {
     }
   };
 
+  const isValidYmdInput = (s) => {
+    const t = String(s || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return false;
+    const [y, m, d] = t.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+  };
+
+  const handlePaymentAmountChange = (e) => {
+    const raw = e.target.value.replace(/,/g, '').trim();
+    const maxBal = Math.max(0, parseFloat(selectedParty?.balance_amount || 0));
+    if (maxBal <= 0) {
+      setPaymentAmount('');
+      return;
+    }
+    if (raw === '') {
+      setPaymentAmount('');
+      return;
+    }
+    if (!/^\d*\.?\d*$/.test(raw)) {
+      return;
+    }
+    if (raw === '.') {
+      setPaymentAmount('0.');
+      return;
+    }
+    const n = parseFloat(raw);
+    if (Number.isNaN(n)) {
+      setPaymentAmount('');
+      return;
+    }
+    if (n < 0) {
+      setPaymentAmount('');
+      return;
+    }
+    if (n > maxBal) {
+      setPaymentAmount(maxBal.toFixed(2));
+      return;
+    }
+    const decPart = raw.includes('.') ? raw.split('.')[1] : '';
+    if (decPart && decPart.length > 2) {
+      setPaymentAmount(Math.min(n, maxBal).toFixed(2));
+      return;
+    }
+    setPaymentAmount(raw);
+  };
+
   const handlePaymentSubmit = async () => {
-    if (!selectedParty || !paymentAmount || parseFloat(paymentAmount) <= 0) {
+    if (!selectedParty || !paymentAmount || String(paymentAmount).trim() === '') {
       toast.error('Please enter a valid payment amount');
+      return;
+    }
+    const paymentAmt = parseFloat(String(paymentAmount).replace(/,/g, '').trim());
+    if (!Number.isFinite(paymentAmt) || paymentAmt <= 0) {
+      toast.error('Please enter a valid payment amount greater than zero');
       return;
     }
 
@@ -250,16 +298,26 @@ const Parties = () => {
     try {
       const partyRes = await apiClient.get(`${config.api.sellers}/${selectedParty.id}`);
       const currentBalance = parseFloat(partyRes.data.party.balance_amount || 0);
-      const paymentAmt = parseFloat(paymentAmount);
+      if (currentBalance <= 0) {
+        toast.error('This party has no outstanding balance to pay');
+        setProcessingPayment(false);
+        return;
+      }
+      const roundedPay = Math.round(paymentAmt * 100) / 100;
+      if (roundedPay > currentBalance + 0.009) {
+        toast.error(`Payment cannot exceed amount due (₹${currentBalance.toFixed(2)})`);
+        setProcessingPayment(false);
+        return;
+      }
 
-      const balanceAfterPay = Math.max(0, currentBalance - paymentAmt);
+      const balanceAfterPay = Math.max(0, currentBalance - roundedPay);
       const prevDue = partyRes.data.party.due_date
         ? String(partyRes.data.party.due_date).slice(0, 10)
         : null;
       if (balanceAfterPay > 0.009) {
         const validDue = (paymentNewDueDate || '').trim();
-        if (!validDue) {
-          toast.error('Please choose the new credit due date — an outstanding balance will remain.');
+        if (!validDue || !isValidYmdInput(validDue)) {
+          toast.error('Please choose a valid next due date — required when a balance remains after this payment.');
           setProcessingPayment(false);
           return;
         }
@@ -271,9 +329,9 @@ const Parties = () => {
         transaction_date: getLocalDateString(),
         previous_balance: currentBalance,
         transaction_amount: 0,
-        paid_amount: paymentAmt,
+        paid_amount: roundedPay,
         balance_after: balanceAfterPay,
-        payment_method: paymentMethod,
+        payment_method: null,
         notes: paymentNotes,
         previous_due_date: prevDue
       };
@@ -282,17 +340,30 @@ const Parties = () => {
       }
       const response = await apiClient.post('/api/unified-transactions', paymentBody);
 
-      toast.success(`Payment of ₹${paymentAmt.toFixed(2)} recorded successfully`);
+      toast.success(`Payment of ₹${roundedPay.toFixed(2)} recorded successfully`);
 
       if (response.data.transaction?.id) {
+        const partial = balanceAfterPay > 0.009;
+        const dueRaw = partial
+          ? String(
+              response.data.transaction.new_due_date != null && response.data.transaction.new_due_date !== ''
+                ? response.data.transaction.new_due_date
+                : paymentNewDueDate || ''
+            )
+              .trim()
+              .slice(0, 10)
+          : '';
         setReceiptData({
           transactionId: response.data.transaction.id,
           receiptNumber: response.data.transaction.bill_number || response.data.transaction.id,
-          amount: paymentAmt,
+          amount: roundedPay,
           partyName: selectedParty.party_name,
-          paymentMethod,
           paymentNotes,
-          date: getLocalDateString()
+          date: formatDateInIndia(new Date()),
+          nextDueDate:
+            partial && dueRaw && /^\d{4}-\d{2}-\d{2}$/.test(dueRaw)
+              ? formatDateInIndia(`${dueRaw}T12:00:00`)
+              : null
         });
         setShowReceiptModal(true);
       }
@@ -534,24 +605,20 @@ const Parties = () => {
                           actions={[
                             {
                               label: 'View Details',
-                              icon: '👁️',
                               onClick: () => handleViewDetails(party)
                             },
                             ...(user?.role === 'super_admin'
                               ? [
                                   {
                                     label: 'Make Payment',
-                                    icon: '💰',
                                     onClick: () => handleMakePayment(party)
                                   },
                                   {
                                     label: 'Edit supplier',
-                                    icon: '✏️',
                                     onClick: () => handleEdit(party)
                                   },
                                   {
                                     label: 'Delete',
-                                    icon: '🗑️',
                                     danger: true,
                                     onClick: () => handleArchive(party)
                                   }
@@ -643,7 +710,7 @@ const Parties = () => {
                   <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
                     <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', marginBottom: '2px' }}>Credit due date</div>
                     <div style={{ fontSize: '13px', fontWeight: 600, color: new Date(partyDetails.due_date) < new Date(new Date().toDateString()) ? '#e8593c' : '#9aaebf' }}>
-                      {new Date(`${String(partyDetails.due_date).slice(0, 10)}T12:00:00`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                      {formatDateInIndia(`${String(partyDetails.due_date).slice(0, 10)}T12:00:00`)}
                     </div>
                   </div>
                 )}
@@ -690,14 +757,14 @@ const Parties = () => {
                           const typeColor = txType === 'sale' ? '#3b82f6' : txType === 'payment' || txType === 'sale_payment' ? '#22c55e' : txType === 'return' ? '#f59a30' : '#94a3b8';
                           const ts = txn.transaction_timestamp ? new Date(txn.transaction_timestamp) : null;
                           const dateStr = ts && !Number.isNaN(ts.getTime())
-                            ? ts.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            ? formatInIndiaTime(ts)
                             : (txn.date || txn.transaction_date
-                              ? new Date(`${String(txn.date || txn.transaction_date).slice(0, 10)}T12:00:00`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })
+                              ? formatDateInIndia(`${String(txn.date || txn.transaction_date).slice(0, 10)}T12:00:00`)
                               : '—');
                           const fmtDue = (d) => {
                             if (!d) return null;
                             try {
-                              return new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+                              return formatDateInIndia(`${String(d).slice(0, 10)}T12:00:00`);
                             } catch {
                               return null;
                             }
@@ -815,7 +882,8 @@ const Parties = () => {
                   step="0.01"
                   max={parseFloat(selectedParty.balance_amount || 0)}
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  onChange={handlePaymentAmountChange}
+                  disabled={parseFloat(selectedParty.balance_amount || 0) <= 0}
                   placeholder="0.00"
                   style={{
                     width: '100%',
@@ -843,7 +911,7 @@ const Parties = () => {
               {paymentAmount && parseFloat(paymentAmount) > 0 && Math.max(0, parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)) > 0.009 && (
                 <div>
                   <label htmlFor="party-pay-new-due" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-                    New credit due date <span style={{ color: '#f87171' }}>*</span>
+                    Next due date <span style={{ color: '#f87171' }}>*</span>
                   </label>
                   <input
                     id="party-pay-new-due"
@@ -864,32 +932,7 @@ const Parties = () => {
                   <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>Required when an amount remains after this payment — shown in transaction history.</div>
                 </div>
               )}
-              <div>
-                <label htmlFor="party-pay-method" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-                  Payment method
-                </label>
-                <select
-                  id="party-pay-method"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '11px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #475569',
-                    background: '#0f172a',
-                    color: '#f8fafc',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {PAYMENT_METHOD_OPTIONS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
+<div>
                 <label htmlFor="party-pay-notes" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
                   Notes <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#64748b' }}>(optional)</span>
                 </label>
@@ -986,7 +1029,13 @@ const Parties = () => {
                 <div><strong>Receipt No:</strong><br />{receiptData.receiptNumber}</div>
                 <div><strong>Date:</strong><br />{receiptData.date}</div>
                 <div><strong>Party:</strong><br />{receiptData.partyName}</div>
-                <div><strong>Method:</strong><br />{receiptData.paymentMethod}</div>
+                {receiptData.nextDueDate && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <strong>Next due date:</strong>
+                    <br />
+                    {receiptData.nextDueDate}
+                  </div>
+                )}
                 {receiptData.paymentNotes && <div style={{ gridColumn: '1/-1' }}><strong>Notes:</strong><br />{receiptData.paymentNotes}</div>}
               </div>
             </div>

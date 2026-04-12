@@ -227,7 +227,6 @@ const DayWiseReports = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px' }}>📅</span>
               <h1 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#eef2f8' }}>Daily summaries</h1>
             </div>
             <p style={{ fontSize: '11px', color: '#9aaebf', margin: '2px 0 0 0' }}>

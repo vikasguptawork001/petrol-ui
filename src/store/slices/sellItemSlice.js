@@ -87,7 +87,12 @@ export const calculatePreview = createAsyncThunk(
             sale_rate: (item.sale_rate !== undefined && item.sale_rate !== null && item.sale_rate !== '') ? parseFloat(item.sale_rate) : (itemDetails.sale_rate || item.sale_rate || 0),
             purchase_rate: itemDetails.purchase_rate || item.purchase_rate || 0,
             min_sale_rate: itemDetails.min_sale_rate != null ? itemDetails.min_sale_rate : item.min_sale_rate,
-            unit: itemDetails.unit != null && itemDetails.unit !== '' ? itemDetails.unit : (item.unit || 'PCS'),
+            unit:
+              item.unit != null && String(item.unit).trim() !== ''
+                ? String(item.unit).trim()
+                : itemDetails.unit != null && itemDetails.unit !== ''
+                  ? itemDetails.unit
+                  : 'PCS',
             // Stock quantity from API (quantity field in response)
             available_quantity: itemDetails.quantity || item.available_quantity || 0
           };
@@ -370,13 +375,20 @@ const sellItemSlice = createSlice({
           ? parseInt(currentStockQuantity) 
           : (stockQuantity !== undefined && stockQuantity !== null ? parseInt(stockQuantity) : 0);
         
+        const unitFromMaster =
+          item.unit != null && String(item.unit).trim() !== ''
+            ? String(item.unit).trim()
+            : 'PCS';
         state.selectedItems.push({
           item_id: item.id,
           product_name: item.product_name,
+          product_code: item.product_code || '',
+          brand: item.brand || '',
           sale_rate: parseFloat(item.sale_rate) || 0,
           min_sale_rate: item.min_sale_rate != null ? parseFloat(item.min_sale_rate) : null,
           tax_rate: parseFloat(item.tax_rate) || 0,
           hsn_number: item.hsn_number || '',
+          unit: unitFromMaster,
           quantity: 1, // Always start with quantity 1 for new items
           available_quantity: availableStock, // Store stock as available_quantity
           discount: 0,
@@ -421,6 +433,15 @@ const sellItemSlice = createSlice({
         if (discountType !== undefined) item.discount_type = discountType;
         if (discount !== undefined) item.discount = discount;
         if (discountPercentage !== undefined) item.discount_percentage = discountPercentage;
+      }
+      state.previewDirty = true;
+    },
+    updateItemUnit: (state, action) => {
+      const { itemId, unit } = action.payload;
+      const item = state.selectedItems.find((i) => i.item_id === itemId);
+      if (item) {
+        const u = unit != null ? String(unit).trim() : '';
+        item.unit = u || 'PCS';
       }
       state.previewDirty = true;
     },
@@ -955,6 +976,7 @@ export const {
   updateItemSaleRate,
   removeItem,
   updateItemDiscount,
+  updateItemUnit,
   updateDiscountInput,
   clearPreview,
   updatePreviewItemQuantity,

@@ -215,7 +215,6 @@ const ReturnReport = () => {
         <div className="pp-page-header" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}>↩️</span>
               <h2 style={{ color: '#fff', margin: 0 }}>Return Report</h2>
             </div>
             <p style={{ color: '#94a3b8', margin: '4px 0 0 0' }}>Track item returns and credit notes issued to customers.</p>
@@ -227,7 +226,7 @@ const ReturnReport = () => {
               disabled={exporting || transactions.length === 0 || loading}
               style={{ padding: '10px 20px', fontWeight: '600' }}
             >
-              {exporting ? 'Exporting...' : '📁 Export to Excel'}
+              {exporting ? 'Exporting...' : 'Export to Excel'}
             </button>
           </div>
         </div>
@@ -393,7 +392,6 @@ const ReturnReport = () => {
                           actions={[
                             {
                               label: 'View',
-                              icon: '👁️',
                               onClick: () => fetchBillDetails(txn)
                             }
                           ]}
@@ -636,7 +634,7 @@ const ReturnReport = () => {
         }}
         title="Scroll to top"
       >
-        ↑
+        Top
       </button>
     </Layout>
   );

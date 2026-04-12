@@ -9,6 +9,7 @@ import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
 import { numberToWords } from '../utils/numberToWords';
 import { getLocalDateString, formatInIndiaTime, formatDateInIndia } from '../utils/dateUtils';
+import { unitOptionsForItem } from '../utils/saleUnits';
 import {
   fetchSellerParties,
   fetchSellerInfo,
@@ -37,6 +38,7 @@ import {
   updatePreviewItemUnit,
   removePreviewItem,
   updateItemDiscount,
+  updateItemUnit,
   updatePreviewItemDiscount,
   updatePreviewItemSaleRate,
   setSelectedAttendant,
@@ -287,7 +289,7 @@ const SellItem = () => {
   const handleAddItemToCart = async (item) => {
     try {
       if ((item.quantity || 0) <= 0) {
-        toast.warning(`⚠️ "${item.product_name || item.item_name}" is out of stock and cannot be added`);
+        toast.warning(`"${item.product_name || item.item_name}" is out of stock and cannot be added`);
         return;
       }
       dispatch(addItemToCart(item));
@@ -349,12 +351,12 @@ const SellItem = () => {
   const handlePreview = async (overrideWithGst = null, overrides = {}, options = {}) => {
     const { silent = false } = options;
     if (!selectedSeller) {
-      toast.warning('⚠️ Please select a seller party first');
+      toast.warning('Please select a seller party first');
       return;
     }
     if (!requirePumpStaff()) return;
     if (selectedItems.length === 0) {
-      toast.warning('⚠️ Please add at least one item to the cart');
+      toast.warning('Please add at least one item to the cart');
       return;
     }
     const invalidItems = [];
@@ -441,7 +443,7 @@ const SellItem = () => {
         paidAmount: effectivePaidAmount
       })).unwrap();
       if (overrideWithGst !== null) dispatch(setWithGst(currentWithGst));
-      if (!silent) toast.success('✅ Bill preview generated successfully');
+      if (!silent) toast.success('Bill preview generated successfully');
     } catch (error) {
       console.error('Error in handlePreview:', error);
       toast.error('❌ ' + (error || 'Error calculating preview'));
@@ -459,12 +461,12 @@ const SellItem = () => {
 
   const handleSubmit = async () => {
     if (loading.submit || actionInProgress) {
-      toast.warning('⏳ Transaction is already being processed...');
+      toast.warning('Transaction is already being processed...');
       return;
     }
     let currentPreviewData = previewData;
     if (!currentPreviewData) {
-      toast.info('⏳ Generating bill preview before confirming sale...');
+      toast.info('Generating bill preview before confirming sale...');
       try {
         await handlePreview();
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -481,7 +483,7 @@ const SellItem = () => {
       }
     }
     if (isPreviewStale() && currentPreviewData) {
-      toast.info('⏳ Updating preview and confirming sale...');
+      toast.info('Updating preview and confirming sale...');
       try {
         await handlePreview();
         await new Promise(resolve => setTimeout(resolve, 150));
@@ -497,7 +499,7 @@ const SellItem = () => {
         return;
       }
     } else if (isPreviewStale()) {
-      toast.warning('⚠️ Please generate bill preview first.');
+      toast.warning('Please generate bill preview first.');
       return;
     }
     try {
@@ -551,7 +553,7 @@ const SellItem = () => {
         }
       }
 
-      toast.info('⏳ Processing your sale transaction...');
+      toast.info('Processing your sale transaction...');
       const currentPaidAmount = currentPreviewData.paymentStatus === 'partially_paid'
         ? Math.round(paidAmount || 0)
         : Math.round(currentPreviewData.paidAmount || 0);
@@ -593,9 +595,9 @@ const SellItem = () => {
         };
         setSuccessModalData(modalData);
         setShowSuccessModal(true);
-        toast.success(`✅ Sale completed successfully! Bill Number: ${result.billNumber || 'N/A'}`);
+        toast.success(`Sale completed successfully. Bill number: ${result.billNumber || 'N/A'}`);
       } else {
-        toast.success('✅ Sale completed successfully!');
+        toast.success('Sale completed successfully.');
         dispatch(resetAfterSale());
       }
     } catch (error) {
@@ -609,11 +611,11 @@ const SellItem = () => {
 
   const handlePrint = async () => {
     if (printDisabled || printClicked) {
-      toast.warning('⚠️ Please confirm the sale first to enable printing');
+      toast.warning('Please confirm the sale first to enable printing');
       return;
     }
     if (!previewData || !previewData.transactionId) {
-      toast.warning('⚠️ Please complete the sale first to print PDF');
+      toast.warning('Please complete the sale first to print PDF');
       return;
     }
     dispatch(setPrintClicked(true));
@@ -625,12 +627,12 @@ const SellItem = () => {
     const txId = transactionId || previewData?.transactionId;
     const billNo = billNumber || previewData?.billNumber;
     if (!txId) {
-      toast.warning('⚠️ Please complete the sale first to download PDF');
+      toast.warning('Please complete the sale first to download PDF');
       return;
     }
     setDownloadingPDF(true);
     try {
-      toast.info('📥 Preparing PDF download...');
+      toast.info('Preparing PDF download...');
       const response = await apiClient.get(config.api.billPdf(txId), {
         responseType: 'blob', timeout: 30000
       });
@@ -646,7 +648,7 @@ const SellItem = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('✅ PDF downloaded successfully');
+      toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast.error('❌ Error downloading PDF: ' + (error.response?.data?.error || error.message || 'Unknown error'));
@@ -658,12 +660,12 @@ const SellItem = () => {
   const handlePrintPDF = async (transactionId) => {
     const txId = transactionId || previewData?.transactionId;
     if (!txId) {
-      toast.warning('⚠️ Please complete the sale first to print PDF');
+      toast.warning('Please complete the sale first to print PDF');
       return;
     }
     setPrintingPDF(true);
     try {
-      toast.info('🖨️ Preparing PDF for printing...');
+      toast.info('Preparing PDF for printing...');
       const response = await apiClient.get(config.api.billPdf(txId), {
         responseType: 'blob', timeout: 30000
       });
@@ -682,11 +684,11 @@ const SellItem = () => {
         try {
           printWindow.focus();
           printWindow.print();
-          toast.success('✅ Print dialog opened');
+          toast.success('Print dialog opened');
           setTimeout(() => window.URL.revokeObjectURL(url), 2000);
         } catch (printError) {
           console.error('Print error:', printError);
-          toast.info('📄 PDF opened in new window. Please use the browser\'s print button.');
+          toast.info('PDF opened in new window. Please use the browser\'s print button.');
           window.URL.revokeObjectURL(url);
         }
       }, 1000);
@@ -702,12 +704,12 @@ const SellItem = () => {
     const txId = transactionId || previewData?.transactionId;
     const billNo = billNumber || previewData?.billNumber;
     if (!txId) {
-      toast.warning('⚠️ Please complete the sale first to download receipt');
+      toast.warning('Please complete the sale first to download receipt');
       return;
     }
     setDownloadingReceipt(true);
     try {
-      toast.info('📥 Preparing receipt download...');
+      toast.info('Preparing receipt download...');
       const response = await apiClient.get(config.api.billPdf(txId), {
         responseType: 'blob', timeout: 30000
       });
@@ -723,7 +725,7 @@ const SellItem = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('✅ Receipt downloaded successfully');
+      toast.success('Receipt downloaded successfully');
     } catch (error) {
       console.error('Error downloading receipt:', error);
       toast.error('❌ Error downloading receipt: ' + (error.response?.data?.error || error.message || 'Unknown error'));
@@ -747,7 +749,7 @@ const SellItem = () => {
     setActionInProgress(true);
     try {
       dispatch(removePreviewItem(itemId));
-      toast.success('✅ Item removed from preview');
+      toast.success('Item removed from preview');
     } finally {
       setActionInProgress(false);
     }
@@ -879,7 +881,7 @@ const SellItem = () => {
                         style={{ padding: '4px 8px', fontSize: '11px', minHeight: 'auto', minWidth: 'auto' }}
                         title="Copy bill number"
                       >
-                        📋 Copy
+                        Copy
                       </button>
                     </div>
                   )}
@@ -910,14 +912,14 @@ const SellItem = () => {
                           )}
                           <span>Date: <strong>{formatDateInIndia(new Date())}</strong></span>
                           {billDueDateDisplay && (
-                            <span>Due Date: <strong>{billDueDateDisplay}</strong></span>
+                            <span>Next due date: <strong>{billDueDateDisplay}</strong></span>
                           )}
                         </div>
                       </div>
                       <div className="bp-seller-meta">
                         {previewData.seller?.mobile_number && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span>📱</span> {previewData.seller.mobile_number}
+                            {previewData.seller.mobile_number}
                           </div>
                         )}
                         {previewData.seller?.gst_number && (
@@ -928,7 +930,6 @@ const SellItem = () => {
                         )}
                         {previewData.seller?.address && (
                           <div className="bp-seller-meta-divider" style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
-                            <span>📍</span>
                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#9aaebf' }}>{previewData.seller.address}</span>
                           </div>
                         )}
@@ -948,8 +949,7 @@ const SellItem = () => {
                             <th style={{ textAlign: 'center', width: '40px' }}>Unit</th>
                             {/* Price (was MRP) — narrowed */}
                             <th style={{ textAlign: 'right', width: '72px' }}>Price</th>
-                            {/* Disc — narrowed label */}
-                            <th style={{ textAlign: 'center', width: '64px' }}>Disc(₹/q)</th>
+                            <th style={{ textAlign: 'center', width: '64px' }} title="Discount per unit of quantity">Discount</th>
                             {/* Sale Price (was Price) — narrowed */}
                             <th style={{ textAlign: 'right', width: '72px' }}>Sale Price</th>
                             {previewData.withGst && <th style={{ textAlign: 'center', width: '62px' }}>Tax%</th>}
@@ -1006,19 +1006,22 @@ const SellItem = () => {
                                 {/* Unit */}
                                 <td style={{ textAlign: 'center', color: '#9aaebf', fontSize: '11px' }}>
                                   {!previewData.transactionId ? (
-                                    <select
-                                      value={item.unit || 'PCS'}
-                                      onChange={(e) => dispatch(updatePreviewItemUnit({ itemId: item.item_id, unit: e.target.value }))}
-                                      onBlur={() => { if (handlePreviewRef.current) handlePreviewRef.current(); }}
-                                      style={{ width: '64px' }}
-                                    >
-                                      <option value="PCS">PCS</option>
-                                      <option value="KG">KG</option>
-                                      <option value="LTR">LTR</option>
-                                      <option value="BOX">BOX</option>
-                                      <option value="PACKET">PACKET</option>
-                                      <option value="MTR">MTR</option>
-                                    </select>
+                                    <>
+                                      <input
+                                        list={`bp-unit-dl-${item.item_id}`}
+                                        value={item.unit || 'PCS'}
+                                        onChange={(e) => dispatch(updatePreviewItemUnit({ itemId: item.item_id, unit: e.target.value }))}
+                                        onBlur={() => { if (handlePreviewRef.current) handlePreviewRef.current(); }}
+                                        maxLength={14}
+                                        style={{ width: '72px', padding: '2px 4px', fontSize: '11px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '4px', color: '#eef2f8' }}
+                                        title="Unit from product master; type any custom unit"
+                                      />
+                                      <datalist id={`bp-unit-dl-${item.item_id}`}>
+                                        {unitOptionsForItem(item.unit).map((opt) => (
+                                          <option key={opt} value={opt} />
+                                        ))}
+                                      </datalist>
+                                    </>
                                   ) : (
                                     item.unit || 'PCS'
                                   )}
@@ -1234,17 +1237,17 @@ const SellItem = () => {
                         marginTop: '20px', marginBottom: '60px', padding: '20px', borderRadius: '10px'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid rgba(29,158,117,0.3)' }}>
-                          <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'linear-gradient(135deg, #1d9e75 0%, #2bc48f 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', boxShadow: '0 4px 12px rgba(29, 158, 117, 0.4)', flexShrink: 0 }}>✅</div>
+                          <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'linear-gradient(135deg, #1d9e75 0%, #2bc48f 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#fff', boxShadow: '0 4px 12px rgba(29, 158, 117, 0.4)', flexShrink: 0 }}>OK</div>
                           <div>
                             <h3 style={{ margin: 0, color: '#2bc48f', fontSize: '20px', fontWeight: '700', letterSpacing: '-0.3px' }}>Transaction Completed Successfully</h3>
                             <p style={{ margin: '6px 0 0 0', color: '#9aaebf', fontSize: '14px', fontWeight: '500' }}>
-                              📄 Bill Number: <strong style={{ fontSize: '15px', color: '#eef2f8' }}>{previewData.billNumber || 'N/A'}</strong>
+                              Bill number: <strong style={{ fontSize: '15px', color: '#eef2f8' }}>{previewData.billNumber || 'N/A'}</strong>
                             </p>
                           </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', padding: '20px', backgroundColor: '#1f2937', borderRadius: '12px', border: '1px solid #374151', marginBottom: '20px' }}>
                           {[
-                            { label: 'Payment Status', value: previewData.paymentStatus === 'fully_paid' ? '✓ Fully Paid' : '⚡ Partially Paid', color: '#2bc48f', bg: 'rgba(29,158,117,0.08)', border: 'rgba(29,158,117,0.25)' },
+                            { label: 'Payment Status', value: previewData.paymentStatus === 'fully_paid' ? 'Fully paid' : 'Partially paid', color: '#2bc48f', bg: 'rgba(29,158,117,0.08)', border: 'rgba(29,158,117,0.25)' },
                             { label: 'Invoice Amount', value: `₹${(previewData.total || 0).toFixed(2)}`, color: '#eef2f8', bg: 'rgba(255,255,255,0.04)', border: '#2a3340' },
                           ].map((card, i) => (
                             <div key={i} style={{ padding: '14px', background: card.bg, borderRadius: '10px', border: `1px solid ${card.border}` }}>
@@ -1287,7 +1290,7 @@ const SellItem = () => {
                         onClick={async () => {
                           if (isProcessing || !previewStale) return;
                           setActionInProgress(true);
-                          try { await handlePreview(); toast.success('✅ Bill preview updated'); }
+                          try { await handlePreview(); toast.success('Bill preview updated'); }
                           finally { setActionInProgress(false); }
                         }}
                         className="btn btn-primary right-panel-btn"
@@ -1545,7 +1548,7 @@ const SellItem = () => {
                             >
                               <span style={{ fontWeight: '600' }}>{party.party_name}</span>
                               {party.mobile_number && (
-                                <span style={{ fontSize: '12px', color: '#6c7f8f', whiteSpace: 'nowrap' }}>📱 {party.mobile_number}</span>
+                                <span style={{ fontSize: '12px', color: '#6c7f8f', whiteSpace: 'nowrap' }}>{party.mobile_number}</span>
                               )}
                             </div>
                           ))
@@ -1627,6 +1630,7 @@ const SellItem = () => {
                           <th style={{ letterSpacing: '0.05em' }}>PRODUCT</th>
                           <th style={{ textAlign: 'right', width: '100px', letterSpacing: '0.05em' }}>PRICE</th>
                           <th style={{ textAlign: 'center', width: '90px', letterSpacing: '0.05em' }}>QTY</th>
+                          <th style={{ textAlign: 'center', width: '72px', letterSpacing: '0.05em' }}>UNIT</th>
                           <th style={{ textAlign: 'center', width: '120px', letterSpacing: '0.05em' }}>DISCOUNT</th>
                           <th style={{ textAlign: 'right', width: '110px', letterSpacing: '0.05em' }}>TOTAL</th>
                           <th style={{ textAlign: 'center', width: '50px', letterSpacing: '0.05em' }}>DEL</th>
@@ -1696,6 +1700,22 @@ const SellItem = () => {
                                   {!isOverStock && availableQty > 0 && <div className="stock-info">{availableQty} left</div>}
                                 </div>
                               </td>
+                              <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                <input
+                                  list={`cart-unit-dl-${item.item_id}`}
+                                  value={item.unit || 'PCS'}
+                                  onChange={(e) => dispatch(updateItemUnit({ itemId: item.item_id, unit: e.target.value }))}
+                                  onBlur={() => { if (previewDirty && handlePreviewRef.current) handlePreviewRef.current(); }}
+                                  maxLength={14}
+                                  style={{ width: '64px', padding: '4px 6px', fontSize: '11px', background: '#0a0f16', border: '1px solid #374151', borderRadius: '4px', color: '#e2e8f0' }}
+                                  title="Unit from master; type a custom value if needed"
+                                />
+                                <datalist id={`cart-unit-dl-${item.item_id}`}>
+                                  {unitOptionsForItem(item.unit).map((opt) => (
+                                    <option key={opt} value={opt} />
+                                  ))}
+                                </datalist>
+                              </td>
                               {/* DISCOUNT */}
                               <td style={{ textAlign: 'center' }}>
                                 <input
@@ -1735,7 +1755,7 @@ const SellItem = () => {
                                   style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '18px' }}
                                   title="Remove Item"
                                 >
-                                  <span style={{ fontSize: '13px', opacity: 0.8 }}>✕</span>
+                                  <span style={{ fontSize: '13px', opacity: 0.8 }}>x</span>
                                 </button>
                               </td>
                             </tr>
@@ -1787,14 +1807,14 @@ const SellItem = () => {
                                       <div className="search-loader-container"><div className="search-spinner"></div><span>Searching inventory...</span></div>
                                     )}
                                     {!loading.items && suggestedItems.length === 0 && (
-                                      <div className="no-results-container"><div className="no-results-icon">🔍</div><div>No products found for "{searchQuery}"</div></div>
+                                      <div className="no-results-container"><div className="no-results-icon" aria-hidden /><div>No products found for "{searchQuery}"</div></div>
                                     )}
                                     {suggestedItems.map((item, idx) => {
                                       const isOutOfStock = (item.quantity || 0) <= 0;
                                       const isAlreadyInCart = selectedItems.some(cartItem => cartItem.item_id === item.id);
                                       const stockLevel = item.quantity || 0;
                                       const stockClass = stockLevel <= 0 ? 'none' : (stockLevel < 10 ? 'low' : 'good');
-                                      const stockIcon = stockLevel <= 0 ? '🚫' : (stockLevel < 10 ? '⚠️' : '📦');
+                                      const stockLabel = stockLevel <= 0 ? 'Out' : stockLevel < 10 ? 'Low' : 'OK';
                                       return (
                                         <div
                                           key={item.id}
@@ -1811,15 +1831,15 @@ const SellItem = () => {
                                               {isAlreadyInCart && <span className="selected-badge">In Cart</span>}
                                             </div>
                                             <div className="table-suggestion-meta">
-                                              <span>🏢 {item.brand}</span>
-                                              <span className={`stock-pill ${stockClass}`}>{stockIcon} {stockLevel} Stock</span>
+                                              <span>{item.brand}</span>
+                                              <span className={`stock-pill ${stockClass}`}>{stockLabel} · {stockLevel} in stock</span>
                                               {item.unit && <span>Unit: {item.unit}</span>}
                                             </div>
                                           </div>
                                           <div className="table-suggestion-right">
                                             <div className="table-suggestion-rate">₹{parseFloat(item.sale_rate || 0).toFixed(2)}</div>
                                             {item.min_sale_rate != null && <div style={{ fontSize: '10px', color: '#6c757d' }}>Min: ₹{parseFloat(item.min_sale_rate).toFixed(2)}</div>}
-                                            {isAlreadyInCart && <div style={{ fontSize: '10px', color: '#40c057', fontWeight: '800' }}>✓ SELECTED</div>}
+                                            {isAlreadyInCart && <div style={{ fontSize: '10px', color: '#40c057', fontWeight: '800' }}>SELECTED</div>}
                                           </div>
                                         </div>
                                       );
@@ -1828,7 +1848,7 @@ const SellItem = () => {
                                   {suggestedItems.length > 0 && (
                                     <div className="table-suggestions-footer">
                                       <span>{suggestedItems.length} results found</span>
-                                      <span>↑↓ Navigate • Enter to Add</span>
+                                      <span>Up/Down to navigate · Enter to add</span>
                                     </div>
                                   )}
                                 </div>,
@@ -1836,10 +1856,9 @@ const SellItem = () => {
                               )}
                             </div>
                           </td>
-                          <td colSpan="4">
+                          <td colSpan="5">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6c7f8f', fontSize: '12px', fontStyle: 'italic', paddingLeft: '15px', opacity: 0.7 }}>
-                              <span style={{ fontSize: '16px' }}>↵</span>
-                              Type name above to quickly add more items
+                              Type a name above to quickly add more items
                             </div>
                           </td>
                         </tr>
@@ -1847,7 +1866,7 @@ const SellItem = () => {
                       {/* FIX 2: Added whiteSpace: 'nowrap' to tfoot cells */}
                       <tfoot>
                         <tr className="si-cart-total-row">
-                          <td colSpan="5" className="si-cart-total-label">
+                          <td colSpan="6" className="si-cart-total-label">
                             Cart balance
                           </td>
                           <td className="si-cart-total-amount">
@@ -1872,7 +1891,7 @@ const SellItem = () => {
               <div className="right-panel-label">Seller / Party</div>
               <div className="right-panel-card">
                 <div className="right-panel-card-title">{sellerInfo.party_name}</div>
-                {sellerInfo.mobile_number && <div className="right-panel-card-meta">📱 {sellerInfo.mobile_number}</div>}
+                {sellerInfo.mobile_number && <div className="right-panel-card-meta">{sellerInfo.mobile_number}</div>}
                 <div className="right-panel-card-balance">Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}</div>
               </div>
             </div>
@@ -1928,7 +1947,7 @@ const SellItem = () => {
           >
             <div className="modal-header" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#1f2937', padding: '12px', borderBottom: '1px solid #374151' }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#28a745', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>✓</span>
+                <span style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#28a745', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>OK</span>
                 Transaction Completed Successfully
               </h3>
               <button className="modal-close" onClick={() => { setShowSuccessModal(false); setSuccessModalData(null); }}>×</button>
@@ -1941,7 +1960,7 @@ const SellItem = () => {
               <h4 style={{ marginBottom: '15px', color: '#f3f4f6', fontSize: '16px', fontWeight: '600' }}>Transaction Summary</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 {[
-                  { label: 'Payment Status', value: successModalData.paymentStatus === 'fully_paid' ? '✓ Fully Paid' : '⚡ Partially Paid', color: '#28a745' },
+                  { label: 'Payment Status', value: successModalData.paymentStatus === 'fully_paid' ? 'Fully paid' : 'Partially paid', color: '#28a745' },
                   { label: 'Cart Amount', value: `₹${(successModalData.cartAmount || 0).toFixed(2)}`, color: '#f3f4f6' },
                   { label: 'Amount Paid', value: `₹${(successModalData.amountPaid || 0).toFixed(2)}`, color: '#28a745' },
                   { label: 'Balance Due', value: `₹${(successModalData.balanceDue || 0).toFixed(2)}`, color: (successModalData.balanceDue || 0) > 0 ? '#dc3545' : '#28a745' },
@@ -2000,13 +2019,13 @@ const SellItem = () => {
             <div className="modal-footer" style={{ position: 'sticky', bottom: 0, backgroundColor: '#1f2937', borderTop: '1px solid #374151', padding: '15px 20px', display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button onClick={handleNewSale} className="btn btn-primary" disabled={downloadingPDF || printingPDF || downloadingReceipt} style={{ minWidth: '120px' }}>🆕 New Sale</button>
               <button onClick={() => handleDownloadPDF(successModalData.transactionId, successModalData.billNumber)} className="btn btn-primary" disabled={downloadingPDF || printingPDF || downloadingReceipt} style={{ minWidth: '140px' }}>
-                {downloadingPDF ? '⏳ Downloading...' : '📥 Download PDF'}
+                {downloadingPDF ? 'Downloading...' : 'Download PDF'}
               </button>
               <button onClick={() => handlePrintPDF(successModalData.transactionId)} className="btn btn-success" disabled={downloadingPDF || printingPDF || downloadingReceipt} style={{ minWidth: '120px' }}>
-                {printingPDF ? '⏳ Opening...' : '🖨️ Print PDF'}
+                {printingPDF ? 'Opening...' : 'Print PDF'}
               </button>
               <button onClick={() => handleDownloadReceipt(successModalData.transactionId, successModalData.billNumber)} className="btn btn-secondary" disabled={downloadingPDF || printingPDF || downloadingReceipt} style={{ minWidth: '140px' }}>
-                {downloadingReceipt ? '⏳ Downloading...' : '📥 Download Receipt'}
+                {downloadingReceipt ? 'Downloading...' : 'Download Receipt'}
               </button>
             </div>
           </div>
