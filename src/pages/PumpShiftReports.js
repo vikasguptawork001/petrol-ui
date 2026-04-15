@@ -4,7 +4,7 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getLocalDateString, formatDateInIndia, formatInIndiaTime, parseMysqlDatetimeIST } from '../utils/dateUtils';
+import { getLocalDateString, formatDateInIndia, formatInIndiaTime } from '../utils/dateUtils';
 import * as XLSX from 'xlsx';
 import TransactionLoader from '../components/TransactionLoader';
 import './Report.css';

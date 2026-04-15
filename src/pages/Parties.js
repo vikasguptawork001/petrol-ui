@@ -119,7 +119,7 @@ const Parties = () => {
     } finally {
       setLoading(false);
     }
-  }, [listPage, pageSize, debouncedSearchQuery, balanceFilter]);
+  }, [listPage, pageSize, debouncedSearchQuery, balanceFilter, toast]);
 
   useEffect(() => {
     fetchParties();
