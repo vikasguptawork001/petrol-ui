@@ -202,7 +202,8 @@ const DayWiseReports = () => {
         padding: '10px 14px',
         border: '1px solid #2a3340',
         borderLeft: `3px solid ${color}`,
-        minWidth: '120px'
+        minWidth: '120px',
+        textAlign: 'center'
       }}
     >
       <div
@@ -424,13 +425,13 @@ const DayWiseReports = () => {
         {tab === 'nozzle' && (
           <>
             {nozzleSummary && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', justifyContent: 'center' }}>
                 {pill('Total liters (period)', fmt(nozzleSummary.total_liters).toFixed(2), '#3b82f6')}
                 {pill('Total shifts', nozzleSummary.total_shifts, '#9aaebf')}
                 {pill('Days with readings', nozzleSummary.days, '#22c55e')}
               </div>
             )}
-            <div style={{ marginBottom: '8px', fontSize: '11px', color: '#9aaebf', fontWeight: 600 }}>
+            <div style={{ marginBottom: '12px', fontSize: '11px', color: '#9aaebf', fontWeight: 600, textAlign: 'center', letterSpacing: '0.02em' }}>
               By date and pump nozzle
             </div>
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflowX: 'auto' }}>
@@ -439,9 +440,9 @@ const DayWiseReports = () => {
                   <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Date</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Nozzle</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Shifts</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Done</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Pending</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Shifts</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Done</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Pending</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Liters sold</th>
                   </tr>
                 </thead>
@@ -459,9 +460,9 @@ const DayWiseReports = () => {
                           {displayDate(r.reading_date)}
                         </td>
                         <td style={{ padding: '7px 10px', color: '#eef2f8' }}>{r.nozzle_name}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: '#9aaebf' }}>{r.shift_count}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: '#22c55e' }}>{r.completed_shifts}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: '#f59a30' }}>{r.pending_shifts}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', color: '#9aaebf' }}>{r.shift_count}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', color: '#22c55e' }}>{r.completed_shifts}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', color: '#f59a30' }}>{r.pending_shifts}</td>
                         <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 600, color: '#3b82f6' }}>
                           {fmt(r.liters_sold).toFixed(2)}
                         </td>
@@ -471,7 +472,7 @@ const DayWiseReports = () => {
                 </tbody>
               </table>
             </div>
-            <div style={{ margin: '16px 0 8px', fontSize: '11px', color: '#9aaebf', fontWeight: 600 }}>
+            <div style={{ margin: '20px 0 12px', fontSize: '11px', color: '#9aaebf', fontWeight: 600, textAlign: 'center', letterSpacing: '0.02em' }}>
               Daily totals (all pumps combined)
             </div>
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflowX: 'auto' }}>
@@ -479,8 +480,8 @@ const DayWiseReports = () => {
                 <thead>
                   <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Date</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Shifts</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Liters sold</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Shifts</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Liters sold</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -496,8 +497,8 @@ const DayWiseReports = () => {
                         <td style={{ padding: '7px 10px', color: '#eef2f8', whiteSpace: 'nowrap' }}>
                           {displayDate(r.reading_date)}
                         </td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', color: '#9aaebf' }}>{r.shift_count}</td>
-                        <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 600, color: '#3b82f6' }}>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', color: '#9aaebf' }}>{r.shift_count}</td>
+                        <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 600, color: '#3b82f6' }}>
                           {fmt(r.liters_sold).toFixed(2)}
                         </td>
                       </tr>
@@ -512,7 +513,7 @@ const DayWiseReports = () => {
         {tab === 'sales' && (
           <>
             {salesSummary && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', justifyContent: 'center' }}>
                 {pill('Total sales', fmtMoney(salesSummary.total_sales), '#f59a30')}
                 {pill('Total paid', fmtMoney(salesSummary.total_paid), '#22c55e')}
                 {pill('Total due', fmtMoney(salesSummary.total_due), '#e8593c')}

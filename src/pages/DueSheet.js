@@ -757,7 +757,7 @@ export function DueSheetPanel({ embedded = false }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ background: '#0f151f' }}>
-                <th style={{ padding: '8px 6px', textAlign: 'center', width: '36px' }}>#</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', width: '40px' }}>S.No</th>
                 <th style={{ padding: '8px 6px', textAlign: 'left', width: '18%' }}>Creditor</th>
                 <th style={{ padding: '8px 6px', textAlign: 'left', width: '12%' }}>Mobile</th>
                 <th style={{ padding: '8px 6px', textAlign: 'left', width: '20%' }}>Address</th>

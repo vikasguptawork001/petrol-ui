@@ -5,6 +5,9 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { getLocalDateString } from '../utils/dateUtils';
 import './Party.css';
 
 const AddSellerParty = () => {
@@ -467,18 +470,26 @@ const AddSellerParty = () => {
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Due Date</label>
-                <input
-                  type="date"
-                  name="due_date"
-                  value={formData.due_date}
-                  onChange={handleChange}
+                <label>Due date (DD-MM-YYYY)</label>
+                <DatePicker
+                  selected={formData.due_date ? new Date(`${String(formData.due_date).slice(0, 10)}T12:00:00`) : null}
+                  onChange={(date) => {
+                    setFormData((prev) => ({ ...prev, due_date: date ? getLocalDateString(date) : '' }));
+                  }}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="Select due date"
+                  className="form-control-date"
+                  wrapperClassName="form-datepicker-wrap"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
                   style={{
                     width: '100%',
                     padding: '10px 12px',
                     border: '1px solid #ddd',
                     borderRadius: '6px',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>

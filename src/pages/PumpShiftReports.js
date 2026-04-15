@@ -4,7 +4,7 @@ import apiClient from '../config/axios';
 import config from '../config/config';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getLocalDateString, formatDateInIndia, formatInIndiaTime } from '../utils/dateUtils';
+import { getLocalDateString, formatDateInIndia, formatInIndiaTime, parseMysqlDatetimeIST } from '../utils/dateUtils';
 import * as XLSX from 'xlsx';
 import TransactionLoader from '../components/TransactionLoader';
 import './Report.css';
@@ -373,7 +373,7 @@ const PumpShiftReports = () => {
                         <td style={{ ...td, textAlign: 'right', color: '#3b82f6' }}>{r.sale_liters != null ? fmt(r.sale_liters) : '—'}</td>
                         <td style={{ ...td, color: '#9aaebf', whiteSpace: 'nowrap' }}>{r.opening_at ? formatInIndiaTime(r.opening_at) : '—'}</td>
                         <td style={{ ...td, color: '#9aaebf', whiteSpace: 'nowrap' }}>{r.closing_at ? formatInIndiaTime(r.closing_at) : '—'}</td>
-                        <td style={td}>
+                        <td style={{ ...td, textAlign: 'center' }}>
                           {r.completed ? (
                             <span style={{ color: '#22c55e', fontWeight: 600 }}>Done</span>
                           ) : (
@@ -498,7 +498,7 @@ const PumpShiftReports = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                 <thead>
                   <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
-                    <th style={{ ...th, width: '44px' }}>#</th>
+                    <th style={{ ...th, width: '48px', textAlign: 'center' }}>S.No</th>
                     <th style={th}>Date</th>
                     <th style={th}>Attendant</th>
                     <th style={{ ...th, textAlign: 'right' }}>Opening</th>
@@ -524,7 +524,7 @@ const PumpShiftReports = () => {
                   ) : (
                     ndShifts.map((r) => (
                       <tr key={r.id} style={{ borderBottom: '1px solid #1a2330' }}>
-                        <td style={{ ...td, color: '#6c7f8f', fontWeight: 700 }}>{r.sequence}</td>
+                        <td style={{ ...td, color: '#6c7f8f', fontWeight: 700, textAlign: 'center' }}>{r.sequence}</td>
                         <td style={{ ...td, whiteSpace: 'nowrap' }}>{showDate(r.reading_date)}</td>
                         <td style={{ ...td, fontWeight: 600 }}>{r.attendant_name}</td>
                         <td style={{ ...td, textAlign: 'right' }}>{fmt(r.opening_reading)}</td>

@@ -190,7 +190,7 @@ const ItemWiseSellReport = () => {
               { l: 'Total GST', v: `₹${fmtN(summary.totalGst).toFixed(2)}`, c: '#9aaebf' },
               { l: 'Net Amount', v: `₹${fmtN(summary.totalNet).toFixed(2)}`, c: '#22c55e' },
             ].map((s, i) => (
-              <div key={i} style={{ background: '#141b26', borderRadius: '8px', padding: '10px 14px', border: '1px solid #2a3340', borderLeft: `3px solid ${s.c}`, minWidth: '120px' }}>
+              <div key={i} style={{ background: '#141b26', borderRadius: '8px', padding: '10px 14px', border: '1px solid #2a3340', borderLeft: `3px solid ${s.c}`, minWidth: '120px', textAlign: 'center' }}>
                 <div style={{ fontSize: '9px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{s.l}</div>
                 <div style={{ fontSize: '16px', fontWeight: 700, color: s.c }}>{s.v}</div>
               </div>
@@ -208,9 +208,9 @@ const ItemWiseSellReport = () => {
                 <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
                   {[
                     { h: 'Product', a: 'left' }, { h: 'Brand', a: 'left' }, { h: 'HSN', a: 'left' },
-                    { h: 'Tax%', a: 'right' }, { h: 'Qty', a: 'right' }, { h: 'Gross', a: 'right' },
-                    { h: 'Discount', a: 'right' }, { h: 'Net Sales', a: 'right' }, { h: 'GST', a: 'right' },
-                    { h: 'Net', a: 'right' }, { h: 'Bills', a: 'center' }
+                    { h: 'Tax%', a: 'center' }, { h: 'Qty', a: 'center' }, { h: 'Gross', a: 'center' },
+                    { h: 'Discount', a: 'center' }, { h: 'Net Sales', a: 'center' }, { h: 'GST', a: 'center' },
+                    { h: 'Net', a: 'center' }, { h: 'Bills', a: 'center' }
                   ].map(col => (
                     <th key={col.h} style={{ padding: '8px 10px', textAlign: col.a, color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>{col.h}</th>
                   ))}
@@ -224,13 +224,13 @@ const ItemWiseSellReport = () => {
                     <td style={{ padding: '7px 10px', fontWeight: 500, color: '#eef2f8' }}>{r.product_name}</td>
                     <td style={{ padding: '7px 10px', color: '#9aaebf' }}>{r.brand || '—'}</td>
                     <td style={{ padding: '7px 10px', color: '#9aaebf', fontFamily: 'monospace', fontSize: '10px' }}>{r.hsn_number || '—'}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', color: '#9aaebf' }}>{Number(r.tax_rate || 0).toFixed(0)}%</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 600, color: '#eef2f8' }}>{Number(r.total_quantity || 0).toFixed(0)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', color: '#f59a30' }}>₹{fmtN(r.gross_amount).toFixed(2)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', color: '#e8593c' }}>₹{fmtN(r.discount_amount).toFixed(2)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', color: '#eef2f8' }}>₹{fmtN(r.taxable_or_net_amount).toFixed(2)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', color: '#9aaebf' }}>₹{fmtN(r.gst_amount).toFixed(2)}</td>
-                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 600, color: '#22c55e' }}>₹{fmtN(r.net_amount).toFixed(2)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#9aaebf' }}>{Number(r.tax_rate || 0).toFixed(0)}%</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 600, color: '#eef2f8' }}>{Number(r.total_quantity || 0).toFixed(0)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#f59a30' }}>₹{fmtN(r.gross_amount).toFixed(2)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#e8593c' }}>₹{fmtN(r.discount_amount).toFixed(2)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#eef2f8' }}>₹{fmtN(r.taxable_or_net_amount).toFixed(2)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', color: '#9aaebf' }}>₹{fmtN(r.gst_amount).toFixed(2)}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 600, color: '#22c55e' }}>₹{fmtN(r.net_amount).toFixed(2)}</td>
                     <td style={{ padding: '7px 10px', textAlign: 'center', color: '#9aaebf' }}>{r.bills_count}</td>
                   </tr>
                 ))}

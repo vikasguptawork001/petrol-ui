@@ -344,9 +344,9 @@ const Dashboard = () => {
   };
 
   const handleQuickSale = async () => {
-    const qty = parseInt(quickSaleQuantity);
-    if (!quickSaleItem || qty <= 0) {
-      toast.error('Valid quantity required');
+    const qty = quickSaleQuantity === '' ? NaN : parseInt(quickSaleQuantity, 10);
+    if (!quickSaleItem || !Number.isFinite(qty) || qty <= 0) {
+      toast.error('Enter a valid quantity (at least 1)');
       return;
     }
     if (qty > quickSaleItem.quantity) {
@@ -369,7 +369,8 @@ const Dashboard = () => {
       fetchItems();
       if (user?.role === 'super_admin') fetchTotalStockAmount();
     } catch (err) {
-      toast.error('Sale failed');
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Sale failed';
+      toast.error(msg);
     } finally {
       setQuickSaleLoading(false);
     }
@@ -451,9 +452,10 @@ const Dashboard = () => {
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Low stock</div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#e8593c' }}>{allItems.filter(i => i.quantity <= (i.alert_quantity || 0)).length}</div>
         </button>
-        <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #22c55e' }}>
+        <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #22c55e' }} title="Sum of (purchase rate × quantity on hand) for all active products.">
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Stock Value</div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: '#22c55e' }}>₹{totalStockAmount?.toFixed(2) || '0'}</div>
+          <div style={{ fontSize: '9px', color: '#64748b', marginTop: '4px' }}>Σ (purchase rate × qty)</div>
         </div>
         <div style={{ padding: '8px', background: '#0f151f', borderRadius: '6px', borderLeft: '2px solid #3b82f6' }}>
           <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total Qty</div>
@@ -468,8 +470,8 @@ const Dashboard = () => {
       </div>
 
       {/* Search & Filters */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '8px', marginBottom: '12px' }}>
-        <div style={{ display: 'flex', gap: '8px', background: '#0f151f', padding: '4px 8px', borderRadius: '6px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', background: '#0f151f', padding: '4px 8px', borderRadius: '6px', flex: '1 1 200px', minWidth: 0 }}>
           <select value={searchField} onChange={e => setSearchField(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '11px' }}>
             <option value="product_name">Name</option>
             <option value="brand">Brand</option>
@@ -491,12 +493,12 @@ const Dashboard = () => {
 
       {/* Advanced Search Panel */}
       {showAdvancedSearch && (
-        <div style={{ background: '#1a2330', border: '1px solid #2a3340', padding: '12px', borderRadius: '8px', marginBottom: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '8px' }}>
+        <div style={{ background: '#1a2330', border: '1px solid #2a3340', padding: '12px', borderRadius: '8px', marginBottom: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))', gap: '8px', alignItems: 'end' }}>
           <input type="text" placeholder="Product Name" value={advancedSearch.product_name} onChange={e => setAdvancedSearch({ ...advancedSearch, product_name: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
           <input type="text" placeholder="Unit" value={advancedSearch.unit} onChange={e => setAdvancedSearch({ ...advancedSearch, unit: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
           <input type="text" placeholder="Brand" value={advancedSearch.brand} onChange={e => setAdvancedSearch({ ...advancedSearch, brand: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
           <input type="text" placeholder="Remarks" value={advancedSearch.remarks} onChange={e => setAdvancedSearch({ ...advancedSearch, remarks: e.target.value })} style={{ ...inputStyle, color: '#eef2f8', background: '#0f151f', border: '1px solid #2a3340' }} />
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', gridColumn: '1 / -1' }}>
             <button onClick={handleAdvancedSearch} disabled={searching} style={{ padding: '6px 14px', background: '#f59a30', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#1a1200', fontWeight: 600 }}>{searching ? '...' : 'Search'}</button>
             <button onClick={() => { setAdvancedSearch({ product_name: '', unit: '', brand: '', remarks: '' }); setSearch(''); fetchItems(); }} style={{ padding: '6px 10px', background: '#2a3340', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', color: '#9aaebf' }}>Clear</button>
           </div>
@@ -528,7 +530,7 @@ const Dashboard = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead>
               <tr style={{ background: '#0f151f', position: 'sticky', top: 0 }}>
-                <th style={{ padding: '8px 6px', textAlign: 'center', width: '40px' }}>#</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', width: '40px' }}>S.No</th>
                 <th onClick={() => handleSort('product_name')} style={{ padding: '8px 6px', textAlign: 'left', cursor: 'pointer' }}>Product {sortBy === 'product_name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                 <th style={{ padding: '8px 6px', textAlign: 'left' }}>Unit</th>
                 <th onClick={() => handleSort('brand')} style={{ padding: '8px 6px', textAlign: 'left', cursor: 'pointer' }}>Brand {sortBy === 'brand' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
@@ -596,7 +598,7 @@ const Dashboard = () => {
         type="transaction"
       />
       
-      <div style={{ padding: '8px 12px', maxWidth: '1600px', margin: '0 auto', position: 'relative' }}>
+      <div style={{ padding: '8px 12px', width: '100%', maxWidth: 'min(1680px, 100%)', margin: '0 auto', position: 'relative', boxSizing: 'border-box' }}>
 
 
         {/* Tab Content */}
@@ -764,8 +766,27 @@ const Dashboard = () => {
             <div style={modalBody}>
               <div><strong>{quickSaleItem.product_name}</strong> {quickSaleItem.brand && `(${quickSaleItem.brand})`}</div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Rate: ₹{quickSaleItem.sale_rate} | Stock: {quickSaleItem.quantity}</div>
-              <input type="number" min="1" max={quickSaleItem.quantity} value={quickSaleQuantity} onChange={e => setQuickSaleQuantity(Math.min(parseInt(e.target.value) || 1, quickSaleItem.quantity))} style={{ ...inputStyle, marginTop: '12px' }} />
-              <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 600 }}>Total: ₹{(quickSaleItem.sale_rate * quickSaleQuantity).toFixed(2)}</div>
+              <input
+                type="number"
+                min={1}
+                max={quickSaleItem.quantity}
+                value={quickSaleQuantity}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '') {
+                    setQuickSaleQuantity('');
+                    return;
+                  }
+                  const n = parseInt(v, 10);
+                  if (Number.isNaN(n)) return;
+                  setQuickSaleQuantity(Math.min(Math.max(1, n), quickSaleItem.quantity));
+                }}
+                style={{ ...inputStyle, marginTop: '12px' }}
+              />
+              <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 600 }}>
+                Total: ₹
+                {(quickSaleItem.sale_rate * (quickSaleQuantity === '' ? 0 : Number(quickSaleQuantity))).toFixed(2)}
+              </div>
             </div>
             <div style={modalFooter}>
               <button onClick={() => setShowQuickSaleModal(false)} style={secondaryBtn}>Cancel</button>

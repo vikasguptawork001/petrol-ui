@@ -1626,7 +1626,7 @@ const SellItem = () => {
                     <table className="table">
                       <thead>
                         <tr>
-                          <th style={{ textAlign: 'center', width: '40px', letterSpacing: '0.05em' }}>#</th>
+                          <th style={{ textAlign: 'center', width: '44px', letterSpacing: '0.05em' }}>S.No</th>
                           <th style={{ letterSpacing: '0.05em' }}>PRODUCT</th>
                           <th style={{ textAlign: 'right', width: '100px', letterSpacing: '0.05em' }}>PRICE</th>
                           <th style={{ textAlign: 'center', width: '90px', letterSpacing: '0.05em' }}>QTY</th>

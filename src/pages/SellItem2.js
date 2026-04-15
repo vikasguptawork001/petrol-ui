@@ -569,7 +569,7 @@ const SellItem2 = () => {
                       <table className="bill-table">
                         <thead>
                           <tr>
-                            <th>#</th>
+                            <th>S.No</th>
                             <th>Item Description</th>
                             <th>HSN</th>
                             <th>Qty</th>

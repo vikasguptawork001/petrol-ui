@@ -212,7 +212,7 @@ const SellReport = () => {
                   <th style={{ padding: '8px 10px', textAlign: 'right', color: '#9aaebf', fontWeight: 600 }}>Balance</th>
                   <th style={{ padding: '8px 10px', textAlign: 'left', color: '#9aaebf', fontWeight: 600 }}>Attendant</th>
                   <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>⋯</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', color: '#9aaebf', fontWeight: 600 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -306,15 +306,15 @@ const SellReport = () => {
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                             <thead>
                               <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
-                                {['#', 'Product', 'Brand', 'Tax%', 'Qty', 'Rate', 'Discount', 'Gross', 'GST', 'Net'].map(h => (
-                                  <th key={h} style={{ padding: '7px 8px', textAlign: h === '#' || h === 'Product' || h === 'Brand' ? 'left' : 'right', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                                {['S.No', 'Product', 'Brand', 'Tax%', 'Qty', 'Rate', 'Discount', 'Gross', 'GST', 'Net'].map(h => (
+                                  <th key={h} style={{ padding: '7px 8px', textAlign: h === 'S.No' ? 'center' : h === 'Product' || h === 'Brand' ? 'left' : 'right', color: '#9aaebf', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
                               {billDetails.items.map((item, i) => (
                                 <tr key={i} style={{ borderBottom: '1px solid #1a2330' }}>
-                                  <td style={{ padding: '6px 8px', color: '#9aaebf' }}>{i + 1}</td>
+                                  <td style={{ padding: '6px 8px', textAlign: 'center', color: '#9aaebf' }}>{i + 1}</td>
                                   <td style={{ padding: '6px 8px', fontWeight: 500, color: '#eef2f8', whiteSpace: 'nowrap' }}>{item.product_name}</td>
                                   <td style={{ padding: '6px 8px', color: '#9aaebf' }}>{item.brand || '—'}</td>
                                   <td style={{ padding: '6px 8px', textAlign: 'right', color: '#9aaebf' }}>{item.tax_rate ?? 0}%</td>

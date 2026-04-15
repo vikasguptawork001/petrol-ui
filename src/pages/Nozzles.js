@@ -427,7 +427,7 @@ const Nozzles = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
                   <tr style={{ background: '#0f151f' }}>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>#</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>S.No</th>
                     <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nozzle name</th>
                     <th style={{ padding: '10px 12px', textAlign: 'center', width: '160px' }}>Actions</th>
                   </tr>

@@ -166,7 +166,8 @@
   .layout .header-content,
   .layout .footer-content,
   .layout .main-content {
-    max-width: 2048px;
+    /* 24–27″ ultrawide: keep line length readable; side margins grow */
+    max-width: min(2048px, 100%);
   }
 }
 

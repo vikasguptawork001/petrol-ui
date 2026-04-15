@@ -218,10 +218,10 @@ const AddItem = () => {
       
       const existingItem = selectedItems.find(i => i.item_id === item.id);
       if (existingItem) {
-        // If item already in cart, just increment quantity
         setSelectedItems(prev => prev.map(i =>
           i.item_id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         ));
+        toast.info(`"${item.product_name}" is already in your list — quantity increased by 1.`);
       } else {
         // Add item using search data (which includes purchase_rate)
         // Note: current_quantity should be the actual stock from the database
@@ -574,6 +574,12 @@ const AddItem = () => {
             </div>
           </div>
 
+          {selectedItems.length > 0 && (
+            <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)', lineHeight: 1.45 }}>
+              Set <strong>Quantity</strong> to the units you are adding to stock, then use <strong>Add to inventory (updates stock)</strong>. Use <strong>Save rates only</strong> when you only change prices (no stock change).
+            </p>
+          )}
+
           <div className="table-responsive-container">
             <table className="table">
                   <thead style={{ background: '#0d1523' }}>
@@ -840,22 +846,24 @@ const AddItem = () => {
           {selectedItems.length > 0 && (
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Click a rate to edit · Enter moves to the next field</span>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button
                   onClick={handleSaveRates}
                   disabled={isSaving}
                   className="btn btn-secondary"
                   style={{ opacity: isSaving ? 0.6 : 1 }}
+                  type="button"
                 >
-                  {isSaving ? 'Saving...' : 'Save Rates'}
+                  {isSaving ? 'Saving...' : 'Save rates only'}
                 </button>
                 <button
                   onClick={handleSubmitPurchase}
                   disabled={isSubmittingPurchase}
                   className="btn btn-success"
                   style={{ opacity: isSubmittingPurchase ? 0.6 : 1 }}
+                  type="button"
                 >
-                  {isSubmittingPurchase ? 'Adding...' : 'Add to Inventory'}
+                  {isSubmittingPurchase ? 'Adding...' : 'Add to inventory (updates stock)'}
                 </button>
                 <button
                   onClick={() => {

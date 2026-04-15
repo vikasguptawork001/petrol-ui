@@ -296,6 +296,7 @@ const Attendants = () => {
   const [reportTo, setReportTo] = useState(() => getLocalDateString());
   const [reportRows, setReportRows] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
+  const [showRemoved, setShowRemoved] = useState(false);
 
   const formatInr = (n) => {
     const num = Number(n || 0);
@@ -336,13 +337,23 @@ const Attendants = () => {
   const fetchAttendants = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get(config.api.attendants);
+      const res = await apiClient.get(config.api.attendants, { params: { include_archived: '1' } });
       setAttendants(res.data.attendants || []);
     } catch (e) {
       console.error(e);
       toast.error('Failed to load attendants');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRestore = async (id) => {
+    try {
+      await apiClient.post(`${config.api.attendants}/${id}/restore`);
+      toast.success('Attendant restored');
+      fetchAttendants();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to restore');
     }
   };
 
@@ -410,14 +421,14 @@ const Attendants = () => {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"? They will be archived.`)) return;
+    if (!window.confirm(`Remove "${name}" from the list? You can bring them back with "Show removed" → Restore.`)) return;
     setDeleting(true);
     try {
       await apiClient.delete(`${config.api.attendants}/${id}`);
-      toast.success('Attendant deleted');
+      toast.success('Removed from list');
       fetchAttendants();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to delete');
+      toast.error(err.response?.data?.error || 'Failed to remove');
     } finally {
       setDeleting(false);
     }
@@ -446,7 +457,7 @@ const Attendants = () => {
       <TransactionLoader
         isLoading={crudBusy}
         message={
-          deleting ? 'Archiving attendant…' : submitting ? 'Saving attendant…' : reportLoading ? 'Loading sales…' : 'Loading…'
+          deleting ? 'Removing attendant…' : submitting ? 'Saving attendant…' : reportLoading ? 'Loading sales…' : 'Loading…'
         }
         type="transaction"
       />
@@ -476,14 +487,20 @@ const Attendants = () => {
         </div>
 
         <div style={{ marginBottom: '16px', padding: '16px 18px', background: '#0a0e14', borderRadius: '10px', border: '1px solid #2a3340' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>Attendant roster</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Shown on the sell screen when choosing who served the sale.</div>
             </div>
-            <button onClick={openAdd} type="button" disabled={crudBusy} style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: crudBusy ? 'not-allowed' : 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px', opacity: crudBusy ? 0.65 : 1 }}>
-              <Icon name="plus" size={14} /> Add attendant
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <label style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={showRemoved} onChange={(e) => setShowRemoved(e.target.checked)} />
+                Show removed
+              </label>
+              <button onClick={openAdd} type="button" disabled={crudBusy} style={{ padding: '8px 16px', background: '#f59a30', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: crudBusy ? 'not-allowed' : 'pointer', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '6px', opacity: crudBusy ? 0.65 : 1 }}>
+                <Icon name="plus" size={14} /> Add attendant
+              </button>
+            </div>
           </div>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>Loading roster…</div>
@@ -496,7 +513,7 @@ const Attendants = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
                   <tr style={{ background: '#0f151f' }}>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '45px' }}>#</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', width: '52px' }}>S.No</th>
                     <th style={{ padding: '10px 12px', textAlign: 'left' }}>Attendance ID</th>
                     <th style={{ padding: '10px 12px', textAlign: 'left' }}>Name</th>
                     <th style={{ padding: '10px 12px', textAlign: 'left' }}>Mobile</th>
@@ -504,20 +521,28 @@ const Attendants = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {attendants.map((a, idx) => (
-                    <tr key={a.id} style={{ borderBottom: '1px solid #2a3340' }}>
+                  {(showRemoved ? attendants : attendants.filter((a) => !a.is_archived)).map((a, idx) => (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #2a3340', opacity: a.is_archived ? 0.75 : 1 }}>
                       <td style={{ padding: '10px 12px', textAlign: 'center', color: '#6c7f8f' }}>{idx + 1}</td>
                       <td style={{ padding: '10px 12px', color: '#9aaebf' }}>{a.attendance_id || '—'}</td>
-                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{a.name}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{a.name}{a.is_archived ? <span style={{ marginLeft: '8px', fontSize: '10px', color: '#94a3b8' }}>(removed)</span> : null}</td>
                       <td style={{ padding: '10px 12px', color: '#9aaebf' }}>{a.mobile_number || '—'}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button type="button" onClick={() => openEdit(a)} disabled={crudBusy} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fff', opacity: crudBusy ? 0.65 : 1 }}>
-                            Edit
-                          </button>
-                          <button type="button" onClick={() => handleDelete(a.id, a.name)} disabled={crudBusy} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fecaca', opacity: crudBusy ? 0.65 : 1 }}>
-                            Archive
-                          </button>
+                          {a.is_archived ? (
+                            <button type="button" onClick={() => handleRestore(a.id)} disabled={crudBusy} style={{ padding: '6px 12px', background: '#14532d', border: '1px solid #22c55e', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#bbf7d0' }}>
+                              Restore
+                            </button>
+                          ) : (
+                            <>
+                              <button type="button" onClick={() => openEdit(a)} disabled={crudBusy} style={{ padding: '6px 12px', background: '#3b82f6', border: 'none', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fff', opacity: crudBusy ? 0.65 : 1 }}>
+                                Edit
+                              </button>
+                              <button type="button" onClick={() => handleDelete(a.id, a.name)} disabled={crudBusy} style={{ padding: '6px 12px', background: 'rgba(232,89,60,0.25)', border: '1px solid #e8593c', borderRadius: '6px', cursor: crudBusy ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#fecaca', opacity: crudBusy ? 0.65 : 1 }}>
+                                Remove
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

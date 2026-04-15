@@ -173,7 +173,7 @@ const OrderSheet = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                 <thead>
                   <tr style={{ background: '#0f151f' }}>
-                    <th style={{ padding: '8px 8px', textAlign: 'center', width: '50px' }}>#</th>
+                    <th style={{ padding: '8px 8px', textAlign: 'center', width: '50px' }}>S.No</th>
                     <th style={{ padding: '8px 8px', textAlign: 'left' }}>Product Name</th>
                     <th style={{ padding: '8px 8px', textAlign: 'left' }}>Brand</th>
                     <th style={{ padding: '8px 8px', textAlign: 'center', width: '100px' }}>Current Qty</th>

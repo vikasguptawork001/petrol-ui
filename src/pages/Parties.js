@@ -55,7 +55,8 @@ const Parties = () => {
   const [editingParty, setEditingParty] = useState(null);
   const [editFormData, setEditFormData] = useState({
     party_name: '', mobile_number: '', cheque_number: '', bank_name: '', address: '',
-    opening_balance: '', closing_balance: '', gst_number: ''
+    opening_balance: '', closing_balance: '', balance_amount: '', gst_number: '',
+    due_date: '', vehicle_number: ''
   });
   const [updating, setUpdating] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -118,7 +119,7 @@ const Parties = () => {
     } finally {
       setLoading(false);
     }
-  }, [listPage, pageSize, debouncedSearchQuery, balanceFilter, toast]);
+  }, [listPage, pageSize, debouncedSearchQuery, balanceFilter]);
 
   useEffect(() => {
     fetchParties();
@@ -161,7 +162,10 @@ const Parties = () => {
       address: party.address || '',
       opening_balance: party.opening_balance || '',
       closing_balance: party.closing_balance || '',
-      gst_number: party.gst_number || ''
+      balance_amount: party.balance_amount != null ? String(party.balance_amount) : '',
+      gst_number: party.gst_number || '',
+      due_date: party.due_date ? String(party.due_date).slice(0, 10) : '',
+      vehicle_number: party.vehicle_number || ''
     });
     setShowEditModal(true);
   };
@@ -184,6 +188,13 @@ const Parties = () => {
       if (editFormData.opening_balance !== '') updateData.opening_balance = parseFloat(editFormData.opening_balance) || 0;
       if (editFormData.closing_balance !== '') updateData.closing_balance = parseFloat(editFormData.closing_balance) || 0;
       if (editFormData.gst_number) updateData.gst_number = editFormData.gst_number.trim();
+      if (editFormData.due_date !== undefined) updateData.due_date = editFormData.due_date ? String(editFormData.due_date).slice(0, 10) : null;
+      if (editFormData.vehicle_number !== undefined) {
+        updateData.vehicle_number = (editFormData.vehicle_number && String(editFormData.vehicle_number).trim()) || null;
+      }
+      if (user?.role === 'super_admin' && editFormData.balance_amount !== undefined && editFormData.balance_amount !== '') {
+        updateData.balance_amount = parseFloat(editFormData.balance_amount) || 0;
+      }
 
       await apiClient.patch(endpoint, updateData);
       toast.success('Party updated successfully');
@@ -359,7 +370,7 @@ const Parties = () => {
           amount: roundedPay,
           partyName: selectedParty.party_name,
           paymentNotes,
-          date: formatDateInIndia(new Date()),
+          date: formatInIndiaTime(new Date()),
           nextDueDate:
             partial && dueRaw && /^\d{4}-\d{2}-\d{2}$/.test(dueRaw)
               ? formatDateInIndia(`${dueRaw}T12:00:00`)
@@ -373,8 +384,10 @@ const Parties = () => {
       setPaymentNotes('');
       await fetchParties();
       if (showPartyDetailsModal && selectedParty) {
-        await fetchPartyDetails(selectedParty);
-        await fetchTransactionHistory(selectedParty, historyPage);
+        await Promise.all([
+          fetchPartyDetails(selectedParty),
+          fetchTransactionHistory(selectedParty, historyPage)
+        ]);
       }
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -836,12 +849,15 @@ const Parties = () => {
               borderRadius: '12px',
               width: '100%',
               maxWidth: '440px',
+              maxHeight: 'min(92vh, 640px)',
               border: '1px solid #334155',
               boxShadow: '0 24px 48px rgba(0,0,0,0.45)',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 18px', borderBottom: '1px solid #2a3340', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 18px', borderBottom: '1px solid #2a3340', gap: '12px', flexShrink: 0 }}>
               <div>
                 <div id="payment-modal-title" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
                   Record payment
@@ -852,7 +868,7 @@ const Parties = () => {
                 <Icons.Close />
               </button>
             </div>
-            <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
               <div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Amount due now</div>
                 <div
@@ -1118,6 +1134,36 @@ const Parties = () => {
                     value={editFormData.gst_number}
                     onChange={(e) => setEditFormData({ ...editFormData, gst_number: e.target.value })}
                     placeholder="Enter GST number"
+                  />
+                </div>
+                {user?.role === 'super_admin' && (
+                  <div className="form-group">
+                    <label>Outstanding balance (₹)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editFormData.balance_amount}
+                      onChange={(e) => setEditFormData({ ...editFormData, balance_amount: e.target.value })}
+                      placeholder="Adjust amount owed"
+                    />
+                    <small style={{ color: '#64748b', fontSize: '11px' }}>Owner only — updates current balance for this creditor.</small>
+                  </div>
+                )}
+                <div className="form-group">
+                  <label>Next due date</label>
+                  <input
+                    type="date"
+                    value={editFormData.due_date || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, due_date: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Vehicle number</label>
+                  <input
+                    type="text"
+                    value={editFormData.vehicle_number || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, vehicle_number: e.target.value })}
+                    placeholder="Optional"
                   />
                 </div>
               </div>

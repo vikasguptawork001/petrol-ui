@@ -781,7 +781,7 @@ const SellItemV2 = () => {
                     <table className="sell2-table">
                       <thead>
                         <tr>
-                          <th style={{ width: 60 }}>#</th>
+                          <th style={{ width: 60 }}>S.No</th>
                           <th>Item</th>
                           <th style={{ width: 110 }}>HSN</th>
                           <th style={{ width: 88 }}>Unit</th>
@@ -1056,7 +1056,7 @@ const SellItemV2 = () => {
                   <table>
                     <thead>
                       <tr>
-                        <th style={{ width: 44 }}>#</th>
+                        <th style={{ width: 44 }}>S.No</th>
                         <th>Item</th>
                         <th style={{ width: 70 }}>Qty</th>
                         <th style={{ width: 86 }}>Rate</th>

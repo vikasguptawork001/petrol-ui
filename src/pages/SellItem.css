@@ -4,11 +4,13 @@ SELL ITEM PAGE — DARK THEME
 .sell-item {
   max-width: 100%;
   margin: 0;
-  padding: 8px 12px;
+  padding: 8px 12px 120px;
   font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
   box-sizing: border-box;
   color: var(--pp-text-primary);
   background: #0a0f16;
+  position: relative;
+  z-index: 1;
 }
 
 /* Two-column layout: main left, fixed right panel */

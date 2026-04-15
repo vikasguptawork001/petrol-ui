@@ -1226,7 +1226,7 @@ import config from '../config/config';
 import { useToast } from '../context/ToastContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getLocalDateString, getLocalISOString, formatInIndiaTime } from '../utils/dateUtils';
+import { getLocalDateString, getLocalISOString, formatInIndiaTime, parseMysqlDatetimeIST } from '../utils/dateUtils';
 import Pagination from '../components/Pagination';
 import PetrolNozzleLoader from '../components/PetrolNozzleLoader';
 import TransactionLoader from '../components/TransactionLoader';
@@ -1258,8 +1258,8 @@ const Icon = ({ name, size = 14 }) => {
 
 const formatDateTime = (s) => {
   if (!s) return '—';
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return s;
+  const d = parseMysqlDatetimeIST(s);
+  if (!d || Number.isNaN(d.getTime())) return '—';
   return formatInIndiaTime(d);
 };
 
@@ -1635,8 +1635,8 @@ export function NozzleReadingPanel({ embedded = false }) {
             <Icon name="fuel" size={16} style={{ color: '#22c55e' }} />
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>{displayTotals.totalSales.toFixed(2)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>Ltrs</span></div>
-          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px' }}>
-            Avg {avgDailyLiters.toFixed(2)} L/day · {rangeDayCount} day(s) · {displayTotals.completedShifts} closed / {displayTotals.totalShifts} shifts
+          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px', textAlign: 'center' }}>
+            Avg {avgDailyLiters.toFixed(2)} L/day · {rangeDayCount} day(s) · <strong style={{ color: '#22c55e' }}>{displayTotals.completedShifts} done</strong> / <strong style={{ color: '#f59a30' }}>{displayTotals.pendingShifts} pending</strong> · {displayTotals.totalShifts} shifts
           </div>
           <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '2px' }}>Period: {getLocalDateString(filters.from)} — {getLocalDateString(filters.to)}</div>
         </div>
@@ -1675,10 +1675,10 @@ export function NozzleReadingPanel({ embedded = false }) {
             <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active Shifts</span>
             <Icon name="refresh" size={16} style={{ color: '#e8593c' }} />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#e8593c' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#e8593c', textAlign: 'center' }}>
             {displayTotals.pendingShifts}
           </div>
-          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px' }}>Shifts without closing (period total)</div>
+          <div style={{ fontSize: '10px', color: '#6c7f8f', marginTop: '4px', textAlign: 'center' }}>Pending (no closing yet)</div>
         </div>
       </div>
 

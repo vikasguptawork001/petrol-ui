@@ -8,6 +8,7 @@ import { getLocalDateString, formatDateInIndia } from '../utils/dateUtils';
 import * as XLSX from 'xlsx';
 import TransactionLoader from '../components/TransactionLoader';
 import Pagination from '../components/Pagination';
+import { useToast } from '../context/ToastContext';
 import './Report.css';
 
 const fmt = (v) => Math.round(parseFloat(v || 0) * 100) / 100;
@@ -23,6 +24,7 @@ const emptyForm = () => ({
 });
 
 const Expenses = () => {
+  const toast = useToast();
   const [tab, setTab] = useState('record');
 
   const [form, setForm] = useState(emptyForm);
@@ -185,13 +187,15 @@ const Expenses = () => {
       };
       if (editingId) {
         await apiClient.put(`${config.api.expenses}/${editingId}`, payload);
+        toast.success('Expense updated');
       } else {
         await apiClient.post(config.api.expenses, payload);
+        toast.success('Expense saved');
       }
       resetForm();
       loadList();
     } catch (err) {
-      alert(err.response?.data?.error || 'Save failed');
+      toast.error(err.response?.data?.error || err.message || 'Save failed');
     } finally {
       setSaving(false);
     }
@@ -214,10 +218,11 @@ const Expenses = () => {
     if (!window.confirm('Delete this expense entry?')) return;
     try {
       await apiClient.delete(`${config.api.expenses}/${id}`);
+      toast.success('Expense deleted');
       if (editingId === id) resetForm();
       loadList();
     } catch (err) {
-      alert(err.response?.data?.error || 'Delete failed');
+      toast.error(err.response?.data?.error || err.message || 'Delete failed');
     }
   };
 

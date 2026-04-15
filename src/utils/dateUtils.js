@@ -12,10 +12,27 @@ function collectISTParts(date, options) {
   return parts;
 }
 
+/**
+ * Parse MySQL DATETIME strings (stored in IST / session +05:30) so JS does not treat them as UTC.
+ * Use before formatInIndiaTime when displaying opening_at / closing_at from the API.
+ */
+export const parseMysqlDatetimeIST = (s) => {
+  if (s == null || s === '') return null;
+  if (s instanceof Date) return Number.isNaN(s.getTime()) ? null : s;
+  const str = String(s).trim();
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (m) {
+    const [, y, mo, d, h, mi, se] = m;
+    return new Date(`${y}-${mo}-${d}T${h}:${mi}:${se}+05:30`);
+  }
+  const d = new Date(str);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
 /** Format date/time in India timezone for display */
 export const formatInIndiaTime = (date) => {
   if (!date) return '-';
-  const d = new Date(date);
+  const d = date instanceof Date ? date : parseMysqlDatetimeIST(date) || new Date(date);
   if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleString('en-IN', {
     timeZone: IST,
