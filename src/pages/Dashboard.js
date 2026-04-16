@@ -132,7 +132,7 @@ const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [showQuickSaleModal, quickSaleItem?.id, toast]);
+  }, [showQuickSaleModal, quickSaleItem, toast]);
 
   useEffect(() => {
     if (allItems.length === 0) return;
