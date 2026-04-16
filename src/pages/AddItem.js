@@ -133,6 +133,7 @@ const AddItem = () => {
         });
       }
 
+      const batchDuplicateNames = new Set();
       // Add items to cart using batch API data
       setSelectedItems(prev => {
         const updatedItems = [...prev];
@@ -155,10 +156,12 @@ const AddItem = () => {
           const existingItemIndex = updatedItems.findIndex(i => i.item_id === item.id);
           if (existingItemIndex >= 0) {
             // If item already in cart, just increment quantity
+            const prevQty = updatedItems[existingItemIndex].quantity;
             updatedItems[existingItemIndex] = {
               ...updatedItems[existingItemIndex],
-              quantity: updatedItems[existingItemIndex].quantity + 1
+              quantity: prevQty + 1
             };
+            batchDuplicateNames.add(itemDetails.product_name);
           } else {
             // Add new item to cart - use search data which now includes purchase_rate
             // Note: current_quantity should be the actual stock from the database
@@ -183,6 +186,14 @@ const AddItem = () => {
         });
         return updatedItems;
       });
+      if (batchDuplicateNames.size > 0) {
+        const uniq = [...batchDuplicateNames];
+        toast.info(
+          uniq.length === 1
+            ? `"${uniq[0]}" was already in your list — quantity increased.`
+            : `${uniq.length} item(s) were already in your list — quantities updated.`
+        );
+      }
     } catch (error) {
       console.error('Error fetching batch item details:', error);
       toast.error('Error loading item details');
@@ -584,6 +595,7 @@ const AddItem = () => {
             <table className="table">
                   <thead style={{ background: '#0d1523' }}>
                     <tr>
+                      <th style={{ textAlign: 'center', padding: '10px 8px', width: '48px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>S.No</th>
                       <th style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Product Details</th>
                       <th style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Brand</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: 'var(--pp-text-secondary, #9aaebf)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Purchase Rate</th>
@@ -599,6 +611,9 @@ const AddItem = () => {
                   <tbody>
                     {selectedItems.map((item, index) => (
                       <tr key={index}>
+                        <td style={{ textAlign: 'center', padding: '10px 8px', color: 'var(--pp-text-muted, #6c7f8f)', fontWeight: 600, fontSize: '13px' }}>
+                          {index + 1}
+                        </td>
                         <td style={{ textAlign: 'left', padding: '10px 14px' }}>
                           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--pp-text-primary, #eef2f8)' }}>{item.product_name}</div>
                           <div style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)', marginTop: '2px' }}>
@@ -844,7 +859,7 @@ const AddItem = () => {
               </div>
 
           {selectedItems.length > 0 && (
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div className="add-item__submit-bar" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Click a rate to edit · Enter moves to the next field</span>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button

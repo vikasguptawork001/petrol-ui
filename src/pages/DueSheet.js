@@ -878,16 +878,18 @@ export function DueSheetPanel({ embedded = false }) {
           </div>
           <div className="ds-due-modal__body">
             <div className="ds-due-modal__field">
-              <label htmlFor="ds-modal-due-picker">New due date</label>
-              <input
-                id="ds-modal-due-picker"
-                type="date"
-                className="ds-due-modal__date"
-                value={editingDueDateValue ? getLocalDateString(editingDueDateValue) : ''}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setEditingDueDateValue(v ? new Date(`${v}T12:00:00`) : null);
-                }}
+              <label>New due date (DD-MM-YYYY)</label>
+              <DatePicker
+                selected={editingDueDateValue instanceof Date && !Number.isNaN(editingDueDateValue.getTime()) ? editingDueDateValue : null}
+                onChange={(date) => setEditingDueDateValue(date || null)}
+                dateFormat="dd-MM-yyyy"
+                placeholderText="Select date"
+                wrapperClassName="ds-due-modal-datepicker-wrap"
+                className="ds-due-modal__date ds-due-modal__datepicker-input"
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+                popperPlacement="bottom-start"
               />
             </div>
             <div className="ds-due-modal__actions">

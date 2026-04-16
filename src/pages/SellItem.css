@@ -4,7 +4,7 @@ SELL ITEM PAGE — DARK THEME
 .sell-item {
   max-width: 100%;
   margin: 0;
-  padding: 8px 12px 120px;
+  padding: 8px 12px calc(160px + max(14vh, env(safe-area-inset-bottom, 0px)));
   font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
   box-sizing: border-box;
   color: var(--pp-text-primary);
@@ -54,7 +54,7 @@ RIGHT PANEL — FIXED SIDEBAR
   max-height: calc(100vh - var(--header-height, 52px) - var(--footer-height, 50px) - 20px);
   overflow-y: auto;
   overflow-x: hidden;
-  z-index: 500;
+  z-index: 480;
   display: block;
   visibility: visible;
   box-sizing: border-box;
@@ -846,6 +846,7 @@ PREVIEW HEADER
 BILL PREVIEW — OUTER WRAPPER
 ============================================ */
 .bill-preview {
+  min-height: min-content;
   background: #111827 !important;
   padding: 16px !important;
   border-radius: 10px !important;

@@ -5,6 +5,8 @@ import config from '../config/config';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { getLocalDateString, formatDateInIndia, formatInIndiaTime } from '../utils/dateUtils';
 import TransactionLoader from '../components/TransactionLoader';
 import Pagination from '../components/Pagination';
@@ -839,7 +841,7 @@ const Parties = () => {
 
       {/* Payment Modal */}
       {showPaymentModal && selectedParty && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1100, padding: 'min(24px, 4vh) 16px 24px', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
           <div
             role="dialog"
             aria-modal="true"
@@ -849,12 +851,16 @@ const Parties = () => {
               borderRadius: '12px',
               width: '100%',
               maxWidth: '440px',
-              maxHeight: 'min(92vh, 640px)',
+              maxHeight: 'min(calc(100dvh - 48px), 92vh, 720px)',
+              margin: 'auto',
+              flexShrink: 0,
+              height: 'auto',
               border: '1px solid #334155',
               boxShadow: '0 24px 48px rgba(0,0,0,0.45)',
               overflow: 'hidden',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              minHeight: 0
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 18px', borderBottom: '1px solid #2a3340', gap: '12px', flexShrink: 0 }}>
@@ -868,7 +874,18 @@ const Parties = () => {
                 <Icons.Close />
               </button>
             </div>
-            <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+            <div
+              style={{
+                padding: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '18px',
+                overflowY: 'auto',
+                flex: '1 1 0%',
+                minHeight: 0,
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
               <div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Amount due now</div>
                 <div
@@ -929,22 +946,25 @@ const Parties = () => {
                   <label htmlFor="party-pay-new-due" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
                     Next due date <span style={{ color: '#f87171' }}>*</span>
                   </label>
-                  <input
-                    id="party-pay-new-due"
-                    type="date"
-                    value={paymentNewDueDate}
-                    onChange={(e) => setPaymentNewDueDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '12px 14px',
-                      borderRadius: '10px',
-                      border: '1px solid #475569',
-                      background: '#0f172a',
-                      color: '#f8fafc',
-                      fontSize: '0.95rem'
-                    }}
-                  />
+                  <div style={{ width: '100%' }} className="parties-payment-datepicker">
+                    <DatePicker
+                      id="party-pay-new-due"
+                      selected={
+                        paymentNewDueDate && /^\d{4}-\d{2}-\d{2}$/.test(String(paymentNewDueDate).slice(0, 10))
+                          ? new Date(`${String(paymentNewDueDate).slice(0, 10)}T12:00:00`)
+                          : null
+                      }
+                      onChange={(date) => setPaymentNewDueDate(date ? getLocalDateString(date) : '')}
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="DD-MM-YYYY"
+                      wrapperClassName="form-datepicker-wrap"
+                      className="parties-datepicker-input"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      popperPlacement="bottom-start"
+                    />
+                  </div>
                   <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>Required when an amount remains after this payment — shown in transaction history.</div>
                 </div>
               )}
@@ -1150,11 +1170,24 @@ const Parties = () => {
                   </div>
                 )}
                 <div className="form-group">
-                  <label>Next due date</label>
-                  <input
-                    type="date"
-                    value={editFormData.due_date || ''}
-                    onChange={(e) => setEditFormData({ ...editFormData, due_date: e.target.value })}
+                  <label>Next due date (DD-MM-YYYY)</label>
+                  <DatePicker
+                    selected={
+                      editFormData.due_date
+                        ? new Date(`${String(editFormData.due_date).slice(0, 10)}T12:00:00`)
+                        : null
+                    }
+                    onChange={(date) =>
+                      setEditFormData({ ...editFormData, due_date: date ? getLocalDateString(date) : '' })
+                    }
+                    dateFormat="dd-MM-yyyy"
+                    placeholderText="Select due date"
+                    wrapperClassName="form-datepicker-wrap"
+                    className="parties-datepicker-input"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    popperPlacement="bottom-start"
                   />
                 </div>
                 <div className="form-group">

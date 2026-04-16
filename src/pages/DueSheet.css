@@ -446,7 +446,39 @@
   box-sizing: border-box;
 }
 
-/* Due date edit modal — full-width aligned field (native date avoids react-datepicker wrapper quirks) */
+/* Due date edit modal — calendar picker (DD-MM-YYYY), popper above modal backdrop */
+.ds-due-modal-datepicker-wrap {
+  width: 100%;
+  display: block;
+}
+
+.ds-due-modal-datepicker-wrap .react-datepicker-popper {
+  z-index: 10050 !important;
+}
+
+.ds-due-modal-datepicker-wrap .react-datepicker__input-container input.ds-due-modal__datepicker-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  margin: 0;
+  border: 1px solid #2a3340;
+  border-radius: 8px;
+  background: #0f151f;
+  color: #f8fafc;
+  font-size: 14px;
+  font-family: var(--pp-font-body, 'Inter', system-ui, sans-serif);
+  line-height: 1.25;
+}
+
+.ds-due-modal-datepicker-wrap .react-datepicker__input-container input.ds-due-modal__datepicker-input:focus {
+  outline: none;
+  border-color: #f59a30;
+  box-shadow: 0 0 0 3px rgba(245, 154, 48, 0.15);
+}
+
 .ds-due-modal__header {
   display: flex;
   align-items: flex-start;

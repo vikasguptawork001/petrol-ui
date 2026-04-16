@@ -401,8 +401,15 @@ const Dashboard = () => {
     setQuickSaleLoading(true);
     try {
       const retail = await apiClient.get(config.api.sellersRetail);
+      const retailParty = retail.data?.party;
+      if (!retailParty?.id) {
+        toast.error(
+          'Retail seller for quick bill is missing. Add a supplier named "quick_sell" (or run DB setup), then try again.'
+        );
+        return;
+      }
       await apiClient.post(config.api.sale, {
-        seller_party_id: retail.data.party.id,
+        seller_party_id: retailParty.id,
         items: [{ item_id: quickSaleItem.id, quantity: qty, sale_rate: parseFloat(quickSaleItem.sale_rate) }],
         payment_status: 'fully_paid',
         paid_amount: quickSaleItem.sale_rate * qty,
@@ -416,8 +423,15 @@ const Dashboard = () => {
       fetchItems();
       if (user?.role === 'super_admin') fetchTotalStockAmount();
     } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Sale failed';
-      toast.error(msg);
+      const status = err.response?.status;
+      const serverMsg = err.response?.data?.error || err.response?.data?.message || '';
+      if (status === 404 || /Retail Seller|quick_sell|retail seller/i.test(String(serverMsg))) {
+        toast.error(
+          'Quick bill needs a retail supplier: create a party named "quick_sell" under Suppliers (or ask your administrator).'
+        );
+      } else {
+        toast.error(serverMsg || err.message || 'Sale failed');
+      }
     } finally {
       setQuickSaleLoading(false);
     }
@@ -577,14 +591,14 @@ const Dashboard = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead>
               <tr style={{ background: '#0f151f', position: 'sticky', top: 0 }}>
-                <th style={{ padding: '8px 6px', textAlign: 'center', width: '40px' }}>S.No</th>
-                <th onClick={() => handleSort('product_name')} style={{ padding: '8px 6px', textAlign: 'left', cursor: 'pointer' }}>Product {sortBy === 'product_name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Unit</th>
-                <th onClick={() => handleSort('brand')} style={{ padding: '8px 6px', textAlign: 'left', cursor: 'pointer' }}>Brand {sortBy === 'brand' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>GST %</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Sale Rate</th>
-                <th style={{ padding: '8px 6px', textAlign: 'right' }}>Stock</th>
-                <th style={{ padding: '8px 6px', textAlign: 'left' }}>Rack</th>
+                <th style={{ padding: '8px 8px', textAlign: 'center', width: '44px' }}>S.No</th>
+                <th onClick={() => handleSort('product_name')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer' }}>Product {sortBy === 'product_name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                <th style={{ padding: '8px 8px', textAlign: 'center' }}>Unit</th>
+                <th onClick={() => handleSort('brand')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer' }}>Brand {sortBy === 'brand' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                <th style={{ padding: '8px 8px', textAlign: 'center' }}>GST %</th>
+                <th style={{ padding: '8px 8px', textAlign: 'center' }}>Sale Rate</th>
+                <th style={{ padding: '8px 12px', textAlign: 'center' }}>Stock</th>
+                <th style={{ padding: '8px 12px', textAlign: 'center' }}>Rack</th>
                 <th style={{ padding: '8px 6px', textAlign: 'center', width: '72px' }}>Actions</th>
                </tr>
               </thead>
@@ -592,13 +606,13 @@ const Dashboard = () => {
                 {sortedItems.map((item, idx) => (
                   <tr key={item.id} style={{ borderBottom: '1px solid #2a3340', background: item.quantity <= (item.alert_quantity || 0) ? '#e8593c10' : 'transparent' }}>
                     <td style={{ padding: '6px', textAlign: 'center', color: '#6c7f8f' }}>{(page - 1) * limit + idx + 1} </td>
-                    <td style={{ padding: '6px', fontWeight: 500 }}>{item.product_name}</td>
-                    <td style={{ padding: '6px', color: '#9aaebf' }}>{item.unit || '-'}</td>
-                    <td style={{ padding: '6px', color: '#9aaebf' }}>{item.brand || '-'}</td>
-                    <td style={{ padding: '6px', textAlign: 'right' }}>{item.tax_rate}%</td>
-                    <td style={{ padding: '6px', textAlign: 'right' }}>₹{parseFloat(item.sale_rate).toFixed(2)}</td>
-                    <td style={{ padding: '6px', textAlign: 'right', fontWeight: 600, color: item.quantity <= (item.alert_quantity || 0) ? '#e8593c' : '#fff' }}>{item.quantity}</td>
-                    <td style={{ padding: '6px', color: '#9aaebf' }}>{item.rack_number || '-'}</td>
+                    <td style={{ padding: '6px', fontWeight: 500, textAlign: 'left' }}>{item.product_name}</td>
+                    <td style={{ padding: '6px', color: '#9aaebf', textAlign: 'center' }}>{item.unit || '-'}</td>
+                    <td style={{ padding: '6px', color: '#9aaebf', textAlign: 'center' }}>{item.brand || '-'}</td>
+                    <td style={{ padding: '6px', textAlign: 'center' }}>{item.tax_rate}%</td>
+                    <td style={{ padding: '6px', textAlign: 'center' }}>₹{parseFloat(item.sale_rate).toFixed(2)}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', fontWeight: 600, color: item.quantity <= (item.alert_quantity || 0) ? '#e8593c' : '#fff' }}>{item.quantity}</td>
+                    <td style={{ padding: '6px 12px', textAlign: 'center', color: '#9aaebf' }}>{item.rack_number || '-'}</td>
                     <td style={{ padding: '6px', textAlign: 'center' }}>
                       <ActionMenu
                         itemId={item.id}

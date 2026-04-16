@@ -113,6 +113,11 @@
   flex: 1;
   min-height: 0;
   position: relative;
+  isolation: isolate;
+}
+
+.layout-body--nav-open {
+  overflow: hidden;
 }
 
 /* ─── Sidebar overlay ─── */
@@ -122,6 +127,8 @@
   background-color: rgba(13, 24, 40, 0.5);
   z-index: 1195;
   animation: fadeIn 0.2s ease-out;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 @keyframes fadeIn {
@@ -286,6 +293,12 @@
   isolation: isolate;
 }
 
+/* When nav is open: stop main column from scrolling behind overlay/sidebar */
+.main-content--nav-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
 /* ─── Footer ─── */
 .footer {
   background: var(--pp-navy, #0d1828);
@@ -298,7 +311,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  /* Above page panels (e.g. New sale right rail z-index 500), below sidebar overlay (1195) */
+  z-index: 550;
 }
 
 .footer::before {

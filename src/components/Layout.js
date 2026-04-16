@@ -16,12 +16,36 @@ const Layout = ({ children }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  /* Lock viewport scroll when nav is open (fixes touch/wheel scrolling content behind overlay). */
   useEffect(() => {
     if (!menuOpen) return undefined;
-    const prevOverflow = document.body.style.overflow;
+    const scrollY = window.scrollY || window.pageYOffset;
+    const html = document.documentElement;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBody = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow,
+    };
+    html.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = prevOverflow;
+      html.style.overflow = prevHtmlOverflow;
+      document.body.style.position = prevBody.position;
+      document.body.style.top = prevBody.top;
+      document.body.style.left = prevBody.left;
+      document.body.style.right = prevBody.right;
+      document.body.style.width = prevBody.width;
+      document.body.style.overflow = prevBody.overflow;
+      window.scrollTo(0, scrollY);
     };
   }, [menuOpen]);
 
@@ -105,16 +129,15 @@ const Layout = ({ children }) => {
         </div>
       </header>
 
-      {/* Overlay when sidebar is open - click to close */}
-      {menuOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      <div className="layout-body">
+      <div className={`layout-body${menuOpen ? ' layout-body--nav-open' : ''}`}>
+        {/* Overlay must be a sibling of main *inside* layout-body so it paints above main (not below the whole column). */}
+        {menuOpen && (
+          <div
+            className="sidebar-overlay"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
         <nav className={`sidebar ${menuOpen ? 'open' : ''}`}>
           <div className="sidebar-header">
             <span className="sidebar-title">Menu</span>
@@ -141,7 +164,7 @@ const Layout = ({ children }) => {
           </ul>
         </nav>
 
-        <main className="main-content">
+        <main className={`main-content${menuOpen ? ' main-content--nav-open' : ''}`}>
           {children}
         </main>
       </div>
