@@ -67,6 +67,11 @@ const Dashboard = () => {
   const [showStockAmountModal, setShowStockAmountModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [quickSaleLoading, setQuickSaleLoading] = useState(false);
+  const [quickSaleNozzles, setQuickSaleNozzles] = useState([]);
+  const [quickSaleAttendants, setQuickSaleAttendants] = useState([]);
+  const [quickSaleNozzleId, setQuickSaleNozzleId] = useState('');
+  const [quickSaleAttendantId, setQuickSaleAttendantId] = useState('');
+  const [quickSaleMetaLoading, setQuickSaleMetaLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -94,6 +99,40 @@ const Dashboard = () => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 500);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    if (!showQuickSaleModal || !quickSaleItem) return undefined;
+    let cancelled = false;
+    setQuickSaleMetaLoading(true);
+    (async () => {
+      try {
+        const [nRes, aRes] = await Promise.all([
+          apiClient.get(config.api.nozzles),
+          apiClient.get(config.api.attendants)
+        ]);
+        if (cancelled) return;
+        const nz = (nRes.data.nozzles || []).filter((n) => !n.is_archived);
+        const at = (aRes.data.attendants || []).filter((a) => !a.is_archived);
+        setQuickSaleNozzles(nz);
+        setQuickSaleAttendants(at);
+        setQuickSaleNozzleId(nz[0]?.id != null ? String(nz[0].id) : '');
+        setQuickSaleAttendantId(at[0]?.id != null ? String(at[0].id) : '');
+      } catch (e) {
+        if (!cancelled) {
+          toast.error('Could not load pumps or staff. Check menu → Pumps & nozzles / Pump staff.');
+          setQuickSaleNozzles([]);
+          setQuickSaleAttendants([]);
+          setQuickSaleNozzleId('');
+          setQuickSaleAttendantId('');
+        }
+      } finally {
+        if (!cancelled) setQuickSaleMetaLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showQuickSaleModal, quickSaleItem?.id, toast]);
 
   useEffect(() => {
     if (allItems.length === 0) return;
@@ -353,6 +392,12 @@ const Dashboard = () => {
       toast.error(`Insufficient stock. Available: ${quickSaleItem.quantity}`);
       return;
     }
+    const nozzleId = parseInt(quickSaleNozzleId, 10);
+    const attendantId = parseInt(quickSaleAttendantId, 10);
+    if (!Number.isFinite(nozzleId) || nozzleId < 1 || !Number.isFinite(attendantId) || attendantId < 1) {
+      toast.error('Select pump (nozzle) and attendant before confirming.');
+      return;
+    }
     setQuickSaleLoading(true);
     try {
       const retail = await apiClient.get(config.api.sellersRetail);
@@ -362,7 +407,9 @@ const Dashboard = () => {
         payment_status: 'fully_paid',
         paid_amount: quickSaleItem.sale_rate * qty,
         discount: 0,
-        with_gst: false
+        with_gst: false,
+        nozzle_id: nozzleId,
+        attendant_id: attendantId
       });
       toast.success('Sale completed');
       setShowQuickSaleModal(false);
@@ -758,7 +805,7 @@ const Dashboard = () => {
 
       {showQuickSaleModal && quickSaleItem && (
         <div style={modalOverlay}>
-          <div style={{ ...modalContent, maxWidth: '380px' }}>
+          <div style={{ ...modalContent, maxWidth: '420px' }}>
             <div style={modalHeader}>
               <h3 style={{ fontSize: '14px', margin: 0 }}>Quick bill (walk-in sale)</h3>
               <button onClick={() => setShowQuickSaleModal(false)} style={closeBtn}>×</button>
@@ -766,31 +813,88 @@ const Dashboard = () => {
             <div style={modalBody}>
               <div><strong>{quickSaleItem.product_name}</strong> {quickSaleItem.brand && `(${quickSaleItem.brand})`}</div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Rate: ₹{quickSaleItem.sale_rate} | Stock: {quickSaleItem.quantity}</div>
-              <input
-                type="number"
-                min={1}
-                max={quickSaleItem.quantity}
-                value={quickSaleQuantity}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === '') {
-                    setQuickSaleQuantity('');
-                    return;
-                  }
-                  const n = parseInt(v, 10);
-                  if (Number.isNaN(n)) return;
-                  setQuickSaleQuantity(Math.min(Math.max(1, n), quickSaleItem.quantity));
-                }}
-                style={{ ...inputStyle, marginTop: '12px' }}
-              />
+
+              <div style={{ marginTop: '14px' }}>
+                <div style={labelStyle}>Pump (nozzle) *</div>
+                <select
+                  value={quickSaleNozzleId}
+                  onChange={(e) => setQuickSaleNozzleId(e.target.value)}
+                  disabled={quickSaleMetaLoading}
+                  style={{ ...inputStyle, cursor: quickSaleMetaLoading ? 'wait' : 'pointer' }}
+                >
+                  <option value="">{quickSaleMetaLoading ? 'Loading…' : 'Select pump'}</option>
+                  {quickSaleNozzles.map((n) => (
+                    <option key={n.id} value={String(n.id)}>{n.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginTop: '10px' }}>
+                <div style={labelStyle}>Attendant *</div>
+                <select
+                  value={quickSaleAttendantId}
+                  onChange={(e) => setQuickSaleAttendantId(e.target.value)}
+                  disabled={quickSaleMetaLoading}
+                  style={{ ...inputStyle, cursor: quickSaleMetaLoading ? 'wait' : 'pointer' }}
+                >
+                  <option value="">{quickSaleMetaLoading ? 'Loading…' : 'Select attendant'}</option>
+                  {quickSaleAttendants.map((a) => (
+                    <option key={a.id} value={String(a.id)}>{a.name || `Staff #${a.id}`}</option>
+                  ))}
+                </select>
+              </div>
+              {!quickSaleMetaLoading && quickSaleNozzles.length === 0 && (
+                <p style={{ fontSize: '11px', color: '#e8593c', marginTop: '10px', marginBottom: 0 }}>
+                  No active pumps found. Add one under <strong>Menu → Pumps &amp; nozzles</strong>.
+                </p>
+              )}
+              {!quickSaleMetaLoading && quickSaleAttendants.length === 0 && (
+                <p style={{ fontSize: '11px', color: '#e8593c', marginTop: '8px', marginBottom: 0 }}>
+                  No active attendants found. Add one under <strong>Menu → Pump staff</strong>.
+                </p>
+              )}
+
+              <div style={{ marginTop: '12px' }}>
+                <div style={labelStyle}>Quantity</div>
+                <input
+                  type="number"
+                  min={1}
+                  max={quickSaleItem.quantity}
+                  value={quickSaleQuantity}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '') {
+                      setQuickSaleQuantity('');
+                      return;
+                    }
+                    const n = parseInt(v, 10);
+                    if (Number.isNaN(n)) return;
+                    setQuickSaleQuantity(Math.min(Math.max(1, n), quickSaleItem.quantity));
+                  }}
+                  style={{ ...inputStyle, marginTop: '4px' }}
+                />
+              </div>
               <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 600 }}>
                 Total: ₹
                 {(quickSaleItem.sale_rate * (quickSaleQuantity === '' ? 0 : Number(quickSaleQuantity))).toFixed(2)}
               </div>
             </div>
             <div style={modalFooter}>
-              <button onClick={() => setShowQuickSaleModal(false)} style={secondaryBtn}>Cancel</button>
-              <button onClick={handleQuickSale} disabled={quickSaleLoading} style={primaryBtn}>{quickSaleLoading ? '...' : 'Confirm'}</button>
+              <button type="button" onClick={() => setShowQuickSaleModal(false)} style={secondaryBtn}>Cancel</button>
+              <button
+                type="button"
+                onClick={handleQuickSale}
+                disabled={
+                  quickSaleLoading ||
+                  quickSaleMetaLoading ||
+                  !quickSaleNozzleId ||
+                  !quickSaleAttendantId ||
+                  quickSaleNozzles.length === 0 ||
+                  quickSaleAttendants.length === 0
+                }
+                style={primaryBtn}
+              >
+                {quickSaleLoading ? '...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>
