@@ -308,7 +308,7 @@ RIGHT PANEL — FIXED SIDEBAR
  * width; a 1320px breakpoint wrongly switches to centered bottom dock + column layout
  * (looks like image 1/3). Zooming to 90% increases the viewport and “fixes” it — same root cause.
  */
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .sell-item-wrapper {
     padding-right: 0;
     flex-direction: column;
@@ -1489,9 +1489,9 @@ UTILITY
 /* ============================================
 RESPONSIVE
 ============================================ */
-/* Laptop widths where the right rail stays beside the main column (only when viewport > 1024px) */
-@media screen and (min-width: 1025px) and (max-width: 1366px) {
-  .sell-item-wrapper { padding-right: 300px; }
+/* Fine-tune for 13–14" laptops that report 769–1366px CSS viewport */
+@media screen and (min-width: 769px) and (max-width: 1366px) {
+  .sell-item-wrapper { padding-right: 300px; flex-direction: row; }
   .sell-item-right-panel {
     --si-rail-width: 270px;
     width: 270px;
