@@ -781,7 +781,7 @@ export function DueSheetPanel({ embedded = false }) {
                     <td style={{ padding: '8px 6px', textAlign: 'right', color: '#9aaebf' }}>₹{formatCurrency(p.opening_balance)}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 700, color: '#f59a30' }}>₹{formatCurrency(p.balance_amount)}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <span style={{ color: isOverdue ? '#e8593c' : '#9aaebf', fontSize: '12px', display: 'block' }}>{formatDate(p.due_date)}</span>
+                      <span style={{ color: isOverdue ? '#e8593c' : '#9aaebf', fontSize: '12px' }}>{formatDate(p.due_date)}</span>
                     </td>
                     <td style={{ padding: '8px 6px', textAlign: 'center', fontWeight: 600, color: isOverdue ? '#e8593c' : '#9aaebf' }}>{daysOverdue}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'center' }}>

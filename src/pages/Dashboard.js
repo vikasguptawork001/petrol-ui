@@ -961,36 +961,104 @@ const Dashboard = () => {
                 <span style={{ color: '#e8593c', fontWeight: 600 }}>₹{dueAlertParties.reduce((s, p) => s + (parseFloat(p.balance_amount) || 0), 0).toFixed(2)}</span>
               </div>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '11px',
+                    tableLayout: 'fixed'
+                  }}
+                >
+                  <colgroup>
+                    <col style={{ width: '36%' }} />
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '16%' }} />
+                  </colgroup>
                   <thead>
                     <tr style={{ background: '#0f151f' }}>
-                      <th style={{ padding: '6px' }}>Supplier</th>
-                      <th>Due Date</th>
-                      <th style={{ textAlign: 'right' }}>Amount</th>
-                      <th style={{ width: '80px' }}>Action</th>
-                     </tr>
+                      <th
+                        style={{
+                          padding: '8px 10px',
+                          textAlign: 'left',
+                          fontWeight: 600,
+                          color: '#9aaebf',
+                          verticalAlign: 'bottom'
+                        }}
+                      >
+                        Supplier
+                      </th>
+                      <th
+                        style={{
+                          padding: '8px 10px',
+                          textAlign: 'center',
+                          fontWeight: 600,
+                          color: '#9aaebf',
+                          verticalAlign: 'bottom'
+                        }}
+                      >
+                        Due Date
+                      </th>
+                      <th
+                        style={{
+                          padding: '8px 10px',
+                          textAlign: 'right',
+                          fontWeight: 600,
+                          color: '#9aaebf',
+                          verticalAlign: 'bottom'
+                        }}
+                      >
+                        Amount
+                      </th>
+                      <th
+                        style={{
+                          padding: '8px 10px',
+                          textAlign: 'center',
+                          fontWeight: 600,
+                          color: '#9aaebf',
+                          verticalAlign: 'bottom'
+                        }}
+                      >
+                        Action
+                      </th>
+                    </tr>
                   </thead>
                   <tbody>
                     {dueAlertParties.map((p) => (
                       <tr key={p.id} style={{ borderBottom: '1px solid #2a3340' }}>
-                        <td style={{ padding: '6px' }}><strong>{p.party_name}</strong><br /><span style={{ fontSize: '9px', color: '#6c7f8f' }}>{p.mobile_number || ''}</span> </td>
-                        <td style={{ padding: '6px' }}>
+                        <td style={{ padding: '8px 10px', textAlign: 'left', verticalAlign: 'top' }}>
+                          <strong>{p.party_name}</strong>
+                          <br />
+                          <span style={{ fontSize: '9px', color: '#6c7f8f' }}>{p.mobile_number || ''}</span>
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle' }}>
                           {dueDateEditingId === p.id ? (
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
                               <input type="date" value={dueDateEditingValue} onChange={e => setDueDateEditingValue(e.target.value)} style={{ ...inputStyle, width: '100px', padding: '2px 4px' }} />
                               <button onClick={() => handleSaveDueDate(p.id)} disabled={dueDateSaving} style={{ padding: '2px 6px', fontSize: '9px', background: '#22c55e', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Save</button>
                               <button onClick={() => { setDueDateEditingId(null); }} style={{ padding: '2px 6px', fontSize: '9px', background: '#2a3340', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>Cancel</button>
                             </div>
                           ) : (
-                            <span>
-                              {p.due_date ? formatDateInIndia(p.due_date) : '—'}
-                              <button type="button" onClick={() => { setDueDateEditingId(p.id); setDueDateEditingValue(p.due_date || ''); }} style={{ marginLeft: '6px', fontSize: '9px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59a30', textDecoration: 'underline' }}>Edit</button>
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                              <span>{p.due_date ? formatDateInIndia(p.due_date) : '—'}</span>
+                              <button type="button" onClick={() => { setDueDateEditingId(p.id); setDueDateEditingValue(p.due_date || ''); }} style={{ fontSize: '9px', background: 'none', border: 'none', cursor: 'pointer', color: '#f59a30', textDecoration: 'underline', padding: 0 }}>Edit</button>
+                            </div>
                           )}
                         </td>
-                        <td style={{ padding: '6px', textAlign: 'right', fontWeight: 600, color: '#e8593c' }}>₹{parseFloat(p.balance_amount).toFixed(2)}</td>
-                        <td style={{ padding: '6px', textAlign: 'center' }}>
-                          <button onClick={() => navigate('/due-sheet')} style={{ padding: '2px 8px', fontSize: '9px', background: '#3b82f6', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>View</button>
+                        <td
+                          style={{
+                            padding: '8px 10px',
+                            textAlign: 'right',
+                            fontWeight: 600,
+                            color: '#e8593c',
+                            fontVariantNumeric: 'tabular-nums',
+                            verticalAlign: 'middle'
+                          }}
+                        >
+                          ₹{parseFloat(p.balance_amount).toFixed(2)}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <button type="button" onClick={() => navigate('/due-sheet')} style={{ padding: '4px 10px', fontSize: '9px', background: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#fff' }}>View</button>
                         </td>
                       </tr>
                     ))}

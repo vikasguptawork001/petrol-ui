@@ -586,7 +586,7 @@ const AddItem = () => {
           </div>
 
           {selectedItems.length > 0 && (
-            <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)', lineHeight: 1.45 }}>
+            <p style={{ margin: '0 0 6px 0', fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)', lineHeight: 1.45 }}>
               Set <strong>Quantity</strong> to the units you are adding to stock, then use <strong>Add to inventory (updates stock)</strong>. Use <strong>Save rates only</strong> when you only change prices (no stock change).
             </p>
           )}
@@ -859,7 +859,7 @@ const AddItem = () => {
               </div>
 
           {selectedItems.length > 0 && (
-            <div className="add-item__submit-bar" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div className="add-item__submit-bar" style={{ marginTop: '2px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: 'var(--pp-text-muted, #6c7f8f)' }}>Click a rate to edit · Enter moves to the next field</span>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button
@@ -897,7 +897,6 @@ const AddItem = () => {
           )}
         </div>
       </div>
-      <div style={{ height: '40px' }} />
 
       {/* Add New Item modal - portaled to body */}
       {showAddItemForm && createPortal(

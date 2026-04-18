@@ -586,7 +586,7 @@ const Parties = () => {
               <thead>
                 <tr>
                   <th className="idx" scope="col">
-                    #
+                    S.No.
                   </th>
                   <th scope="col">Supplier</th>
                   <th scope="col">Mobile</th>
@@ -863,14 +863,14 @@ const Parties = () => {
               minHeight: 0
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 18px', borderBottom: '1px solid #2a3340', gap: '12px', flexShrink: 0 }}>
+            <div className="parties-payment-modal-header">
               <div>
-                <div id="payment-modal-title" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
+                <div id="payment-modal-title" className="parties-payment-modal-title">
                   Record payment
                 </div>
-                <div style={{ fontSize: '0.8125rem', color: '#94a3b8', marginTop: '6px', wordBreak: 'break-word' }}>{selectedParty.party_name}</div>
+                <div className="parties-payment-modal-subtitle">{selectedParty.party_name}</div>
               </div>
-              <button type="button" onClick={() => setShowPaymentModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px', flexShrink: 0 }} aria-label="Close">
+              <button type="button" onClick={() => setShowPaymentModal(false)} className="parties-payment-modal-close" aria-label="Close">
                 <Icons.Close />
               </button>
             </div>
@@ -887,7 +887,7 @@ const Parties = () => {
               }}
             >
               <div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Amount due now</div>
+                <div className="parties-form-label-caps" style={{ marginBottom: '8px' }}>Amount due now</div>
                 <div
                   style={{
                     padding: '14px 16px',
@@ -905,8 +905,8 @@ const Parties = () => {
                 </div>
               </div>
               <div>
-                <label htmlFor="party-pay-amt" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-                  Payment amount <span style={{ color: '#f87171' }}>*</span>
+                <label htmlFor="party-pay-amt" className="parties-form-label-caps" style={{ display: 'block', marginBottom: '8px' }}>
+                  Payment amount <span className="parties-form-required">*</span>
                 </label>
                 <input
                   id="party-pay-amt"
@@ -931,11 +931,11 @@ const Parties = () => {
                     fontVariantNumeric: 'tabular-nums'
                   }}
                 />
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>Maximum you can apply: ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}</div>
+                <div className="parties-form-hint">Maximum you can apply: ₹{parseFloat(selectedParty.balance_amount || 0).toFixed(2)}</div>
               </div>
               {paymentAmount && parseFloat(paymentAmount) > 0 && (
                 <div style={{ padding: '12px 14px', background: '#0f172a', borderRadius: '10px', border: '1px solid #334155' }}>
-                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Balance after this payment</div>
+                  <div className="parties-form-label-caps" style={{ marginBottom: '4px' }}>Balance after this payment</div>
                   <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#e2e8f0', fontVariantNumeric: 'tabular-nums' }}>
                     ₹{Math.max(0, parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)).toFixed(2)}
                   </div>
@@ -943,8 +943,8 @@ const Parties = () => {
               )}
               {paymentAmount && parseFloat(paymentAmount) > 0 && Math.max(0, parseFloat(selectedParty.balance_amount || 0) - parseFloat(paymentAmount)) > 0.009 && (
                 <div>
-                  <label htmlFor="party-pay-new-due" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-                    Next due date <span style={{ color: '#f87171' }}>*</span>
+                  <label htmlFor="party-pay-new-due" className="parties-form-label-caps" style={{ display: 'block', marginBottom: '8px' }}>
+                    Next due date <span className="parties-form-required">*</span>
                   </label>
                   <div style={{ width: '100%' }} className="parties-payment-datepicker">
                     <DatePicker
@@ -965,12 +965,12 @@ const Parties = () => {
                       popperPlacement="bottom-start"
                     />
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px' }}>Required when an amount remains after this payment — shown in transaction history.</div>
+                  <div className="parties-form-hint parties-form-hint--sm">Required when an amount remains after this payment — shown in transaction history.</div>
                 </div>
               )}
-<div>
-                <label htmlFor="party-pay-notes" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-                  Notes <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#64748b' }}>(optional)</span>
+              <div>
+                <label htmlFor="party-pay-notes" className="parties-form-label-caps" style={{ display: 'block', marginBottom: '8px' }}>
+                  Notes <span className="parties-form-label-optional">(optional)</span>
                 </label>
                 <textarea
                   id="party-pay-notes"

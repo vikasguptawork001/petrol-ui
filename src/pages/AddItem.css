@@ -8,6 +8,8 @@
 
 .add-item .card {
   overflow: visible !important;
+  /* Tighter than global .card so actions sit closer to the search row */
+  padding-bottom: 12px;
 }
 
 /* Keep primary actions visible while scrolling long product lists (PDF: submit / stock update). */
@@ -15,13 +17,13 @@
   position: sticky;
   bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   z-index: 30;
-  padding-top: 12px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-  margin-top: 8px;
+  padding-top: 4px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+  margin-top: 0;
   background: linear-gradient(180deg, rgba(20, 27, 38, 0.65) 0%, rgba(15, 21, 31, 0.98) 22%);
   border-top: 1px solid var(--pp-border, #2a3340);
   backdrop-filter: blur(10px);
-  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.28);
 }
 
 .selected-items {
@@ -238,8 +240,12 @@
 
 .table-search-row td {
   background-color: var(--pp-bg-elevated, #1a2330);
-  padding: 8px 14px !important;
-  border-bottom: 2px solid var(--pp-orange, #f59a30) !important;
+  padding: 5px 10px !important;
+  border-bottom: 1px solid var(--pp-orange, #f59a30) !important;
+}
+
+.add-item .table-search-row .table-search-input {
+  padding: 7px 12px;
 }
 
 .table-search-input {
@@ -264,7 +270,8 @@
   width: 100%;
   overflow: visible !important; /* CRITICAL: Must be visible to show dropdown */
   position: relative;
-  min-height: 400px;
+  /* Let table height follow rows; a large min-height left empty space above the action bar */
+  min-height: 0;
   z-index: 100;
 }
 
