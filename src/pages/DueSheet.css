@@ -485,7 +485,12 @@
   justify-content: space-between;
   gap: 12px;
   padding: 16px 18px;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.32);
+  background: linear-gradient(180deg, #334155 0%, #1e293b 42%, #1a2330 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 6px 18px rgba(0, 0, 0, 0.35);
+  border-radius: 12px 12px 0 0;
 }
 
 .ds-due-modal__title-block {
