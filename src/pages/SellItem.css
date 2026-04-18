@@ -302,8 +302,13 @@ RIGHT PANEL — FIXED SIDEBAR
   vertical-align: middle;
 }
 
-/* Responsive: dock rail above footer; keep same rail width when it fits */
-@media (max-width: 1320px) {
+/*
+ * Docked / stacked layout only on narrow viewports (tablets & phones).
+ * Do NOT use 1280–1320px here: at 100% zoom many 13–14" laptops report ~1280–1366px CSS
+ * width; a 1320px breakpoint wrongly switches to centered bottom dock + column layout
+ * (looks like image 1/3). Zooming to 90% increases the viewport and “fixes” it — same root cause.
+ */
+@media (max-width: 1024px) {
   .sell-item-wrapper {
     padding-right: 0;
     flex-direction: column;
@@ -1484,8 +1489,8 @@ UTILITY
 /* ============================================
 RESPONSIVE
 ============================================ */
-/* Laptop widths where the right rail stays beside the main column (must stay above 1320px so it does not fight the stacked/docked layout) */
-@media screen and (min-width: 1321px) and (max-width: 1366px) {
+/* Laptop widths where the right rail stays beside the main column (only when viewport > 1024px) */
+@media screen and (min-width: 1025px) and (max-width: 1366px) {
   .sell-item-wrapper { padding-right: 300px; }
   .sell-item-right-panel {
     --si-rail-width: 270px;
