@@ -39,12 +39,14 @@ SELL ITEM PAGE — DARK THEME
 RIGHT PANEL — FIXED SIDEBAR
 ============================================ */
 .sell-item-right-panel {
+  --si-rail-width: 270px;
   position: fixed;
   top: var(--header-height, 52px);
   right: 12px;
   bottom: calc(var(--footer-height, 50px) + 12px);
-  width: 270px;
-  min-width: 0;
+  width: var(--si-rail-width);
+  min-width: var(--si-rail-width);
+  max-width: var(--si-rail-width);
   background: #111827;
   border: 1px solid #1f2937;
   border-radius: 8px;
@@ -52,20 +54,64 @@ RIGHT PANEL — FIXED SIDEBAR
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   height: auto;
   max-height: calc(100vh - var(--header-height, 52px) - var(--footer-height, 50px) - 20px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   z-index: 560;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   visibility: visible;
   box-sizing: border-box;
+}
+
+/* Payment / seller + add-more only — grows to fill space above summary */
+.sell-item-right-panel__scroll {
+  flex: 1 1 auto;
+  min-height: 48px;
+  max-height: min(42vh, 320px);
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #2a3340 #0f151f;
 }
 
-.sell-item-right-panel::-webkit-scrollbar { width: 5px; }
-.sell-item-right-panel::-webkit-scrollbar-track { background: #0f151f; border-radius: 3px; }
-.sell-item-right-panel::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
-.sell-item-right-panel::-webkit-scrollbar-thumb:hover { background: #3a4555; }
+/* Bill summary + cart summary — fixed width, never inside the scroll area */
+.sell-item-right-panel__summary {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0;
+  margin-bottom: 10px;
+  padding: 10px 8px;
+  min-height: 0;
+  background: #0f172a;
+  border: 1px solid #243045;
+  border-radius: 8px;
+}
+
+/* When payment/seller scroll exists above, pin summary + actions to the lower half of the rail */
+.sell-item-right-panel__scroll + .sell-item-right-panel__summary {
+  margin-top: auto;
+}
+
+.sell-item-right-panel__scroll::-webkit-scrollbar { width: 5px; }
+.sell-item-right-panel__scroll::-webkit-scrollbar-track { background: #0f151f; border-radius: 3px; }
+.sell-item-right-panel__scroll::-webkit-scrollbar-thumb { background: #2a3340; border-radius: 3px; }
+.sell-item-right-panel__scroll::-webkit-scrollbar-thumb:hover { background: #3a4555; }
+
+.sell-item-right-panel__actions {
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-bottom: 0 !important;
+  padding-top: 12px;
+  border-top: 1px solid var(--pp-border, #2a3340);
+  background: linear-gradient(180deg, rgba(15, 21, 31, 0.98) 0%, #111827 100%);
+  box-shadow: 0 -6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.sell-item-right-panel__actions .right-panel-label {
+  margin-top: 0;
+}
 
 .sell-item-right-panel .right-panel-section {
   margin-bottom: 12px;
@@ -256,33 +302,39 @@ RIGHT PANEL — FIXED SIDEBAR
   vertical-align: middle;
 }
 
-/* Responsive: dock actions/summary above app footer (fixes overlap + 13–14" / scaled viewports) */
+/* Responsive: dock rail above footer; keep same rail width when it fits */
 @media (max-width: 1320px) {
   .sell-item-wrapper {
     padding-right: 0;
     flex-direction: column;
   }
   .sell-item {
-    padding-bottom: calc(min(42vh, 380px) + var(--footer-height, 50px) + 28px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(min(52vh, 460px) + var(--footer-height, 50px) + 24px + env(safe-area-inset-bottom, 0px));
   }
   .sell-item-right-panel {
+    --si-rail-width: min(270px, calc(100vw - 24px));
     position: fixed;
-    left: max(12px, env(safe-area-inset-left, 0px));
-    right: max(12px, env(safe-area-inset-right, 0px));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
     bottom: calc(var(--footer-height, 50px) + max(10px, env(safe-area-inset-bottom, 0px)));
     top: auto;
-    width: auto;
-    max-width: none;
+    width: var(--si-rail-width);
+    min-width: min(270px, calc(100vw - 24px));
+    max-width: min(270px, calc(100vw - 24px));
     margin: 0;
     height: auto;
-    max-height: min(42vh, 380px);
-    overflow-y: auto;
-    overflow-x: hidden;
+    max-height: min(85vh, calc(100vh - var(--header-height, 52px) - var(--footer-height, 50px) - 24px));
+    overflow: hidden;
     margin-top: 0;
     border-radius: 12px;
     box-shadow:
       0 -6px 36px rgba(0, 0, 0, 0.55),
       0 0 0 1px rgba(245, 154, 48, 0.12);
+  }
+
+  .sell-item-right-panel__scroll {
+    max-height: min(32vh, 220px);
   }
 }
 
@@ -1436,9 +1488,13 @@ RESPONSIVE
 @media screen and (min-width: 1321px) and (max-width: 1366px) {
   .sell-item-wrapper { padding-right: 300px; }
   .sell-item-right-panel {
+    --si-rail-width: 270px;
     width: 270px;
     min-width: 270px;
+    max-width: 270px;
     right: 10px;
+    left: auto;
+    transform: none;
     padding: 14px;
     bottom: calc(var(--footer-height, 50px) + 8px);
     max-height: calc(100vh - var(--header-height, 52px) - var(--footer-height, 50px) - 18px);

@@ -1272,42 +1272,8 @@ const SellItem = () => {
           {/* Right Panel — preview mode */}
           {createPortal(
             <aside className="sell-item-right-panel">
-              <div className="right-panel-section">
-                <div className="right-panel-label">Actions</div>
-                {isTransactionComplete ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <button onClick={handleNewSaleClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing}>New Sale</button>
-                    <button onClick={handlePrintClick} className="btn btn-primary right-panel-btn" disabled={printDisabled || printClicked || isProcessing}>
-                      {printClicked ? 'Printing...' : 'Print'}
-                    </button>
-                    <button onClick={handleDownloadPDFClick} className="btn btn-success right-panel-btn" disabled={!previewData.transactionId || isProcessing}>Download PDF</button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button onClick={handleBackToEditClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing} style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}>Back</button>
-                      <button
-                        onClick={async () => {
-                          if (isProcessing || !previewStale) return;
-                          setActionInProgress(true);
-                          try { await handlePreview(); toast.success('Bill preview updated'); }
-                          finally { setActionInProgress(false); }
-                        }}
-                        className="btn btn-primary right-panel-btn"
-                        disabled={isProcessing || !previewStale}
-                        style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}
-                      >
-                        {previewStale ? 'Update' : 'Updated'}
-                      </button>
-                    </div>
-                    <button onClick={handleSubmitClick} className="btn btn-success right-panel-btn" disabled={isProcessing || previewStale} style={{ margin: 0 }}>
-                      {loading.submit ? 'Processing...' : previewStale ? 'Generate Preview First' : 'Confirm Sale'}
-                    </button>
-                  </div>
-                )}
-                {isTransactionComplete && <div className="right-panel-badge success">Sale Confirmed</div>}
-              </div>
               {!previewData.transactionId && (
+              <div className="sell-item-right-panel__scroll">
                 <div className="right-panel-section">
                   <div className="right-panel-label">Payment</div>
                   <div className="right-panel-radio-group">
@@ -1406,8 +1372,9 @@ const SellItem = () => {
                     </div>
                   )}
                 </div>
+              </div>
               )}
-              <div className="right-panel-section">
+              <div className="sell-item-right-panel__summary right-panel-section">
                 <div className="right-panel-label">Summary</div>
                 <div className="summary-row"><span>Cart Amount</span><span>₹{(previewData.total || 0).toFixed(2)}</span></div>
                 {(() => {
@@ -1418,6 +1385,41 @@ const SellItem = () => {
                 <div className="summary-row"><span>Grand Total</span><span>₹{Math.round(previewData.grandTotal || previewData.total || 0).toFixed(2)}</span></div>
                 <div className="summary-row"><span>Amount Paid</span><span>₹{Math.round(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || previewData.grandTotal || 0)).toFixed(2)}</span></div>
                 <div className="summary-row"><span>Balance Due</span><span>₹{(Math.max(0, Math.round(previewData.grandTotal || previewData.total || 0) - Math.round(paymentStatus === 'partially_paid' ? (paidAmount || 0) : (previewData.paidAmount || previewData.grandTotal || 0)))).toFixed(2)}</span></div>
+              </div>
+              <div className="sell-item-right-panel__actions right-panel-section">
+                <div className="right-panel-label">Actions</div>
+                {isTransactionComplete ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button onClick={handleNewSaleClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing}>New Sale</button>
+                    <button onClick={handlePrintClick} className="btn btn-primary right-panel-btn" disabled={printDisabled || printClicked || isProcessing}>
+                      {printClicked ? 'Printing...' : 'Print'}
+                    </button>
+                    <button onClick={handleDownloadPDFClick} className="btn btn-success right-panel-btn" disabled={!previewData.transactionId || isProcessing}>Download PDF</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button onClick={handleBackToEditClick} className="btn btn-secondary right-panel-btn" disabled={isProcessing} style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}>Back</button>
+                      <button
+                        onClick={async () => {
+                          if (isProcessing || !previewStale) return;
+                          setActionInProgress(true);
+                          try { await handlePreview(); toast.success('Bill preview updated'); }
+                          finally { setActionInProgress(false); }
+                        }}
+                        className="btn btn-primary right-panel-btn"
+                        disabled={isProcessing || !previewStale}
+                        style={{ flex: 1, padding: '8px', fontSize: '13px', margin: 0 }}
+                      >
+                        {previewStale ? 'Update' : 'Updated'}
+                      </button>
+                    </div>
+                    <button onClick={handleSubmitClick} className="btn btn-success right-panel-btn" disabled={isProcessing || previewStale} style={{ margin: 0 }}>
+                      {loading.submit ? 'Processing...' : previewStale ? 'Generate Preview First' : 'Confirm Sale'}
+                    </button>
+                  </div>
+                )}
+                {isTransactionComplete && <div className="right-panel-badge success">Sale Confirmed</div>}
               </div>
             </aside>,
             document.body
@@ -1886,37 +1888,39 @@ const SellItem = () => {
       {/* Right Panel — cart mode */}
       {createPortal(
         <aside className="sell-item-right-panel">
-          {sellerInfo && (
-            <div className="right-panel-section">
-              <div className="right-panel-label">Seller / Party</div>
-              <div className="right-panel-card">
-                <div className="right-panel-card-title">{sellerInfo.party_name}</div>
-                {sellerInfo.mobile_number && <div className="right-panel-card-meta">{sellerInfo.mobile_number}</div>}
-                <div className="right-panel-card-balance">Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}</div>
+          <div className="sell-item-right-panel__scroll">
+            {sellerInfo && (
+              <div className="right-panel-section">
+                <div className="right-panel-label">Seller / Party</div>
+                <div className="right-panel-card">
+                  <div className="right-panel-card-title">{sellerInfo.party_name}</div>
+                  {sellerInfo.mobile_number && <div className="right-panel-card-meta">{sellerInfo.mobile_number}</div>}
+                  <div className="right-panel-card-balance">Balance: ₹{parseFloat(sellerInfo.balance_amount || 0).toFixed(2)}</div>
+                </div>
               </div>
+            )}
+            <div className="right-panel-section">
+              <button
+                type="button"
+                onClick={() => {
+                  if (itemSearchInputRef.current) {
+                    itemSearchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => itemSearchInputRef.current?.focus(), 300);
+                  }
+                }}
+                className="btn btn-secondary right-panel-btn"
+              >
+                Add more items
+              </button>
             </div>
-          )}
-          <div className="right-panel-section">
+          </div>
+          <div className="sell-item-right-panel__summary right-panel-section">
             <div className="right-panel-label">Cart Summary</div>
             <div className="summary-row"><span>Items</span><span>{selectedItems.length}</span></div>
             <div className="summary-row"><span>Cart Total</span><span>₹{calculateTotal().toFixed(2)}</span></div>
           </div>
-          <div className="right-panel-section">
-            <button
-              type="button"
-              onClick={() => {
-                if (itemSearchInputRef.current) {
-                  itemSearchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  setTimeout(() => itemSearchInputRef.current?.focus(), 300);
-                }
-              }}
-              className="btn btn-secondary right-panel-btn"
-            >
-              Add more items
-            </button>
-          </div>
           {selectedItems.length > 0 && (
-            <div className="right-panel-section">
+            <div className="sell-item-right-panel__actions right-panel-section">
               <button
                 onClick={async () => {
                   if (previewLoading || actionInProgress) return;
