@@ -50,6 +50,8 @@ const AddSellerParty = () => {
           error = 'Party name is required';
         } else if (value.length > 255) {
           error = 'Party name must be less than 255 characters';
+        } else if (String(value).trim().toLowerCase() === 'quick_sell') {
+          error = 'This name is reserved for Quick bill / quick sale — choose a different supplier name';
         }
         break;
       case 'mobile_number':

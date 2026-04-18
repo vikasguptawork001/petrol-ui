@@ -26,6 +26,9 @@ const Icons = {
   Print: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 9V3h12v6" /><rect x="6" y="18" width="12" height="4" rx="1" /></svg>
 };
 
+/** Matches server `/sellers/retail` — supplier used for Dashboard quick bill */
+const isQuickBillSupplier = (party) => String(party?.party_name || '').trim() === 'quick_sell';
+
 const Parties = () => {
   const toast = useToast();
   const { user } = useAuth();
@@ -61,6 +64,7 @@ const Parties = () => {
     due_date: '', vehicle_number: ''
   });
   const [updating, setUpdating] = useState(false);
+  const [editModalErrors, setEditModalErrors] = useState({});
   const [showScrollTop, setShowScrollTop] = useState(false);
   /** 'all' | 'owing' | 'settled' — filter list by outstanding balance */
   const [balanceFilter, setBalanceFilter] = useState('all');
@@ -169,6 +173,7 @@ const Parties = () => {
       due_date: party.due_date ? String(party.due_date).slice(0, 10) : '',
       vehicle_number: party.vehicle_number || ''
     });
+    setEditModalErrors({});
     setShowEditModal(true);
   };
 
@@ -178,12 +183,30 @@ const Parties = () => {
       return;
     }
 
+    const nextName = editFormData.party_name.trim();
+    if (!isQuickBillSupplier(editingParty) && nextName.toLowerCase() === 'quick_sell') {
+      setEditModalErrors({ party_name: 'This name is reserved for Quick bill / quick sale. Choose another.' });
+      return;
+    }
+
+    const mob = (editFormData.mobile_number || '').trim();
+    if (mob !== '' && !/^[0-9]{10}$/.test(mob)) {
+      setEditModalErrors({ mobile_number: 'Mobile must be exactly 10 digits, or leave blank.' });
+      return;
+    }
+
+    setEditModalErrors({});
+
     setUpdating(true);
     try {
       const endpoint = `${config.api.sellers}/${editingParty.id}`;
       const updateData = {};
-      if (editFormData.party_name) updateData.party_name = editFormData.party_name.trim();
-      if (editFormData.mobile_number) updateData.mobile_number = editFormData.mobile_number.trim();
+      if (editFormData.party_name && !isQuickBillSupplier(editingParty)) {
+        updateData.party_name = editFormData.party_name.trim();
+      }
+      if (editFormData.mobile_number !== undefined) {
+        updateData.mobile_number = mob === '' ? null : mob;
+      }
       updateData.cheque_number = (editFormData.cheque_number || '').trim() || null;
       updateData.bank_name = (editFormData.bank_name || '').trim() || null;
       if (editFormData.address) updateData.address = editFormData.address.trim();
@@ -203,6 +226,7 @@ const Parties = () => {
       await fetchParties();
       setShowEditModal(false);
       setEditingParty(null);
+      setEditModalErrors({});
     } catch (error) {
       console.error('Error updating party:', error);
       toast.error(error.response?.data?.error || 'Failed to update party');
@@ -632,11 +656,15 @@ const Parties = () => {
                                     label: 'Edit supplier',
                                     onClick: () => handleEdit(party)
                                   },
-                                  {
-                                    label: 'Delete',
-                                    danger: true,
-                                    onClick: () => handleArchive(party)
-                                  }
+                                  ...(isQuickBillSupplier(party)
+                                    ? []
+                                    : [
+                                        {
+                                          label: 'Delete',
+                                          danger: true,
+                                          onClick: () => handleArchive(party)
+                                        }
+                                      ])
                                 ]
                               : [])
                           ]}
@@ -1090,11 +1118,27 @@ const Parties = () => {
 
       {/* Edit Modal - Compact */}
       {showEditModal && editingParty && (
-        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}>
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditModal(false);
+              setEditModalErrors({});
+            }
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Edit supplier</h3>
-              <button className="modal-close" type="button" onClick={() => setShowEditModal(false)} aria-label="Close">
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditModalErrors({});
+                }}
+                aria-label="Close"
+              >
                 <Icons.Close />
               </button>
             </div>
@@ -1102,21 +1146,55 @@ const Parties = () => {
               <div className="form-row">
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Party Name *</label>
+                  {isQuickBillSupplier(editingParty) && (
+                    <small style={{ display: 'block', color: '#94a3b8', fontSize: '11px', marginBottom: '6px' }}>
+                      Reserved for Quick bill on the dashboard — name cannot be changed.
+                    </small>
+                  )}
                   <input
                     type="text"
                     value={editFormData.party_name}
-                    onChange={(e) => setEditFormData({ ...editFormData, party_name: e.target.value })}
+                    onChange={(e) => {
+                      setEditFormData({ ...editFormData, party_name: e.target.value });
+                      if (editModalErrors.party_name) setEditModalErrors((prev) => ({ ...prev, party_name: undefined }));
+                    }}
                     placeholder="Enter party name"
+                    disabled={isQuickBillSupplier(editingParty)}
+                    title={
+                      isQuickBillSupplier(editingParty)
+                        ? 'Reserved for Quick bill — supplier name must stay quick_sell'
+                        : undefined
+                    }
+                    style={editModalErrors.party_name ? { borderColor: '#e8593c' } : undefined}
                   />
+                  {editModalErrors.party_name && (
+                    <small style={{ color: '#e8593c', fontSize: '12px', display: 'block', marginTop: '6px' }}>{editModalErrors.party_name}</small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Mobile</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={10}
                     value={editFormData.mobile_number}
-                    onChange={(e) => setEditFormData({ ...editFormData, mobile_number: e.target.value })}
-                    placeholder="Enter mobile number"
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                      setEditFormData({ ...editFormData, mobile_number: v });
+                      if (editModalErrors.mobile_number) setEditModalErrors((prev) => ({ ...prev, mobile_number: undefined }));
+                    }}
+                    placeholder="10 digits (optional)"
+                    style={editModalErrors.mobile_number ? { borderColor: '#e8593c' } : undefined}
                   />
+                  {editModalErrors.mobile_number && (
+                    <small style={{ color: '#e8593c', fontSize: '12px', display: 'block', marginTop: '6px' }}>{editModalErrors.mobile_number}</small>
+                  )}
+                  {!editModalErrors.mobile_number && (
+                    <small style={{ color: '#64748b', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                      {editFormData.mobile_number ? `${editFormData.mobile_number.length}/10 digits` : 'Leave blank if none'}
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Cheque number</label>
@@ -1205,7 +1283,16 @@ const Parties = () => {
               <button type="button" onClick={handleUpdate} className="btn btn-primary" disabled={updating} style={{ padding: '10px 22px', fontSize: '0.9rem', fontWeight: 700, borderRadius: '10px', minWidth: '140px' }}>
                 {updating ? 'Saving…' : 'Save changes'}
               </button>
-              <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-secondary" disabled={updating} style={{ padding: '10px 20px', fontSize: '0.9rem', fontWeight: 600, borderRadius: '10px', minWidth: '120px', border: '1px solid #475569' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditModalErrors({});
+                }}
+                className="btn btn-secondary"
+                disabled={updating}
+                style={{ padding: '10px 20px', fontSize: '0.9rem', fontWeight: 600, borderRadius: '10px', minWidth: '120px', border: '1px solid #475569' }}
+              >
                 Cancel
               </button>
             </div>
