@@ -9,7 +9,6 @@ import { useToast } from '../context/ToastContext';
 import TransactionLoader from '../components/TransactionLoader';
 import { numberToWords } from '../utils/numberToWords';
 import { getLocalDateString, formatInIndiaTime, formatDateInIndia } from '../utils/dateUtils';
-import { unitOptionsForItem } from '../utils/saleUnits';
 import {
   fetchSellerParties,
   fetchSellerInfo,
@@ -35,10 +34,8 @@ import {
   resetAfterSale,
   clearPreview,
   updatePreviewItemQuantity,
-  updatePreviewItemUnit,
   removePreviewItem,
   updateItemDiscount,
-  updateItemUnit,
   updatePreviewItemDiscount,
   updatePreviewItemSaleRate,
   setSelectedAttendant,
@@ -1005,26 +1002,7 @@ const SellItem = () => {
                                 </td>
                                 {/* Unit */}
                                 <td style={{ textAlign: 'center', color: '#9aaebf', fontSize: '11px' }}>
-                                  {!previewData.transactionId ? (
-                                    <>
-                                      <input
-                                        list={`bp-unit-dl-${item.item_id}`}
-                                        value={item.unit || 'PCS'}
-                                        onChange={(e) => dispatch(updatePreviewItemUnit({ itemId: item.item_id, unit: e.target.value }))}
-                                        onBlur={() => { if (handlePreviewRef.current) handlePreviewRef.current(); }}
-                                        maxLength={14}
-                                        style={{ width: '72px', padding: '2px 4px', fontSize: '11px', background: '#0f151f', border: '1px solid #2a3340', borderRadius: '4px', color: '#eef2f8' }}
-                                        title="Unit from product master; type any custom unit"
-                                      />
-                                      <datalist id={`bp-unit-dl-${item.item_id}`}>
-                                        {unitOptionsForItem(item.unit).map((opt) => (
-                                          <option key={opt} value={opt} />
-                                        ))}
-                                      </datalist>
-                                    </>
-                                  ) : (
-                                    item.unit || 'PCS'
-                                  )}
+                                  {item.unit || 'PCS'}
                                 </td>
                                 {/* Price (editable sale_rate input) */}
                                 <td style={{ textAlign: 'right' }} className="bp-price-cell">
@@ -1702,21 +1680,8 @@ const SellItem = () => {
                                   {!isOverStock && availableQty > 0 && <div className="stock-info">{availableQty} left</div>}
                                 </div>
                               </td>
-                              <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                <input
-                                  list={`cart-unit-dl-${item.item_id}`}
-                                  value={item.unit || 'PCS'}
-                                  onChange={(e) => dispatch(updateItemUnit({ itemId: item.item_id, unit: e.target.value }))}
-                                  onBlur={() => { if (previewDirty && handlePreviewRef.current) handlePreviewRef.current(); }}
-                                  maxLength={14}
-                                  style={{ width: '64px', padding: '4px 6px', fontSize: '11px', background: '#0a0f16', border: '1px solid #374151', borderRadius: '4px', color: '#e2e8f0' }}
-                                  title="Unit from master; type a custom value if needed"
-                                />
-                                <datalist id={`cart-unit-dl-${item.item_id}`}>
-                                  {unitOptionsForItem(item.unit).map((opt) => (
-                                    <option key={opt} value={opt} />
-                                  ))}
-                                </datalist>
+                              <td style={{ textAlign: 'center', verticalAlign: 'middle', color: '#9aaebf', fontSize: '11px' }}>
+                                {item.unit || 'PCS'}
                               </td>
                               {/* DISCOUNT */}
                               <td style={{ textAlign: 'center' }}>

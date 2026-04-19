@@ -592,7 +592,7 @@ const Dashboard = () => {
             <thead>
               <tr style={{ background: '#0f151f', position: 'sticky', top: 0 }}>
                 <th style={{ padding: '8px 8px', textAlign: 'center', width: '44px' }}>S.No</th>
-                <th onClick={() => handleSort('product_name')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer' }}>Product {sortBy === 'product_name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                <th onClick={() => handleSort('product_name')} style={{ padding: '8px 8px', textAlign: 'left', cursor: 'pointer' }}>Product {sortBy === 'product_name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                 <th style={{ padding: '8px 8px', textAlign: 'center' }}>Unit</th>
                 <th onClick={() => handleSort('brand')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer' }}>Brand {sortBy === 'brand' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                 <th style={{ padding: '8px 8px', textAlign: 'center' }}>GST %</th>
@@ -669,7 +669,7 @@ const Dashboard = () => {
       {/* Modals - All remain the same */}
       {showEditModal && editingItem && (
         <div style={modalOverlay}>
-          <div style={{ ...modalContent, maxWidth: '520px' }}>
+          <div className="pp-modal-shell-compact" style={{ ...modalContent, maxWidth: '520px' }}>
             <div style={modalHeader}>
               <div>
                 <div style={{ fontSize: '11px', color: '#9aaebf', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Edit Item</div>
@@ -677,7 +677,7 @@ const Dashboard = () => {
               </div>
               <button onClick={() => setShowEditModal(false)} style={closeBtn}>×</button>
             </div>
-            <div style={modalBody}>
+            <div style={modalBody} className="pp-modal-scroll-compact">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div style={{ gridColumn: '1/-1' }}>
                   <div style={{ fontSize: '10px', color: '#9aaebf', marginBottom: '4px', textTransform: 'uppercase' }}>Product Name *</div>
@@ -754,7 +754,7 @@ const Dashboard = () => {
 
       {showViewModal && viewItem && (
         <div style={modalOverlay}>
-          <div style={{ ...modalContent, maxWidth: '560px' }}>
+          <div className="pp-modal-shell-compact" style={{ ...modalContent, maxWidth: '560px' }}>
             <div style={{ ...modalHeader, paddingBottom: '12px', flexDirection: 'column', alignItems: 'flex-start', gap: '0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
                 <div>
@@ -770,7 +770,7 @@ const Dashboard = () => {
                 {viewItem.rack_number && <span style={{ background: '#2a3340', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', color: '#9aaebf' }}>Rack: {viewItem.rack_number}</span>}
               </div>
             </div>
-            <div style={modalBody}>
+            <div style={modalBody} className="pp-modal-scroll-compact">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                 <div style={{ background: '#0f151f', borderRadius: '6px', padding: '10px 12px', border: '1px solid #2a3340' }}>
                   <div style={labelStyle}>Sale Rate</div>
@@ -819,12 +819,12 @@ const Dashboard = () => {
 
       {showQuickSaleModal && quickSaleItem && (
         <div style={modalOverlay}>
-          <div style={{ ...modalContent, maxWidth: '420px' }}>
+          <div className="pp-modal-shell-compact" style={{ ...modalContent, maxWidth: '420px' }}>
             <div style={modalHeader}>
               <h3 style={{ fontSize: '14px', margin: 0 }}>Quick bill (walk-in sale)</h3>
               <button onClick={() => setShowQuickSaleModal(false)} style={closeBtn}>×</button>
             </div>
-            <div style={modalBody}>
+            <div style={modalBody} className="pp-modal-scroll-compact">
               <div><strong>{quickSaleItem.product_name}</strong> {quickSaleItem.brand && `(${quickSaleItem.brand})`}</div>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Rate: ₹{quickSaleItem.sale_rate} | Stock: {quickSaleItem.quantity}</div>
 
@@ -916,12 +916,12 @@ const Dashboard = () => {
 
       {showStockAmountModal && (
         <div style={modalOverlay}>
-          <div style={{ ...modalContent, maxWidth: '420px' }}>
+          <div className="pp-modal-shell-compact" style={{ ...modalContent, maxWidth: '420px' }}>
             <div style={modalHeader}>
               <h3 style={{ fontSize: '14px', margin: 0 }}>Total Stock Value</h3>
               <button onClick={() => setShowStockAmountModal(false)} style={closeBtn}>×</button>
             </div>
-            <div style={modalBody}>
+            <div style={modalBody} className="pp-modal-scroll-compact">
               <div style={{ textAlign: 'center', marginBottom: '16px' }}>
                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#f59a30' }}>₹{totalStockAmount?.toFixed(2) || '0.00'}</div>
                 <div style={{ fontSize: '10px', color: '#94a3b8' }}>Total value of all inventory</div>
@@ -947,7 +947,7 @@ const Dashboard = () => {
 
       {showDueAlertModal && dueAlertParties.length > 0 && (
         <div style={modalOverlay}>
-          <div style={{ ...modalContent, maxWidth: '580px' }}>
+          <div className="pp-modal-shell-compact" style={{ ...modalContent, maxWidth: '580px' }}>
             <div style={{ ...modalHeader, background: '#e8593c10', borderBottomColor: '#e8593c' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Icon name="alert" size={18} />
@@ -955,7 +955,7 @@ const Dashboard = () => {
               </div>
               <button onClick={() => setShowDueAlertModal(false)} style={closeBtn}>×</button>
             </div>
-            <div style={modalBody}>
+            <div style={modalBody} className="pp-modal-scroll-compact">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '12px', padding: '8px', background: '#0f151f', borderRadius: '6px' }}>
                 <span>{dueAlertParties.length} supplier{dueAlertParties.length !== 1 ? 's' : ''}</span>
                 <span style={{ color: '#e8593c', fontWeight: 600 }}>₹{dueAlertParties.reduce((s, p) => s + (parseFloat(p.balance_amount) || 0), 0).toFixed(2)}</span>
@@ -1122,7 +1122,7 @@ const modalHeader = {
   display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #2a3340'
 };
 
-const modalBody = { padding: '12px', overflowY: 'auto', flex: 1, maxHeight: '70vh' };
+const modalBody = { padding: '12px', overflowY: 'auto', flex: 1, minHeight: 0 };
 const modalFooter = { padding: '10px 12px', borderTop: '1px solid #2a3340', display: 'flex', justifyContent: 'flex-end', gap: '8px' };
 const closeBtn = { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '18px' };
 const primaryBtn = { padding: '5px 12px', fontSize: '11px', background: '#f59a30', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: 500 };

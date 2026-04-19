@@ -387,11 +387,13 @@ const SellItem2 = () => {
                     <div className="cart-item-header">
                       <strong>{item.item_name}</strong>
                       <button
-                        className="btn-icon btn-icon-danger"
+                        type="button"
+                        className="btn-icon btn-icon-danger cart-item-remove"
                         onClick={() => dispatch(removeFromCart(item.item_id))}
                         title="Remove item"
+                        aria-label="Remove item"
                       >
-                        x
+                        ×
                       </button>
                     </div>
                     

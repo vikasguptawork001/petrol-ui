@@ -711,12 +711,15 @@ const Parties = () => {
       {/* Party Details Modal - Compact */}
       {showPartyDetailsModal && selectedParty && partyDetails && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: 'min(1200px, 100vw - 32px)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
+          <div className="pp-modal-party-details-shell" style={{ background: '#141b26', borderRadius: '8px', width: '100%', maxWidth: 'min(1200px, 100vw - 32px)', display: 'flex', flexDirection: 'column', border: '1px solid #2a3340' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a3340' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{partyDetails.party_name}</h3>
+              <div>
+                <div style={{ fontSize: '10px', color: '#9aaebf', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: '4px' }}>View details</div>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{partyDetails.party_name}</h3>
+              </div>
               <button onClick={() => setShowPartyDetailsModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}><Icons.Close /></button>
             </div>
-            <div style={{ padding: '16px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '16px', overflowY: 'auto', flex: 1 }} className="pp-modal-scroll-compact">
               {/* Party Info Grid - Compact */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px', marginBottom: '14px' }}>
                 <div style={{ padding: '8px 12px', background: '#0f151f', borderRadius: '6px', border: '1px solid #2a3340' }}>
@@ -874,12 +877,12 @@ const Parties = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="payment-modal-title"
+            className="pp-modal-payment-shell"
             style={{
               background: '#141b26',
               borderRadius: '12px',
               width: '100%',
               maxWidth: '440px',
-              maxHeight: 'min(calc(100dvh - 48px), 92vh, 720px)',
               margin: 'auto',
               flexShrink: 0,
               height: 'auto',
@@ -903,6 +906,7 @@ const Parties = () => {
               </button>
             </div>
             <div
+              className="pp-modal-scroll-compact"
               style={{
                 padding: '18px',
                 display: 'flex',

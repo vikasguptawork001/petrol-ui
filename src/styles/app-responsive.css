@@ -180,3 +180,46 @@
 .layout .main-content {
   max-width: var(--layout-max-width);
 }
+
+/* ─── Modals: keep dialogs usable on 14" / short viewports ─── */
+.pp-modal-shell-compact {
+  max-height: min(92vh, calc(100dvh - 24px));
+}
+
+.pp-modal-scroll-compact {
+  max-height: min(52vh, 480px, calc(100dvh - 200px));
+}
+
+.pp-modal-party-details-shell {
+  max-height: min(90vh, calc(100dvh - 32px));
+}
+
+.pp-modal-payment-shell {
+  max-height: min(calc(100dvh - 48px), 88vh, 560px);
+}
+
+@media (max-height: 900px) {
+  .pp-modal-shell-compact {
+    max-height: min(85vh, calc(100dvh - 16px));
+  }
+
+  .pp-modal-scroll-compact {
+    max-height: min(40vh, 340px);
+  }
+
+  .pp-modal-party-details-shell {
+    max-height: min(82vh, calc(100dvh - 20px));
+  }
+
+  .pp-modal-payment-shell {
+    max-height: min(calc(100dvh - 40px), 80vh, 480px);
+  }
+
+  .modal-content {
+    max-height: min(calc(100dvh - 24px), 86vh) !important;
+  }
+
+  .modal-body {
+    max-height: min(38vh, 320px);
+  }
+}

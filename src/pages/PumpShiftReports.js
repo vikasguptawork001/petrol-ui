@@ -337,7 +337,7 @@ const PumpShiftReports = () => {
             )}
 
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px' }}>
                 <thead>
                   <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
                     <th style={th}>Date</th>
@@ -347,7 +347,7 @@ const PumpShiftReports = () => {
                     <th style={{ ...th, textAlign: 'right' }}>Liters</th>
                     <th style={th}>Opened</th>
                     <th style={th}>Closed</th>
-                    <th style={th}>Status</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -367,7 +367,7 @@ const PumpShiftReports = () => {
                     ahShifts.map((r) => (
                       <tr key={r.id} style={{ borderBottom: '1px solid #1a2330' }}>
                         <td style={td}>{showDate(r.reading_date)}</td>
-                        <td style={{ ...td, fontWeight: 600 }}>{r.nozzle_name}</td>
+                        <td style={{ ...td, fontWeight: 600, wordBreak: 'break-word' }}>{r.nozzle_name}</td>
                         <td style={{ ...td, textAlign: 'right' }}>{fmt(r.opening_reading)}</td>
                         <td style={{ ...td, textAlign: 'right' }}>{r.closing_reading != null ? fmt(r.closing_reading) : '—'}</td>
                         <td style={{ ...td, textAlign: 'right', color: '#3b82f6' }}>{r.sale_liters != null ? fmt(r.sale_liters) : '—'}</td>
@@ -495,7 +495,7 @@ const PumpShiftReports = () => {
             )}
 
             <div style={{ background: '#0f151f', border: '1px solid #2a3340', borderRadius: '8px', overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px' }}>
                 <thead>
                   <tr style={{ background: '#0d1320', borderBottom: '1px solid #2a3340' }}>
                     <th style={{ ...th, width: '48px', textAlign: 'center' }}>S.No</th>

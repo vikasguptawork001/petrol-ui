@@ -276,13 +276,22 @@
 .cart-item-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 .cart-item-header strong {
   color: #2c3e50;
   font-size: 16px;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.cart-item-header .cart-item-remove {
+  flex-shrink: 0;
+  margin-top: -2px;
 }
 
 .cart-item-details {
@@ -461,8 +470,16 @@ button {
 .btn-icon {
   background: none;
   color: #95a5a6;
-  padding: 4px 8px;
-  font-size: 18px;
+  padding: 6px 10px;
+  font-size: 20px;
+  line-height: 1;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  box-sizing: border-box;
 }
 
 .btn-icon:hover {

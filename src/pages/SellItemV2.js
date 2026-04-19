@@ -810,18 +810,8 @@ const SellItemV2 = () => {
                                 </div>
                               </td>
                               <td>{it.hsn_number || '-'}</td>
-                              <td>
-                                <input
-                                  className="sell2-mini-input"
-                                  style={{ width: 76 }}
-                                  value={it.unit ?? 'PCS'}
-                                  onChange={(e) => {
-                                    const u = e.target.value;
-                                    updateCartItem(it.item_id, { unit: u.trim() === '' ? 'PCS' : u });
-                                  }}
-                                  placeholder="PCS"
-                                  title="Unit for bill / PDF"
-                                />
+                              <td style={{ color: 'var(--pp-text-secondary, #64748b)', fontWeight: 600 }}>
+                                {it.unit ?? 'PCS'}
                               </td>
                               <td>
                                 <input
